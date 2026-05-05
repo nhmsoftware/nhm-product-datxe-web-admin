@@ -61,6 +61,12 @@ export const adminService = {
     return response.data;
   },
 
+  getDriverDetail: async (userId) => {
+    const response = await api.get(`/v1/admin/drivers/${userId}`);
+    return response.data;
+  },
+
+
   updateDriverStatus: async (userId, data) => {
     const response = await api.put(`/v1/admin/drivers/${userId}/status`, data);
     return response.data;
@@ -74,5 +80,15 @@ export const adminService = {
   rejectDriver: async (userId, reason) => {
     const response = await api.post(`/v1/admin/drivers/${userId}/reject`, { reason });
     return response.data;
+  },
+
+  exportDrivers: async (params) => {
+    const response = await api.get('/v1/admin/drivers/export', { 
+      params,
+      responseType: 'blob'
+    });
+    return response;
   }
 };
+
+

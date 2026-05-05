@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck } from 'lucide-react';
 
 const Sidebar = () => {
   const menuItems = [
@@ -10,21 +10,13 @@ const Sidebar = () => {
     { icon: <Package size={20} />, label: 'Dịch vụ', path: '/services' },
     { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
     { icon: <Settings size={20} />, label: 'Cài đặt', path: '/settings' },
+
   ];
 
+
   return (
-    <aside className="sidebar glass" style={{
-      width: 'var(--sidebar-width)',
-      height: '100vh',
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      padding: '2rem 1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 100,
-      borderRadius: '0 24px 24px 0'
-    }}>
+    <aside className="sidebar glass">
+
       <div className="logo" style={{
         padding: '0 1rem 3rem',
         fontSize: '1.5rem',
@@ -52,25 +44,16 @@ const Sidebar = () => {
           <NavLink
             key={item.path}
             to={item.path}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.875rem 1rem',
-              color: isActive ? 'white' : 'var(--text-muted)',
-              textDecoration: 'none',
-              borderRadius: '12px',
-              marginBottom: '0.5rem',
-              background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
-              transition: 'var(--transition)'
-            })}
+            end
+            className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
           >
+
             {item.icon}
-            <span style={{ fontWeight: 500 }}>{item.label}</span>
+            <span style={{ fontWeight: 600 }}>{item.label}</span>
           </NavLink>
         ))}
       </nav>
+
 
       <button className="btn-logout" style={{
         marginTop: 'auto',

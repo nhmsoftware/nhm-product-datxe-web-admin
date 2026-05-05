@@ -1,11 +1,169 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, MoreVertical, CheckCircle, XCircle, Check, X, Ban, Unlock } from 'lucide-react';
+import { Search, Filter, MoreVertical, CheckCircle, XCircle, Check, X, Ban, Unlock, Car, Eye, MapPin, Calendar, Smartphone, ShieldCheck, Mail, Info, Package } from 'lucide-react';
+
 import { adminService } from '../../services/adminService';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
+
+import { useLocation } from 'react-router-dom';
+
+const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
+
+  const [driver, setDriver] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [userId]);
+
+  const fetchDetail = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.getDriverDetail(userId);
+      setDriver(response.data);
+    } catch (error) {
+      toast.error('Không thể tải chi tiết tài xế');
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '600px' }}>
+        <div className="modal-body" style={{ textAlign: 'center', padding: '4rem' }}>
+          <div className="skeleton" style={{ width: '80px', height: '80px', borderRadius: '50%', margin: '0 auto 1.5rem' }}></div>
+          <div className="skeleton" style={{ width: '200px', height: '2rem', margin: '0 auto 1rem' }}></div>
+          <div className="skeleton" style={{ width: '150px', height: '1.5rem', margin: '0 auto' }}></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Info size={24} className="text-primary" /> Chi tiết hồ sơ tài xế
+          </h2>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+        <div className="modal-body">
+          <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
+            <div style={{ 
+              width: '120px', 
+              height: '120px', 
+              borderRadius: '24px', 
+              background: 'linear-gradient(45deg, var(--primary), #a855f7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '3rem',
+              fontWeight: 800,
+              color: 'white',
+              boxShadow: '0 10px 20px rgba(99, 102, 241, 0.3)'
+            }}>
+              {driver?.full_name?.[0] || 'D'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{driver?.full_name}</h3>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <span className={`badge ${driver?.kyc_status === 2 ? 'badge-success' : driver?.kyc_status === 1 ? 'badge-warning' : 'badge-error'}`}>
+                  {driver?.kyc_status_label || 'Chưa duyệt'}
+                </span>
+                <span className={`badge ${driver?.is_active ? 'badge-success' : 'badge-error'}`}>
+                  {driver?.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>THÔNG TIN CƠ BẢN</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Smartphone size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Số điện thoại</div>
+                    <div style={{ fontWeight: 600 }}>{driver?.phone}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Mail size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Email</div>
+                    <div style={{ fontWeight: 600 }}>{driver?.email || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>HỆ THỐNG</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Calendar size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ngày gia nhập</div>
+                    <div style={{ fontWeight: 600 }}>{new Date(driver?.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <ShieldCheck size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vai trò</div>
+                    <div style={{ fontWeight: 600 }}>Tài xế đối tác</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px', marginTop: '1.5rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>HỒ SƠ ĐĂNG KÝ (KYC)</p>
+            {driver?.kyc_status ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Bằng lái xe</div>
+                  <div style={{ fontWeight: 600 }}>{driver.license_info?.license_number || 'N/A'}</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Trạng thái</div>
+                  <div style={{ fontWeight: 600 }}>{driver.kyc_status_label}</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Ghi chú</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{driver.kyc_cancel_reason || 'Không'}</div>
+                </div>
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>Chưa có hồ sơ đăng ký nào.</p>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DriverList = () => {
+  const location = useLocation();
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [params, setParams] = useState({ keyword: '', kyc_status: '', page: 1 });
+  const [activeTab, setActiveTab] = useState(location.pathname === '/drivers/pending' ? 'pending' : 'approved');
+  const [params, setParams] = useState({ 
+    keyword: '', 
+    kyc_status: location.pathname === '/drivers/pending' ? '1' : '2', 
+    page: 1 
+  });
+
+
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
     fetchDrivers();
@@ -17,79 +175,179 @@ const DriverList = () => {
       const response = await adminService.getDrivers(params);
       setDrivers(response.data.data || []);
     } catch (error) {
-      console.error('Failed to fetch drivers:', error);
+      toast.error('Lỗi khi tải danh sách tài xế');
     } finally {
       setLoading(false);
     }
   };
 
   const handleApprove = async (driver) => {
-    if (!window.confirm(`Duyệt hồ sơ cho tài xế ${driver.name}?`)) return;
-    try {
-      await adminService.approveDriver(driver.id, 'Duyệt bởi Admin');
-      fetchDrivers();
-    } catch (error) {
-      alert('Lỗi khi duyệt hồ sơ');
+    const result = await Swal.fire({
+      title: 'Duyệt tài xế?',
+      text: `Bạn có chắc chắn muốn duyệt hồ sơ cho ${driver.name}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Đồng ý duyệt',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#10b981'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await adminService.approveDriver(driver.id, 'Hồ sơ hợp lệ');
+        toast.success('Đã duyệt hồ sơ tài xế');
+        fetchDrivers();
+      } catch (error) {
+        toast.error('Lỗi khi duyệt hồ sơ');
+      }
     }
   };
 
   const handleReject = async (driver) => {
-    const reason = window.prompt(`Lý do từ chối tài xế ${driver.name}:`);
-    if (reason === null) return;
-    try {
-      await adminService.rejectDriver(driver.id, reason || 'Hồ sơ chưa đạt yêu cầu');
-      fetchDrivers();
-    } catch (error) {
-      alert('Lỗi khi từ chối hồ sơ');
+    const { value: reason } = await Swal.fire({
+      title: 'Từ chối hồ sơ',
+      input: 'textarea',
+      inputLabel: 'Lý do từ chối',
+      inputPlaceholder: 'Nhập lý do tại đây...',
+      inputAttributes: {
+        'aria-label': 'Nhập lý do tại đây'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận từ chối',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#ef4444'
+    });
+
+    if (reason) {
+      try {
+        await adminService.rejectDriver(driver.id, reason);
+        toast.success('Đã từ chối hồ sơ');
+        fetchDrivers();
+      } catch (error) {
+        toast.error('Lỗi khi từ chối hồ sơ');
+      }
     }
   };
 
   const handleToggleStatus = async (driver) => {
     const newStatus = !driver.is_active;
-    if (!window.confirm(newStatus ? 'Mở khóa tài xế này?' : 'Khóa tài xế này?')) return;
-    try {
-      await adminService.updateDriverStatus(driver.id, {
-        is_active: newStatus,
-        lock_reason: newStatus ? '' : 'Khóa bởi Admin',
-        locked_days: 7
-      });
-      fetchDrivers();
-    } catch (error) {
-      alert('Cập nhật trạng thái thất bại');
+    const result = await Swal.fire({
+      title: newStatus ? 'Mở khóa tài xế?' : 'Khóa tài xế?',
+      text: newStatus ? `Mở khóa quyền hoạt động cho ${driver.name}` : `Tạm dừng quyền hoạt động của ${driver.name}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: newStatus ? '#10b981' : '#ef4444'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await adminService.updateDriverStatus(driver.id, {
+          is_active: newStatus,
+          lock_reason: newStatus ? '' : 'Vi phạm quy định',
+          locked_days: 7
+        });
+        toast.success(newStatus ? 'Đã mở khóa tài xế' : 'Đã khóa tài xế');
+        fetchDrivers();
+      } catch (error) {
+        toast.error('Cập nhật thất bại');
+      }
     }
   };
 
+  const handleExport = async () => {
+    try {
+      toast.loading('Đang chuẩn bị file...');
+      const response = await adminService.exportDrivers(params);
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Lấy filename từ header hoặc đặt mặc định
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `danh_sach_tai_xe_${new Date().getTime()}.csv`;
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (fileNameMatch && fileNameMatch.length > 1) {
+          filename = fileNameMatch[1];
+        }
+      }
+
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.dismiss();
+      toast.success('Tải file thành công');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Lỗi khi tải file');
+    }
+  };
+
+
   return (
-    <div className="drivers-page">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <div className="drivers-page" style={{ padding: '2rem' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
         <div>
           <h1 className="page-title">Quản lý Tài xế</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Quản lý và duyệt hồ sơ đăng ký tài xế trên toàn hệ thống.</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Hệ thống quản lý thông tin và xét duyệt hồ sơ tài xế.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn glass glass-hover" style={{ color: 'white' }}>
-            <Filter size={18} /> Lọc
+          <button className="btn btn-glass" onClick={() => fetchDrivers()}>
+            <Filter size={18} /> Làm mới
           </button>
-          <button className="btn btn-primary">
-            + Thêm tài xế
+          <button className="btn btn-primary" onClick={handleExport}>
+            <Package size={18} /> Xuất Excel
           </button>
         </div>
       </div>
 
-      <div className="glass" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
+
+      <div className="tabs-container">
+        <button 
+          className={`tab-item ${activeTab === 'approved' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('approved');
+            setParams({ ...params, kyc_status: '2', page: 1 });
+          }}
+        >
+          Danh sách tài xế
+        </button>
+        <button 
+          className={`tab-item ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('pending');
+            setParams({ ...params, kyc_status: '1', page: 1 });
+          }}
+        >
+          Hồ sơ chờ duyệt
+        </button>
+      </div>
+
+
+      <div className="glass" style={{ padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', borderRadius: '20px' }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Tìm kiếm tài xế..." 
-            style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', color: 'white', outline: 'none' }}
+            placeholder="Tìm kiếm theo tên, SĐT hoặc email..." 
+            style={{ width: '100%', padding: '0.875rem 1rem 0.875rem 2.75rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', transition: 'var(--transition)' }}
+            className="input-focus"
             onChange={(e) => setParams({ ...params, keyword: e.target.value })}
           />
+
         </div>
         <select 
-          style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', color: 'white', outline: 'none' }}
+          style={{ padding: '0.75rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', minWidth: '180px' }}
+          value={params.kyc_status}
           onChange={(e) => setParams({ ...params, kyc_status: e.target.value })}
         >
+
           <option value="">Tất cả trạng thái</option>
           <option value="1">Chờ duyệt</option>
           <option value="2">Đã duyệt</option>
@@ -97,9 +355,40 @@ const DriverList = () => {
         </select>
       </div>
 
-      <div className="glass" style={{ padding: '1.5rem' }}>
+      <div className="glass" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>Đang tải...</div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Họ và tên</th>
+                  <th>Thông tin liên hệ</th>
+                  <th>Trạng thái KYC</th>
+                  <th>Trạng thái HĐ</th>
+                  <th>Ngày gia nhập</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <tr key={i}>
+                    <td><div className="skeleton" style={{ width: '150px', height: '1.5rem' }}></div></td>
+                    <td><div className="skeleton" style={{ width: '120px', height: '1.5rem' }}></div></td>
+                    <td><div className="skeleton" style={{ width: '80px', height: '1.5rem' }}></div></td>
+                    <td><div className="skeleton" style={{ width: '80px', height: '1.5rem' }}></div></td>
+                    <td><div className="skeleton" style={{ width: '100px', height: '1.5rem' }}></div></td>
+                    <td><div className="skeleton" style={{ width: '200px', height: '2rem', marginLeft: 'auto' }}></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : drivers.length === 0 ? (
+          <div className="empty-state" style={{ padding: '5rem 0' }}>
+            <Car size={64} style={{ marginBottom: '1.5rem', opacity: 0.2, color: 'var(--primary)' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Không tìm thấy tài xế</h3>
+            <p style={{ color: 'var(--text-muted)' }}>Hiện tại không có dữ liệu tài xế nào khớp với tìm kiếm của bạn.</p>
+          </div>
         ) : (
           <div className="table-container">
             <table>
@@ -119,21 +408,31 @@ const DriverList = () => {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ 
-                          width: '40px', 
-                          height: '40px', 
-                          borderRadius: '10px', 
+                          width: '44px', 
+                          height: '44px', 
+                          borderRadius: '12px', 
                           background: 'linear-gradient(45deg, var(--primary), #a855f7)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontWeight: 700
-                        }}>{driver.name?.[0] || 'D'}</div>
-                        <span style={{ fontWeight: 600 }}>{driver.name}</span>
+                          fontWeight: 700,
+                          color: 'white',
+                          boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)'
+                        }}>{driver.full_name?.[0] || 'D'}</div>
+                        <div>
+                          <div style={{ fontWeight: 700 }}>{driver.full_name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {driver.id.slice(-8)}</div>
+                        </div>
+
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.875rem' }}>{driver.phone}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{driver.email}</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Smartphone size={14} className="text-primary" /> {driver.phone}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Mail size={14} /> {driver.email || 'N/A'}
+                      </div>
                     </td>
                     <td>
                       <span className={`badge ${
@@ -145,27 +444,40 @@ const DriverList = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={driver.is_active ? 'badge-success' : 'badge-error'}>
+                      <span className={`badge ${driver.is_active ? 'badge-success' : 'badge-error'}`}>
                         {driver.is_active ? 'Hoạt động' : 'Bị khóa'}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>
                       {new Date(driver.created_at).toLocaleDateString('vi-VN')}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                      <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                        <button 
+                          onClick={() => setSelectedUserId(driver.id)} 
+                          className="btn-action btn-action-view"
+                        >
+                          <Eye size={16} /> Hồ sơ
+                        </button>
+                        
                         {driver.kyc_status === 1 && (
                           <>
-                            <button onClick={() => handleApprove(driver)} className="icon-btn success" title="Duyệt"><Check size={18} /></button>
-                            <button onClick={() => handleReject(driver)} className="icon-btn error" title="Từ chối"><X size={18} /></button>
+                            <button onClick={() => handleApprove(driver)} className="btn-action btn-action-approve">
+                              <Check size={16} /> Duyệt
+                            </button>
+                            <button onClick={() => handleReject(driver)} className="btn-action btn-action-reject">
+                              <X size={16} /> Từ chối
+                            </button>
                           </>
                         )}
+                        
                         <button 
                           onClick={() => handleToggleStatus(driver)}
-                          className={`icon-btn ${driver.is_active ? 'error' : 'success'}`}
-                          title={driver.is_active ? 'Khóa' : 'Mở khóa'}
+                          className={`btn-icon ${driver.is_active ? 'badge-error' : 'badge-success'}`}
+                          style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                          title={driver.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                         >
-                          {driver.is_active ? <Ban size={18} /> : <Unlock size={18} />}
+                          {driver.is_active ? <Ban size={18} color="#ef4444" /> : <Unlock size={18} color="#10b981" />}
                         </button>
                       </div>
                     </td>
@@ -176,8 +488,17 @@ const DriverList = () => {
           </div>
         )}
       </div>
+
+      {selectedUserId && (
+        <DriverDetailModal 
+          userId={selectedUserId} 
+          onClose={() => setSelectedUserId(null)} 
+          onRefresh={fetchDrivers}
+        />
+      )}
     </div>
   );
 };
 
 export default DriverList;
+

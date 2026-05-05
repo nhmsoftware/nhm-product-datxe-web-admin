@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, User, Sun, Moon } from 'lucide-react';
+import { Bell, Search, User, Sun, Moon, LogOut } from 'lucide-react';
+import authService from '../../services/authService';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const [theme, setTheme] = useState(localStorage.getItem('admin_theme') || 'light');
+  const navigate = useNavigate();
+  const user = authService.getCurrentUser();
 
   useEffect(() => {
     document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
@@ -11,6 +15,11 @@ const Navbar = () => {
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleLogout = async () => {
+    await authService.logout();
+    navigate('/login');
   };
 
   return (
@@ -22,7 +31,7 @@ const Navbar = () => {
 
       <div className="user-actions">
         {/* Nút chuyển đổi Theme */}
-        <button className="theme-toggle-btn" onClick={toggleTheme}>
+        <button className="theme-toggle-btn" onClick={toggleTheme} title="Chế độ sáng/tối">
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
@@ -31,16 +40,23 @@ const Navbar = () => {
           <span className="unread-dot"></span>
         </div>
         
-        <div className="profile">
-          <div className="avatar-box">
-            <User size={20} color="white" />
+        <div className="profile-group">
+          <div className="profile">
+            <div className="avatar-box">
+              <User size={20} color="white" />
+            </div>
+            <div className="user-info">
+              <div className="name">{user?.full_name || 'System Admin'}</div>
+              <div className="role">{user?.role_name || 'Quản trị viên'}</div>
+            </div>
           </div>
-          <div className="user-info">
-            <div className="name">System Admin</div>
-            <div className="role">Admin Role</div>
-          </div>
+          
+          <button className="logout-btn" onClick={handleLogout} title="Đăng xuất">
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
+
 
       <style dangerouslySetInnerHTML={{ __html: `
         .navbar-glass {
@@ -95,6 +111,14 @@ const Navbar = () => {
           border: 2px solid var(--bg);
         }
 
+        .profile-group {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding-left: 1rem;
+          border-left: 1px solid var(--border);
+        }
+
         .profile {
           display: flex; align-items: center; gap: 0.75rem;
           cursor: pointer; padding: 0.25rem 0.5rem;
@@ -111,6 +135,28 @@ const Navbar = () => {
 
         .user-info .name { font-size: 0.875rem; font-weight: 600; color: var(--text); }
         .user-info .role { font-size: 0.75rem; color: var(--text-muted); }
+
+        .logout-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          border: 1px solid var(--border);
+          background: var(--card);
+          color: var(--text-muted);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+          background: var(--error);
+          color: white;
+          border-color: var(--error);
+          transform: translateY(-2px);
+        }
+
 
         @media (max-width: 768px) {
           .search-bar { display: none; }

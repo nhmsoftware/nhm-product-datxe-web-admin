@@ -16,13 +16,20 @@ const StatCard = ({ icon, label, value, trend, color, loading }) => (
     <div className="stat-icon" style={{ background: `${color}15`, color: color }}>
       {icon}
     </div>
-    <div>
-      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{label}</div>
-      <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '4px 0' }}>
-        {loading ? '...' : value}
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 500 }}>{label}</div>
+      <div style={{ fontSize: '1.75rem', fontWeight: 800, margin: '4px 0', color: 'var(--text)' }}>
+        {loading ? <div className="skeleton" style={{ width: '60%', height: '2rem' }}></div> : value}
       </div>
-      <div style={{ fontSize: '0.75rem', color: trend.startsWith('+') ? 'var(--success)' : 'var(--error)' }}>
-        {trend} so với tháng trước
+      <div style={{ 
+        fontSize: '0.75rem', 
+        fontWeight: 600,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        color: trend.startsWith('+') ? 'var(--success)' : 'var(--error)' 
+      }}>
+        {trend} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>so với tháng trước</span>
       </div>
     </div>
   </div>
@@ -35,6 +42,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setLoading(true);
         const response = await adminService.getDashboardStats();
         setStats(response.data);
       } catch (error) {
@@ -49,17 +57,18 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-page">
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '2.5rem' }}>
         <h1 className="page-title">Chào buổi sáng, Admin</h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Đây là những gì đang diễn ra với hệ thống của bạn hôm nay.</p>
+        <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', fontSize: '1rem' }}>Đây là những gì đang diễn ra với hệ thống của bạn hôm nay.</p>
       </div>
 
       <div className="stats-grid">
-        <StatCard icon={<Users />} label="Khách hàng" value={stats?.total_users?.toLocaleString()} trend="+12.5%" color="#6366f1" loading={loading} />
-        <StatCard icon={<Car />} label="Tài xế" value={stats?.active_drivers?.toLocaleString()} trend="+3.2%" color="#10b981" loading={loading} />
-        <StatCard icon={<ShoppingBag />} label="Chuyến đi" value={stats?.total_orders?.toLocaleString()} trend="+24.8%" color="#f59e0b" loading={loading} />
-        <StatCard icon={<DollarSign />} label="Doanh thu" value={`${((stats?.total_revenue || 0) / 1000000).toFixed(1)}M`} trend="+18.4%" color="#ef4444" loading={loading} />
+        <StatCard icon={<Users size={24} />} label="Khách hàng" value={stats?.total_users?.toLocaleString() || '0'} trend="+12.5%" color="#6366f1" loading={loading} />
+        <StatCard icon={<Car size={24} />} label="Tài xế" value={stats?.active_drivers?.toLocaleString() || '0'} trend="+3.2%" color="#10b981" loading={loading} />
+        <StatCard icon={<ShoppingBag size={24} />} label="Chuyến đi" value={stats?.total_orders?.toLocaleString() || '0'} trend="+24.8%" color="#f59e0b" loading={loading} />
+        <StatCard icon={<DollarSign size={24} />} label="Doanh thu" value={`${((stats?.total_revenue || 0) / 1000000).toFixed(1)}M`} trend="+18.4%" color="#ef4444" loading={loading} />
       </div>
+
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginTop: '2rem' }}>
         <div className="glass" style={{ padding: '2rem' }}>

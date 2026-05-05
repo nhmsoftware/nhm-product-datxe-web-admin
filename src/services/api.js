@@ -11,14 +11,8 @@ const api = axios.create({
 // Add a request interceptor to add the bearer token
 api.interceptors.request.use(
   (config) => {
-    let token = localStorage.getItem('admin_token');
+    const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
     
-    // Magic Bypass cho môi trường test local
-    if (!token) {
-        token = '16|2p8ugha3DjJQnawavrBIXvDYqQzy3ynknIW79YQF45623d18';
-        localStorage.setItem('admin_token', token);
-    }
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,4 +21,20 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Add a response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      sessionStorage.removeItem('admin_token');
+      sessionStorage.removeItem('admin_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
+

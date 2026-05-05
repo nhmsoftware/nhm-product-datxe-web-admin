@@ -200,19 +200,20 @@ const Pricing = () => {
                 <h3>{VEHICLE_INFO[Number(config.vehicle_type)]?.name || 'Loại xe mới'}</h3>
                 <p>{editingConfigId === config.vehicle_type ? 'Đang chỉnh sửa...' : 'Cấu hình tiêu chuẩn'}</p>
               </div>
-              <div className="actions">
+              <div className="card-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
                 {editingConfigId === config.vehicle_type ? (
-                  <div className="edit-actions">
-                    <button onClick={handleSaveConfig} className="btn-icon save"><Save size={18} /></button>
-                    <button onClick={() => setEditingConfigId(null)} className="btn-icon cancel"><X size={18} /></button>
-                  </div>
+                  <>
+                    <button onClick={handleSaveConfig} className="btn-icon" style={{ color: 'var(--success)', borderColor: 'var(--success)' }} title="Lưu"><Save size={18} /></button>
+                    <button onClick={() => setEditingConfigId(null)} className="btn-icon" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} title="Hủy"><X size={18} /></button>
+                  </>
                 ) : (
-                  <div className="actions">
-                    <button onClick={() => handleResetConfig(config.vehicle_type)} className="btn-icon reset" title="Khôi phục mặc định"><RefreshCw size={18} /></button>
-                    <button onClick={() => handleEditConfig(config)} className="btn-icon edit"><Edit2 size={18} /></button>
-                  </div>
+                  <>
+                    <button onClick={() => handleResetConfig(config.vehicle_type)} className="btn-icon" title="Khôi phục mặc định"><RefreshCw size={18} /></button>
+                    <button onClick={() => handleEditConfig(config)} className="btn-icon" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }} title="Chỉnh sửa"><Edit2 size={18} /></button>
+                  </>
                 )}
               </div>
+
             </div>
 
             <div className="card-body">
@@ -308,24 +309,37 @@ const Pricing = () => {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <button className="btn-icon" onClick={() => { setEditSurgeRule({...rule, rule_id: rule.id}); setShowSurgeModal(true); }}><Edit2 size={16} /></button>
-                    <button className="btn-icon danger" onClick={async () => { 
-                       const delRes = await Swal.fire({
-                          title: 'Xác nhận xóa?',
-                          text: "Hành động này không thể hoàn tác!",
-                          icon: 'warning',
-                          showCancelButton: true,
-                          confirmButtonColor: '#ef4444',
-                          confirmButtonText: 'Xóa ngay',
-                          background: document.body.className.includes('dark') ? '#1e293b' : '#fff',
-                          color: document.body.className.includes('dark') ? '#fff' : '#000',
-                       });
-                       if(delRes.isConfirmed) { 
-                          await adminService.deleteSurgeRule(rule.id); 
-                          fetchData(); 
-                          toast.success('Đã xóa quy tắc!');
-                       } 
-                    }}><Trash2 size={16} /></button>
+                    <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                      <button 
+                        className="btn-action btn-action-edit" 
+                        onClick={() => { setEditSurgeRule({...rule, rule_id: rule.id}); setShowSurgeModal(true); }}
+                      >
+                        <Edit2 size={16} /> Sửa
+                      </button>
+                      <button 
+                        className="btn-action btn-action-danger" 
+                        onClick={async () => { 
+                          const delRes = await Swal.fire({
+                              title: 'Xác nhận xóa?',
+                              text: "Hành động này không thể hoàn tác!",
+                              icon: 'warning',
+                              showCancelButton: true,
+                              confirmButtonColor: '#ef4444',
+                              confirmButtonText: 'Xóa ngay',
+                              cancelButtonText: 'Hủy',
+                              background: document.body.className.includes('dark') ? '#1e293b' : '#fff',
+                              color: document.body.className.includes('dark') ? '#fff' : '#000',
+                          });
+                          if(delRes.isConfirmed) { 
+                              await adminService.deleteSurgeRule(rule.id); 
+                              fetchData(); 
+                              toast.success('Đã xóa quy tắc!');
+                          } 
+                        }}
+                      >
+                        <Trash2 size={16} /> Xóa
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -338,58 +352,63 @@ const Pricing = () => {
         <div className="modal-overlay" onClick={(e) => {
           if (e.target.className === 'modal-overlay') setShowSurgeModal(false);
         }}>
-          <div className="modal-content glass">
-            <h3>{editSurgeRule.rule_id ? 'Chỉnh sửa quy tắc' : 'Thêm mới quy tắc'}</h3>
-            <form onSubmit={handleSaveSurgeRule}>
-              <div className="form-group">
-                <label>Loại phương tiện</label>
-                <select value={editSurgeRule.vehicle_type} onChange={e => setEditSurgeRule({...editSurgeRule, vehicle_type: e.target.value})}>
-                  {Object.entries(VEHICLE_INFO).map(([id, info]) => <option key={id} value={id}>{info.name}</option>)}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Điều kiện áp dụng</label>
-                <div className="conditions-grid">
-                  {SURGE_CONDITIONS.map(cond => (
-                    <label key={cond.id} className="cond-checkbox">
-                      <input 
-                        type="checkbox" 
-                        checked={editSurgeRule.conditions.includes(cond.id)}
-                        onChange={(e) => {
-                          const newConds = e.target.checked 
-                            ? [...editSurgeRule.conditions, cond.id]
-                            : editSurgeRule.conditions.filter(c => c !== cond.id);
-                          setEditSurgeRule({...editSurgeRule, conditions: newConds});
-                        }}
-                      />
-                      <span>{cond.label}</span>
-                    </label>
-                  ))}
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>{editSurgeRule.rule_id ? 'Chỉnh sửa quy tắc' : 'Thêm mới quy tắc'}</h3>
+              <button className="btn-icon" onClick={() => setShowSurgeModal(false)}><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleSaveSurgeRule}>
+                <div className="form-group">
+                  <label>Loại phương tiện</label>
+                  <select value={editSurgeRule.vehicle_type} onChange={e => setEditSurgeRule({...editSurgeRule, vehicle_type: e.target.value})}>
+                    {Object.entries(VEHICLE_INFO).map(([id, info]) => <option key={id} value={id}>{info.name}</option>)}
+                  </select>
                 </div>
-              </div>
 
-              <div className="form-row">
-                 <div className="form-group">
-                    <label>Giờ bắt đầu</label>
-                    <input type="time" value={editSurgeRule.start_time} onChange={e => setEditSurgeRule({...editSurgeRule, start_time: e.target.value})} />
-                 </div>
-                 <div className="form-group">
-                    <label>Giờ kết thúc</label>
-                    <input type="time" value={editSurgeRule.end_time} onChange={e => setEditSurgeRule({...editSurgeRule, end_time: e.target.value})} />
-                 </div>
-              </div>
+                <div className="form-group">
+                  <label>Điều kiện áp dụng</label>
+                  <div className="conditions-grid">
+                    {SURGE_CONDITIONS.map(cond => (
+                      <label key={cond.id} className="cond-checkbox">
+                        <input 
+                          type="checkbox" 
+                          checked={editSurgeRule.conditions.includes(cond.id)}
+                          onChange={(e) => {
+                            const newConds = e.target.checked 
+                              ? [...editSurgeRule.conditions, cond.id]
+                              : editSurgeRule.conditions.filter(c => c !== cond.id);
+                            setEditSurgeRule({...editSurgeRule, conditions: newConds});
+                          }}
+                        />
+                        <span>{cond.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="form-group">
-                <label>Hệ số tăng giá (multiplier)</label>
-                <input type="number" step="0.1" value={editSurgeRule.multiplier} onChange={e => setEditSurgeRule({...editSurgeRule, multiplier: e.target.value})} />
-              </div>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                      <label>Giờ bắt đầu</label>
+                      <input type="time" value={editSurgeRule.start_time} onChange={e => setEditSurgeRule({...editSurgeRule, start_time: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                      <label>Giờ kết thúc</label>
+                      <input type="time" value={editSurgeRule.end_time} onChange={e => setEditSurgeRule({...editSurgeRule, end_time: e.target.value})} />
+                  </div>
+                </div>
 
-              <div className="modal-footer">
-                <button type="button" onClick={() => setShowSurgeModal(false)} className="btn-cancel-text">Hủy</button>
-                <button type="submit" className="btn-premium">Lưu cấu hình</button>
-              </div>
-            </form>
+                <div className="form-group">
+                  <label>Hệ số tăng giá (multiplier)</label>
+                  <input type="number" step="0.1" value={editSurgeRule.multiplier} onChange={e => setEditSurgeRule({...editSurgeRule, multiplier: e.target.value})} />
+                </div>
+
+                <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                  <button type="button" onClick={() => setShowSurgeModal(false)} className="btn glass" style={{ color: 'var(--text)' }}>Hủy</button>
+                  <button type="submit" className="btn-premium">Lưu cấu hình</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -418,20 +437,25 @@ const Pricing = () => {
         .price-card:hover { transform: translateY(-5px); }
         
         .card-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-        .icon-badge { width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; }
-        .title-box h3 { font-size: 1.1rem; font-weight: 700; margin: 0; }
-        .title-box p { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+        .icon-badge { width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .title-box { flex: 1; min-width: 0; }
+        .title-box h3 { font-size: 1rem; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .title-box p { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
         
-        .actions { margin-left: auto; display: flex; gap: 0.5rem; }
-        .btn-edit, .btn-save, .btn-cancel { border: none; background: var(--bg-soft); color: var(--text-muted); padding: 0.5rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-        .btn-edit:hover { color: var(--primary); background: rgba(99, 102, 241, 0.1); }
-        .btn-save:hover { color: var(--success); background: rgba(16, 185, 129, 0.1); }
-
         .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-        .price-item { padding: 0.75rem; background: var(--bg-soft); border-radius: 12px; border: 1px solid var(--border); }
-        .price-item label { display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600; }
-        .price-item .val { font-size: 1.1rem; font-weight: 700; }
-        .price-item .unit { font-size: 0.8rem; color: var(--text-muted); margin-left: 2px; }
+        .price-item { 
+          padding: 0.875rem; 
+          background: var(--bg-soft); 
+          border-radius: 12px; 
+          border: 1px solid var(--border);
+          border-left: 3px solid var(--primary);
+          transition: var(--transition);
+        }
+        .price-item:hover { background: var(--bg); border-color: var(--primary); }
+        .price-item label { display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; font-weight: 700; letter-spacing: 0.5px; }
+        .price-item .val { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+        .price-item .unit { font-size: 0.8rem; color: var(--text-muted); margin-left: 4px; font-weight: 600; }
+
 
         .surge-section { padding: 2rem; border-radius: 24px; background: var(--card); }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
@@ -443,12 +467,6 @@ const Pricing = () => {
         .status-tag { padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(239, 68, 68, 0.1); color: var(--error); }
         .status-tag.active { background: rgba(16, 185, 129, 0.1); color: var(--success); }
 
-        .btn-icon { border: 1px solid var(--border); background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--text-muted); cursor: pointer; margin-left: 0.4rem; }
-        .btn-icon:hover { color: var(--primary); border-color: var(--primary); }
-        .btn-icon.danger:hover { color: var(--error); border-color: var(--error); }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { width: 100%; max-width: 500px; padding: 2.5rem; border-radius: 24px; background: var(--card); max-height: 90vh; overflow-y: auto; }
         .conditions-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; background: var(--bg-soft); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
         .cond-checkbox { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 6px; transition: background 0.2s; }
         .cond-checkbox:hover { background: rgba(99, 102, 241, 0.1); }
@@ -456,14 +474,13 @@ const Pricing = () => {
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-muted); }
         .form-group select, .form-group input { width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 1.5rem; margin-top: 2rem; }
-        .btn-cancel-text { background: transparent; border: none; color: var(--text-muted); font-weight: 600; cursor: pointer; }
 
         @media (max-width: 640px) {
           .pricing-grid { grid-template-columns: 1fr; }
           .card-body { grid-template-columns: 1fr; }
         }
       `}} />
+
     </div>
   );
 };
