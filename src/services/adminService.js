@@ -1,0 +1,78 @@
+import api from './api';
+
+export const adminService = {
+  // UC-76: View Dashboard
+  getDashboardStats: async () => {
+    const response = await api.get('/v1/admin/dashboard');
+    return response.data;
+  },
+
+  // UC-91: Configure Pricing
+  getPricingConfigs: async () => {
+    const response = await api.get('/v1/admin/pricing/configs');
+    return response.data;
+  },
+
+  updatePricingConfig: async (data) => {
+    const response = await api.post('/v1/admin/pricing/configs', data);
+    return response.data;
+  },
+
+  resetPricingConfig: async (vehicleType) => {
+    const response = await api.delete(`/v1/admin/pricing/configs/${vehicleType}/reset`);
+    return response.data;
+  },
+
+  toggleFreeMode: async (isFreeMode) => {
+    const response = await api.post('/v1/admin/pricing/toggle-free-mode', { is_free_mode: isFreeMode });
+    return response.data;
+  },
+
+  // UC-96: Set Surge Pricing
+  getSurgeRules: async () => {
+    const response = await api.get('/v1/admin/pricing/surge-rules');
+    return response.data;
+  },
+
+  saveSurgeRule: async (data) => {
+    const response = await api.post('/v1/admin/pricing/surge-rules', data);
+    return response.data;
+  },
+
+  deleteSurgeRule: async (ruleId) => {
+    const response = await api.delete(`/v1/admin/pricing/surge-rules/${ruleId}`);
+    return response.data;
+  },
+
+  // UC-77: Customer Management
+  getCustomers: async (params) => {
+    const response = await api.get('/v1/admin/users/customers', { params });
+    return response.data;
+  },
+
+  updateCustomerStatus: async (userId, data) => {
+    const response = await api.put(`/v1/admin/users/${userId}/status`, data);
+    return response.data;
+  },
+
+  // UC-80: Driver Management
+  getDrivers: async (params) => {
+    const response = await api.get('/v1/admin/drivers', { params });
+    return response.data;
+  },
+
+  updateDriverStatus: async (userId, data) => {
+    const response = await api.put(`/v1/admin/drivers/${userId}/status`, data);
+    return response.data;
+  },
+
+  approveDriver: async (userId, note) => {
+    const response = await api.post(`/v1/admin/drivers/${userId}/approve`, { note });
+    return response.data;
+  },
+
+  rejectDriver: async (userId, reason) => {
+    const response = await api.post(`/v1/admin/drivers/${userId}/reject`, { reason });
+    return response.data;
+  }
+};
