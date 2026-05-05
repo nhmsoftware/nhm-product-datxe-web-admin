@@ -30,7 +30,7 @@ api.interceptors.response.use(
       localStorage.removeItem('admin_user');
       sessionStorage.removeItem('admin_token');
       sessionStorage.removeItem('admin_user');
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
     return Promise.reject(error);
   }
