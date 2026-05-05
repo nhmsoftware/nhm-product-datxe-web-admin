@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, Car, ShoppingBag, TrendingUp, DollarSign } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { adminService } from '../../services/adminService';
 
 const data = [
   { name: '01/05', rides: 40, revenue: 2400 },
@@ -10,14 +11,16 @@ const data = [
   { name: '05/05', rides: 80, revenue: 4800 },
 ];
 
-const StatCard = ({ icon, label, value, trend, color }) => (
+const StatCard = ({ icon, label, value, trend, color, loading }) => (
   <div className="glass stat-card glass-hover">
     <div className="stat-icon" style={{ background: `${color}15`, color: color }}>
       {icon}
     </div>
     <div>
       <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{label}</div>
-      <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '4px 0' }}>{value}</div>
+      <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '4px 0' }}>
+        {loading ? '...' : value}
+      </div>
       <div style={{ fontSize: '0.75rem', color: trend.startsWith('+') ? 'var(--success)' : 'var(--error)' }}>
         {trend} so với tháng trước
       </div>
@@ -26,6 +29,24 @@ const StatCard = ({ icon, label, value, trend, color }) => (
 );
 
 const Dashboard = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await adminService.getDashboardStats();
+        setStats(response.data);
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
@@ -34,10 +55,10 @@ const Dashboard = () => {
       </div>
 
       <div className="stats-grid">
-        <StatCard icon={<Users />} label="Khách hàng" value="1,284" trend="+12.5%" color="#6366f1" />
-        <StatCard icon={<Car />} label="Tài xế" value="452" trend="+3.2%" color="#10b981" />
-        <StatCard icon={<ShoppingBag />} label="Chuyến đi" value="8,902" trend="+24.8%" color="#f59e0b" />
-        <StatCard icon={<DollarSign />} label="Doanh thu" value="42.5M" trend="+18.4%" color="#ef4444" />
+        <StatCard icon={<Users />} label="Khách hàng" value={stats?.total_users?.toLocaleString()} trend="+12.5%" color="#6366f1" loading={loading} />
+        <StatCard icon={<Car />} label="Tài xế" value={stats?.active_drivers?.toLocaleString()} trend="+3.2%" color="#10b981" loading={loading} />
+        <StatCard icon={<ShoppingBag />} label="Chuyến đi" value={stats?.total_orders?.toLocaleString()} trend="+24.8%" color="#f59e0b" loading={loading} />
+        <StatCard icon={<DollarSign />} label="Doanh thu" value={`${((stats?.total_revenue || 0) / 1000000).toFixed(1)}M`} trend="+18.4%" color="#ef4444" loading={loading} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginTop: '2rem' }}>

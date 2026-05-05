@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Car, Settings, LogOut, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote } from 'lucide-react';
 
 const Sidebar = () => {
   const menuItems = [
@@ -8,6 +8,7 @@ const Sidebar = () => {
     { icon: <Users size={20} />, label: 'Khách hàng', path: '/customers' },
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
     { icon: <Package size={20} />, label: 'Dịch vụ', path: '/services' },
+    { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
     { icon: <Settings size={20} />, label: 'Cài đặt', path: '/settings' },
   ];
 

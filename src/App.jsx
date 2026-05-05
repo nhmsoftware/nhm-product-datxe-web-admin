@@ -5,6 +5,7 @@ import Navbar from './components/Layout/Navbar';
 import Dashboard from './pages/Dashboard/Dashboard';
 import CustomerList from './pages/Customers/CustomerList';
 import DriverList from './pages/Drivers/DriverList';
+import Pricing from './pages/Pricing/Pricing';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/customers" element={<CustomerList />} />
           <Route path="/drivers" element={<DriverList />} />
+          <Route path="/pricing" element={<Pricing />} />
         </Routes>
       </main>
     </BrowserRouter>
