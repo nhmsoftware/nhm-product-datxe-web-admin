@@ -173,7 +173,7 @@ const VoucherList = () => {
       icon: 'error',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6366f1',
+      cancelButtonColor: '#004da0', // var(--primary)
       confirmButtonText: 'Xóa ngay!',
       cancelButtonText: 'Hủy',
       background: 'var(--card)',
@@ -198,7 +198,7 @@ const VoucherList = () => {
       text: "Voucher này sẽ không thể sử dụng cho các đơn hàng mới!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#6366f1',
+      confirmButtonColor: 'var(--primary)',
       cancelButtonColor: '#ef4444',
       confirmButtonText: 'Đồng ý!',
       cancelButtonText: 'Hủy',
@@ -763,7 +763,7 @@ const VoucherList = () => {
         }
 
         .btn-primary {
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
           color: white;
           box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
         }

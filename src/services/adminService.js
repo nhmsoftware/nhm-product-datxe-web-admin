@@ -44,6 +44,28 @@ export const adminService = {
     return response.data;
   },
 
+  // UC-118/121: Scheduled Ride Pricing
+  getScheduledPricing: async () => {
+    const response = await api.get('/v1/admin/pricing/scheduled');
+    return response.data;
+  },
+
+  updateScheduledPricing: async (data) => {
+    const response = await api.post('/v1/admin/pricing/scheduled', data);
+    return response.data;
+  },
+
+  // UC-120: Cancellation Configs
+  getCancellationConfigs: async () => {
+    const response = await api.get('/v1/admin/risk/cancellation-configs');
+    return response.data;
+  },
+
+  updateCancellationConfig: async (id, data) => {
+    const response = await api.put(`/v1/admin/risk/cancellation-configs/${id}`, data);
+    return response.data;
+  },
+
   // UC-77: Customer Management
   getCustomers: async (params) => {
     const response = await api.get('/v1/admin/users/customers', { params });

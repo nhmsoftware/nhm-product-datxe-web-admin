@@ -56,14 +56,14 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
               width: '120px', 
               height: '120px', 
               borderRadius: '24px', 
-              background: 'linear-gradient(45deg, var(--primary), #a855f7)',
+              background: 'linear-gradient(45deg, var(--primary), var(--secondary))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '3rem',
               fontWeight: 800,
               color: 'white',
-              boxShadow: '0 10px 20px rgba(99, 102, 241, 0.3)'
+              boxShadow: '0 10px 20px rgba(0, 77, 160, 0.3)'
             }}>
               {driver?.full_name?.[0] || 'D'}
             </div>
@@ -471,13 +471,13 @@ const DriverList = () => {
                             width: '44px', 
                             height: '44px', 
                             borderRadius: '12px', 
-                            background: 'linear-gradient(45deg, var(--primary), #a855f7)',
+                            background: 'linear-gradient(45deg, var(--primary), var(--secondary))',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 700,
                             color: 'white',
-                            boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)'
+                            boxShadow: '0 4px 10px rgba(0, 77, 160, 0.2)'
                           }}>{driver.full_name?.[0] || 'D'}</div>
                           <div>
                             <div style={{ fontWeight: 700 }}>{driver.full_name}</div>

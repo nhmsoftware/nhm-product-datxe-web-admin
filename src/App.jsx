@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import Navbar from './components/Layout/Navbar';
 import Dashboard from './pages/Dashboard/Dashboard';
+import ScheduledDispatchBoard from './pages/Rides/ScheduledDispatchBoard';
 import CustomerList from './pages/Customers/CustomerList';
 import DriverList from './pages/Drivers/DriverList';
 import VoucherList from './pages/Vouchers/VoucherList';
@@ -12,6 +13,7 @@ import Services from './pages/Services/Services';
 import Settings from './pages/Settings/Settings';
 import AntiFraud from './pages/RiskManagement/AntiFraud';
 import PenaltyRules from './pages/RiskManagement/PenaltyRules';
+import CancellationConfigs from './pages/RiskManagement/CancellationConfigs';
 import Login from './pages/Auth/Login';
 import authService from './services/authService';
 
@@ -101,6 +103,18 @@ function App() {
         <Route path="/risk/penalty-rules" element={
           <ProtectedRoute>
             <PenaltyRules />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/risk/cancellation-configs" element={
+          <ProtectedRoute>
+            <CancellationConfigs />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/rides/scheduled" element={
+          <ProtectedRoute>
+            <ScheduledDispatchBoard />
           </ProtectedRoute>
         } />
 

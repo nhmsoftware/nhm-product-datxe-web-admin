@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
+  background: radial-gradient(circle at top left, #0f172a 0%, #020617 100%);
   position: fixed;
   top: 0;
   left: 0;
@@ -38,7 +38,7 @@
 .shape-2 {
   width: 350px;
   height: 350px;
-  background: #8b5cf6;
+  background: var(--secondary);
   bottom: -50px;
   right: -50px;
   animation-delay: -5s;
@@ -47,7 +47,7 @@
 .shape-3 {
   width: 250px;
   height: 250px;
-  background: #3b82f6;
+  background: var(--primary);
   top: 40%;
   right: 15%;
   animation-delay: -10s;
@@ -144,7 +144,7 @@
   outline: none;
   border-color: var(--primary);
   background: rgba(15, 23, 42, 0.8);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 4px rgba(0, 77, 160, 0.15);
 }
 
 .password-toggle {
@@ -203,7 +203,7 @@
   margin-top: 1rem;
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -215,12 +215,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 77, 160, 0.3);
 }
 
 .login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 20px 25px -5px rgba(0, 77, 160, 0.4);
 }
 
 .login-button:active:not(:disabled) {

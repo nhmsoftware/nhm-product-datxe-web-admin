@@ -171,14 +171,14 @@ const CustomerList = () => {
                             width: '44px', 
                             height: '44px', 
                             borderRadius: '12px', 
-                            background: 'linear-gradient(135deg, var(--primary), #a855f7)',
+                            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
                             fontWeight: 700,
                             fontSize: '1.1rem',
-                            boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)'
+                            boxShadow: '0 4px 10px rgba(0, 77, 160, 0.2)'
                           }}>{customer.full_name?.[0] || 'U'}</div>
                           <div>
                             <div style={{ fontWeight: 700, color: 'var(--text)' }}>{customer.full_name}</div>

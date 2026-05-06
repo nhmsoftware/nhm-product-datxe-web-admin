@@ -486,7 +486,7 @@ const PenaltyRules = () => {
         .header-icon-main {
           width: 64px;
           height: 64px;
-          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+          background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
           color: white;
           border-radius: 20px;
           display: flex;
@@ -500,7 +500,7 @@ const PenaltyRules = () => {
           font-weight: 850;
           margin: 0;
           letter-spacing: -0.03em;
-          background: linear-gradient(135deg, var(--text) 0%, #6366f1 100%);
+          background: linear-gradient(135deg, var(--text) 0%, var(--primary) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -771,7 +771,7 @@ const PenaltyRules = () => {
         .btn-save { padding: 1.25rem 2.5rem; border-radius: 18px; border: none; background: var(--primary); color: #ffffff; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2); transition: all 0.2s; }
         .btn-save:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3); filter: brightness(1.1); }
 
-        .btn-premium { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; padding: 1rem 2.25rem; border-radius: 20px; font-weight: 850; font-size: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); }
+        .btn-premium { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; padding: 1rem 2.25rem; border-radius: 20px; font-weight: 850; font-size: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 10px 20px rgba(0, 77, 160, 0.25); }
         .btn-premium:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4); }
 
         /* Empty State */

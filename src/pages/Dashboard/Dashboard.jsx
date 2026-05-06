@@ -63,7 +63,7 @@ const Dashboard = () => {
       </div>
 
       <div className="stats-grid">
-        <StatCard icon={<Users size={24} />} label="Khách hàng" value={stats?.total_users?.toLocaleString() || '0'} trend="+12.5%" color="#6366f1" loading={loading} />
+        <StatCard icon={<Users size={24} />} label="Khách hàng" value={stats?.total_users?.toLocaleString() || '0'} trend="+12.5%" color="var(--primary)" loading={loading} />
         <StatCard icon={<Car size={24} />} label="Tài xế" value={stats?.active_drivers?.toLocaleString() || '0'} trend="+3.2%" color="#10b981" loading={loading} />
         <StatCard icon={<ShoppingBag size={24} />} label="Chuyến đi" value={stats?.total_orders?.toLocaleString() || '0'} trend="+24.8%" color="#f59e0b" loading={loading} />
         <StatCard icon={<DollarSign size={24} />} label="Doanh thu" value={`${((stats?.total_revenue || 0) / 1000000).toFixed(1)}M`} trend="+18.4%" color="#ef4444" loading={loading} />

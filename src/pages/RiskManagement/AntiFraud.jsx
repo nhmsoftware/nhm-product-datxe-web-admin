@@ -111,7 +111,7 @@ const AntiFraud = () => {
     switch (type) {
       case 1: return <User size={16} className="text-blue-500" />;
       case 2: return <Truck size={16} className="text-orange-500" />;
-      case 3: return <ShieldAlert size={16} className="text-purple-500" />;
+      case 3: return <ShieldAlert size={16} style={{ color: 'var(--primary)' }} />;
       case 4: return <CreditCard size={16} className="text-green-500" />;
       default: return <AlertTriangle size={16} />;
     }
@@ -127,7 +127,7 @@ const AntiFraud = () => {
   if (loading && !stats) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--primary)' }}></div>
       </div>
     );
   }

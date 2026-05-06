@@ -3,7 +3,7 @@ import { adminService } from '../../services/adminService';
 import { 
   Car, Save, Edit2, X, Plus, Trash2, Clock, 
   CloudRain, TrendingUp, Users, Monitor, RefreshCw,
-  Bike, Bus, CarFront
+  Bike, Bus, CarFront, Loader2, ClipboardCheck
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -13,6 +13,15 @@ const Pricing = () => {
   const [isFreeMode, setIsFreeMode] = useState(false);
   const [surgeRules, setSurgeRules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scheduledConfig, setScheduledConfig] = useState({
+    base_price: 0,
+    scheduled_surcharge: 0,
+    intercity_base_price: 0,
+    airport_base_price: 0,
+    dispatch_mode: 1
+  });
+  const [savingScheduled, setSavingScheduled] = useState(false);
+  const [isEditingScheduled, setIsEditingScheduled] = useState(false);
   
   // State cho việc sửa giá cố định
   const [editingConfigId, setEditingConfigId] = useState(null);
@@ -37,13 +46,22 @@ const Pricing = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [configRes, surgeRes] = await Promise.all([
+      const [configRes, surgeRes, scheduledRes] = await Promise.all([
         adminService.getPricingConfigs(),
-        adminService.getSurgeRules()
+        adminService.getSurgeRules(),
+        adminService.getScheduledPricing()
       ]);
       setConfigs(configRes.data.configs);
       setIsFreeMode(configRes.data.is_free_mode);
       setSurgeRules(surgeRes.data);
+      const sData = scheduledRes.data;
+      setScheduledConfig({
+        base_price: sData?.pricing?.base_price || 0,
+        scheduled_surcharge: sData?.pricing?.scheduled_surcharge || 0,
+        intercity_base_price: sData?.pricing?.intercity_base_price || 0,
+        airport_base_price: sData?.pricing?.airport_base_price || 0,
+        dispatch_mode: sData?.dispatch_mode || 1
+      });
     } catch (error) {
       toast.error('Không thể tải dữ liệu cấu hình!');
     } finally {
@@ -89,7 +107,7 @@ const Pricing = () => {
       text: "Hệ thống sẽ quay về giá cước mặc định trong code cho loại xe này.",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#6366f1',
+      confirmButtonColor: 'var(--primary)',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Đồng ý',
       cancelButtonText: 'Hủy',
@@ -156,9 +174,35 @@ const Pricing = () => {
       toast.error(errorMsg);
     }
   };
+  
+  const handleUpdateScheduledConfig = async () => {
+    try {
+      setSavingScheduled(true);
+      const payload = {
+        base_price: Number(scheduledConfig.base_price),
+        scheduled_surcharge: Number(scheduledConfig.scheduled_surcharge),
+        intercity_base_price: Number(scheduledConfig.intercity_base_price),
+        airport_base_price: Number(scheduledConfig.airport_base_price),
+        dispatch_mode: scheduledConfig.dispatch_mode === 2 ? 2 : 1
+      };
+
+      await adminService.updateScheduledPricing(payload);
+      toast.success('Đã cập nhật cấu hình đặt trước!');
+      setIsEditingScheduled(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Lỗi khi cập nhật cấu hình');
+    } finally {
+      setSavingScheduled(false);
+    }
+  };
+
+  const toggleScheduledEdit = () => {
+    setIsEditingScheduled(true);
+  };
 
   const VEHICLE_INFO = {
-    1: { name: 'Xe máy (Bike)', icon: <Bike size={22} />, color: '#6366f1' },
+    1: { name: 'Xe máy (Bike)', icon: <Bike size={22} />, color: 'var(--primary)' },
     2: { name: 'Ô tô 4 chỗ (Car 4)', icon: <Car size={22} />, color: '#10b981' },
     3: { name: 'Ô tô 7 chỗ (Car 7)', icon: <CarFront size={22} />, color: '#f59e0b' },
     4: { name: 'Ô tô 9 chỗ (Car 9)', icon: <Bus size={22} />, color: '#ef4444' },
@@ -348,6 +392,140 @@ const Pricing = () => {
         </div>
       </div>
 
+      {/* UC-118: Scheduled Ride Pricing */}
+      <div className="price-card glass mt-8" style={{ padding: '2rem', borderRadius: '24px' }}>
+        <div className="card-top" style={{ marginBottom: '2rem', flexWrap: 'wrap' }}>
+          <div className="icon-badge" style={{ color: 'var(--primary)', width: '64px', height: '64px', background: 'rgba(0, 77, 160, 0.1)' }}>
+            <ClipboardCheck size={32} />
+          </div>
+          <div className="title-box" style={{ flex: 1, marginLeft: '1rem', minWidth: '200px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>Cấu hình Chuyến đặt trước</h3>
+            <p style={{ fontSize: '0.9rem', color: isEditingScheduled ? 'var(--warning)' : 'var(--text-muted)', fontWeight: isEditingScheduled ? 600 : 400 }}>
+              {isEditingScheduled ? 'Đang trong chế độ chỉnh sửa...' : 'Các thông số phụ phí và cơ chế phát đơn hẹn giờ'}
+            </p>
+          </div>
+          <div className="card-actions" style={{ display: 'flex', gap: '0.75rem', marginTop: window.innerWidth < 640 ? '1rem' : '0' }}>
+            {isEditingScheduled ? (
+              <>
+                <button 
+                  onClick={handleUpdateScheduledConfig}
+                  disabled={savingScheduled}
+                  className="btn-icon"
+                  style={{ color: 'var(--success)', borderColor: 'var(--success)', width: '46px', height: '46px' }}
+                  title="Lưu thay đổi"
+                >
+                  {savingScheduled ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                </button>
+                <button 
+                  className="btn-icon" 
+                  onClick={() => setIsEditingScheduled(false)}
+                  style={{ color: 'var(--error)', borderColor: 'var(--error)', width: '46px', height: '46px' }}
+                  title="Hủy bỏ"
+                >
+                  <X size={20} />
+                </button>
+              </>
+            ) : (
+              <button 
+                className="btn-icon" 
+                onClick={toggleScheduledEdit}
+                style={{ color: 'var(--primary)', borderColor: 'var(--primary)', width: '46px', height: '46px' }}
+                title="Chỉnh sửa cấu hình"
+              >
+                <Edit2 size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="card-body" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+          <PriceBox 
+            label="Giá cơ bản đặt trước" 
+            value={scheduledConfig.base_price} 
+            editing={isEditingScheduled}
+            editValue={scheduledConfig.base_price}
+            onChange={val => setScheduledConfig({...scheduledConfig, base_price: val})}
+            unit="đ"
+          />
+          <PriceBox 
+            label="Phụ phí đặt trước (Booking Fee)" 
+            value={scheduledConfig.scheduled_surcharge} 
+            editing={isEditingScheduled}
+            editValue={scheduledConfig.scheduled_surcharge}
+            onChange={val => setScheduledConfig({...scheduledConfig, scheduled_surcharge: val})}
+            unit="đ"
+          />
+          <PriceBox 
+            label="Phụ phí đi tỉnh" 
+            value={scheduledConfig.intercity_base_price} 
+            editing={isEditingScheduled}
+            editValue={scheduledConfig.intercity_base_price}
+            onChange={val => setScheduledConfig({...scheduledConfig, intercity_base_price: val})}
+            unit="đ"
+          />
+          <PriceBox 
+            label="Phụ phí sân bay" 
+            value={scheduledConfig.airport_base_price} 
+            editing={isEditingScheduled}
+            editValue={scheduledConfig.airport_base_price}
+            onChange={val => setScheduledConfig({...scheduledConfig, airport_base_price: val})}
+            unit="đ"
+          />
+        </div>
+
+        <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px dashed var(--border)' }}>
+          <label style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', display: 'block', letterSpacing: '1px' }}>
+            Cơ chế phân phối (Dispatch Mode)
+          </label>
+          <div style={{ 
+            background: 'var(--bg-soft)', 
+            padding: '1.5rem', 
+            borderRadius: '16px', 
+            border: `1px solid ${isEditingScheduled ? 'var(--primary)' : 'var(--border)'}`, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            flexWrap: 'wrap', 
+            gap: '1.5rem',
+            transition: 'var(--transition)'
+          }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <div style={{ 
+                fontWeight: 800, 
+                fontSize: '1.1rem', 
+                color: scheduledConfig.dispatch_mode === 1 ? 'var(--primary)' : 'var(--success)', 
+                marginBottom: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                {scheduledConfig.dispatch_mode === 1 ? <Monitor size={20} /> : <Users size={20} />}
+                {scheduledConfig.dispatch_mode === 1 ? "Ưu tiên Đội xe nhà (Admin Board)" : "Phát sóng diện rộng (Open Pool)"}
+              </div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                {scheduledConfig.dispatch_mode === 1 
+                  ? "Đơn sẽ không nổ trực tiếp cho tài xế. Quản trị viên sẽ là người phân bổ thủ công trên bảng điều khiển để đảm bảo chất lượng." 
+                  : "Đơn được phát sóng trực tiếp cho tất cả tài xế đang hoạt động xung quanh để tranh nhận. Tiết kiệm thời gian điều phối."}
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: isEditingScheduled ? 1 : 0.6, cursor: isEditingScheduled ? 'pointer' : 'not-allowed' }}
+                 onClick={() => {
+                   if (!isEditingScheduled) return;
+                   setScheduledConfig({
+                     ...scheduledConfig, 
+                     dispatch_mode: scheduledConfig.dispatch_mode === 2 ? 1 : 2
+                   });
+                 }}
+            >
+              <div className={`switch-btn ${scheduledConfig.dispatch_mode === 2 ? 'active' : ''}`} style={{ width: '56px', height: '30px', borderRadius: '30px', pointerEvents: 'none' }}>
+                <div className="switch-handle" style={{ width: '24px', height: '24px', top: '3px', left: '3px', transform: scheduledConfig.dispatch_mode === 2 ? 'translateX(26px)' : 'none' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {showSurgeModal && (
         <div className="modal-overlay" onClick={(e) => {
           if (e.target.className === 'modal-overlay') setShowSurgeModal(false);
@@ -458,7 +636,9 @@ const Pricing = () => {
 
 
         .surge-section { padding: 2rem; border-radius: 24px; background: var(--card); }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: nowrap; }
+        .btn-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-muted); cursor: pointer; transition: var(--transition); flex-shrink: 0; }
+        .btn-icon:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
         
         .badge-list { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .mini-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--bg-soft); border-radius: 6px; display: flex; align-items: center; gap: 0.25rem; }

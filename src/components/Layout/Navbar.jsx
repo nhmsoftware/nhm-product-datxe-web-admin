@@ -128,7 +128,7 @@ const Navbar = () => {
 
         .avatar-box {
           width: 36px; height: 36px;
-          background: linear-gradient(135deg, var(--primary), #a855f7);
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
           border-radius: 10px;
           display: flex; align-items: center; justify-content: center;
         }
