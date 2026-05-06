@@ -71,15 +71,15 @@ const Dashboard = () => {
 
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginTop: '2rem' }}>
-        <div className="glass" style={{ padding: '2rem' }}>
+        <div className="glass" style={{ padding: '2rem', minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
             <h3 style={{ fontSize: '1.125rem' }}>Biểu đồ tăng trưởng</h3>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Mục tiêu: 50M</span>
             </div>
           </div>
-          <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <div>
+            <ResponsiveContainer width="99%" aspect={2.5} minWidth={0}>
               <AreaChart data={data}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">

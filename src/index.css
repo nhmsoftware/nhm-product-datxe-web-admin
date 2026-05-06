@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
+
 :root {
   /* Common Colors */
   --primary: #6366f1;
@@ -5,21 +7,21 @@
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
-  --sidebar-width: 260px;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --glass-blur: blur(12px);
+  --sidebar-width: 280px;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-blur: blur(16px);
 }
 
 /* Light Theme (Mặc định) */
 .light-theme {
-  --bg: #f8fafc;
-  --bg-soft: #f1f5f9;
+  --bg: #fdfdfd;
+  --bg-soft: #f4f7fa;
   --card: #ffffff;
-  --text: #0f172a;
+  --text: #1e293b;
   --text-muted: #64748b;
-  --border: #e2e8f0;
-  --glass: rgba(255, 255, 255, 0.8);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --border: #eef2f6;
+  --glass: rgba(255, 255, 255, 0.85);
+  --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 5px 15px -3px rgba(0, 0, 0, 0.02);
   --sidebar-bg: #ffffff;
   --sidebar-active-bg: rgba(99, 102, 241, 0.08);
   --sidebar-active-text: var(--primary);
@@ -28,15 +30,15 @@
 
 
 .dark-theme {
-  --bg: #0f172a;
-  --bg-soft: #1e293b;
-  --card: #1e293b;
-  --text: #f8fafc;
+  --bg: #0a0c10;
+  --bg-soft: #151921;
+  --card: #151921;
+  --text: #f1f5f9;
   --text-muted: #94a3b8;
-  --border: rgba(255, 255, 255, 0.08);
-  --glass: rgba(30, 41, 59, 0.7);
-  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-  --sidebar-bg: #0f172a;
+  --border: rgba(255, 255, 255, 0.05);
+  --glass: rgba(21, 25, 33, 0.75);
+  --shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  --sidebar-bg: #0a0c10;
   --sidebar-active-bg: rgba(99, 102, 241, 0.15);
   --sidebar-active-text: #ffffff;
   --sidebar-text: #94a3b8;
@@ -44,15 +46,13 @@
 }
 
 
-
-
-
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -60,7 +60,8 @@ body {
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color 0.3s, color 0.3s;
+  line-height: 1.6;
+  transition: background-color 0.4s, color 0.4s;
 }
 
 #root {
@@ -120,10 +121,11 @@ td {
 
 /* Typography */
 .page-title {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
 }
 
 /* Dashboard & Grids */
@@ -229,15 +231,15 @@ td {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #818cf8);
   color: white;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary));
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
 }
 
 .btn-premium {
@@ -324,28 +326,27 @@ td {
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
   color: var(--sidebar-text);
   text-decoration: none;
-  border-radius: 0 12px 12px 0;
+  border-radius: 14px;
   margin-bottom: 0.5rem;
   transition: var(--transition);
-  position: relative;
-  margin-left: -1rem;
-  padding-left: 2rem;
+  font-weight: 500;
+  margin-inline: 0.5rem;
 }
 
-
 .sidebar-item:hover {
-  background: var(--bg-soft);
+  background: var(--sidebar-active-bg);
   color: var(--primary);
 }
 
 .sidebar-item.active {
   background: var(--sidebar-active-bg) !important;
   color: var(--sidebar-active-text) !important;
-  font-weight: 800;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.1);
 }
 
 

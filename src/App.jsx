@@ -5,10 +5,13 @@ import Navbar from './components/Layout/Navbar';
 import Dashboard from './pages/Dashboard/Dashboard';
 import CustomerList from './pages/Customers/CustomerList';
 import DriverList from './pages/Drivers/DriverList';
+import VoucherList from './pages/Vouchers/VoucherList';
 import { Toaster } from 'react-hot-toast';
 import Pricing from './pages/Pricing/Pricing';
 import Services from './pages/Services/Services';
 import Settings from './pages/Settings/Settings';
+import AntiFraud from './pages/RiskManagement/AntiFraud';
+import PenaltyRules from './pages/RiskManagement/PenaltyRules';
 import Login from './pages/Auth/Login';
 import authService from './services/authService';
 
@@ -33,7 +36,7 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <BrowserRouter basename="/admin" future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter basename={import.meta.env.DEV ? '/' : '/admin'} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster position="top-right" reverseOrder={false} />
 
 
@@ -64,6 +67,12 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/vouchers" element={
+          <ProtectedRoute>
+            <VoucherList />
+          </ProtectedRoute>
+        } />
+
         
         <Route path="/pricing" element={
           <ProtectedRoute>
@@ -80,6 +89,18 @@ function App() {
         <Route path="/settings" element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/risk/anti-fraud" element={
+          <ProtectedRoute>
+            <AntiFraud />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/risk/penalty-rules" element={
+          <ProtectedRoute>
+            <PenaltyRules />
           </ProtectedRoute>
         } />
 
