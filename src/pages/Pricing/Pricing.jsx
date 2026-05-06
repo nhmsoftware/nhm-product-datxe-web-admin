@@ -51,10 +51,17 @@ const Pricing = () => {
         adminService.getSurgeRules(),
         adminService.getScheduledPricing()
       ]);
-      setConfigs(configRes.data.configs);
-      setIsFreeMode(configRes.data.is_free_mode);
-      setSurgeRules(surgeRes.data);
-      const sData = scheduledRes.data;
+
+      // Backend: { data: { configs: [...], global_settings: { is_free_mode: bool } } }
+      const configData = configRes?.data ?? {};
+      setConfigs(Array.isArray(configData.configs) ? configData.configs : []);
+      setIsFreeMode(configData.global_settings?.is_free_mode ?? false);
+
+      // Backend: { data: [...] } — array trực tiếp
+      setSurgeRules(Array.isArray(surgeRes?.data) ? surgeRes.data : []);
+
+      // Backend: { data: { pricing: {...}, dispatch_mode: ... } }
+      const sData = scheduledRes?.data ?? {};
       setScheduledConfig({
         base_price: sData?.pricing?.base_price || 0,
         scheduled_surcharge: sData?.pricing?.scheduled_surcharge || 0,
@@ -63,6 +70,7 @@ const Pricing = () => {
         dispatch_mode: sData?.dispatch_mode || 1
       });
     } catch (error) {
+      console.error('fetchData error:', error);
       toast.error('Không thể tải dữ liệu cấu hình!');
     } finally {
       setLoading(false);
