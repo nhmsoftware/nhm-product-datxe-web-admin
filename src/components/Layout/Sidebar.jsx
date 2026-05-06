@@ -21,25 +21,18 @@ const Sidebar = () => {
     <aside className="sidebar glass">
 
       <div className="logo" style={{
-        padding: '0 1rem 3rem',
-        fontSize: '1.5rem',
-        fontWeight: 800,
-        color: 'var(--primary)',
+        padding: '0.5rem 1rem 2rem',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.75rem'
+        justifyContent: 'center'
       }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          background: 'var(--primary)',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white'
-        }}>NHM</div>
-        <span>DATXE</span>
+        <img src="/logo.jpg" alt="Logo" style={{ 
+          width: '100%', 
+          maxWidth: '160px', 
+          height: 'auto',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        }} />
       </div>
 
       <nav style={{ flex: 1 }}>
