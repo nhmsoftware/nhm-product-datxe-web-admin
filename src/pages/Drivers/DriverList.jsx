@@ -70,8 +70,12 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{driver?.full_name}</h3>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <span className={`badge ${driver?.kyc_status === 2 ? 'badge-success' : driver?.kyc_status === 1 ? 'badge-warning' : 'badge-error'}`}>
-                  {driver?.kyc_status_label || 'Chưa cập nhật'}
+                <span className={`badge ${
+                  driver?.kyc_status === 2 ? 'badge-success' : 
+                  driver?.kyc_status === 1 ? 'badge-warning' : 
+                  driver?.kyc_status === 3 ? 'badge-error' : ''
+                }`}>
+                  {driver?.kyc_status_label || 'Chưa có hồ sơ'}
                 </span>
                 <span className={`badge ${driver?.is_active ? 'badge-success' : 'badge-error'}`}>
                   {driver?.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
@@ -406,6 +410,7 @@ const DriverList = () => {
           <option value="1">Chờ duyệt</option>
           <option value="2">Đã duyệt</option>
           <option value="3">Từ chối</option>
+          <option value="0">Chưa có hồ sơ</option>
         </select>
       </div>
 
@@ -491,10 +496,10 @@ const DriverList = () => {
                       <td>
                         <span className={`badge ${
                           driver.kyc_status === 2 ? 'badge-success' : 
-                          driver.kyc_status === 1 ? 'badge-warning' : 'badge-error'
+                          driver.kyc_status === 1 ? 'badge-warning' : 
+                          driver.kyc_status === 3 ? 'badge-error' : ''
                         }`}>
-                          {driver.kyc_status === 2 ? 'Đã duyệt' : 
-                           driver.kyc_status === 1 ? 'Chờ duyệt' : 'Từ chối'}
+                          {driver.kyc_status_label || 'Chưa có hồ sơ'}
                         </span>
                       </td>
                       <td>

@@ -41,7 +41,7 @@ const Login = () => {
 
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-logo">MoveCore</h1>
+          <img src="/logo.jpg" alt="Logo" className="login-logo-img" />
           <p className="login-subtitle">Hệ thống quản trị vận tải thông minh</p>
         </div>
 
