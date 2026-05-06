@@ -26,7 +26,7 @@ const Sidebar = () => {
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <img src="/logo.png" alt="Logo" style={{
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" style={{
           width: '100%', 
           maxWidth: '160px', 
           height: 'auto'
