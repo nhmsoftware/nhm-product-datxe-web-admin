@@ -41,7 +41,7 @@ const Login = () => {
 
       <div className="login-card">
         <div className="login-header">
-          <img src="/logo.jpg" alt="Logo" className="login-logo-img" />
+          <img src="/logo.png" alt="Logo" className="login-logo-img" />
           <p className="login-subtitle">Hệ thống quản trị vận tải thông minh</p>
         </div>
 

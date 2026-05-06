@@ -26,12 +26,10 @@ const Sidebar = () => {
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <img src="/logo.jpg" alt="Logo" style={{ 
+        <img src="/logo.png" alt="Logo" style={{
           width: '100%', 
           maxWidth: '160px', 
-          height: 'auto',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          height: 'auto'
         }} />
       </div>
 
