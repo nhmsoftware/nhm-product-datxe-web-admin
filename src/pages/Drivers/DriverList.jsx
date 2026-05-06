@@ -71,7 +71,7 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
               <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{driver?.full_name}</h3>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <span className={`badge ${driver?.kyc_status === 2 ? 'badge-success' : driver?.kyc_status === 1 ? 'badge-warning' : 'badge-error'}`}>
-                  {driver?.kyc_status_label || 'Chưa duyệt'}
+                  {driver?.kyc_status_label || 'Chưa cập nhật'}
                 </span>
                 <span className={`badge ${driver?.is_active ? 'badge-success' : 'badge-error'}`}>
                   {driver?.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
@@ -155,7 +155,7 @@ const DriverList = () => {
   const location = useLocation();
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(location.pathname === '/drivers/pending' ? 'pending' : 'approved');
+  const [activeTab, setActiveTab] = useState(location.pathname === '/drivers/pending' ? 'pending' : 'all');
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
@@ -164,7 +164,7 @@ const DriverList = () => {
   });
   const [params, setParams] = useState({ 
     keyword: '', 
-    kyc_status: location.pathname === '/drivers/pending' ? '1' : '2', 
+    kyc_status: location.pathname === '/drivers/pending' ? '1' : '', 
     page: 1,
     per_page: 20
   });
@@ -367,10 +367,10 @@ const DriverList = () => {
 
       <div className="tabs-container">
         <button 
-          className={`tab-item ${activeTab === 'approved' ? 'active' : ''}`}
+          className={`tab-item ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => {
-            setActiveTab('approved');
-            setParams({ ...params, kyc_status: '2', page: 1 });
+            setActiveTab('all');
+            setParams({ ...params, kyc_status: '', page: 1 });
           }}
         >
           Danh sách tài xế
