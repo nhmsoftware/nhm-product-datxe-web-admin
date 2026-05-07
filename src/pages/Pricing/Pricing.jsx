@@ -58,7 +58,14 @@ const Pricing = () => {
       setIsFreeMode(configData.global_settings?.is_free_mode ?? false);
 
       // Backend: { data: [...] } — array trực tiếp
-      setSurgeRules(Array.isArray(surgeRes?.data) ? surgeRes.data : []);
+      // Normalize surge rules: ensure each rule's conditions is an array
+      const rawSurgeRules = Array.isArray(surgeRes?.data) ? surgeRes.data : [];
+      setSurgeRules(rawSurgeRules.map(rule => ({
+        ...rule,
+        conditions: Array.isArray(rule.conditions)
+          ? rule.conditions
+          : (typeof rule.conditions === 'string' ? JSON.parse(rule.conditions || '[]') : [])
+      })));
 
       // Backend: { data: { pricing: {...}, dispatch_mode: ... } }
       const sData = scheduledRes?.data ?? {};
@@ -364,7 +371,7 @@ const Pricing = () => {
                     <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
                       <button 
                         className="btn-action btn-action-edit" 
-                        onClick={() => { setEditSurgeRule({...rule, rule_id: rule.id}); setShowSurgeModal(true); }}
+                        onClick={() => { setEditSurgeRule({...rule, rule_id: rule.id, conditions: Array.isArray(rule.conditions) ? rule.conditions : []}); setShowSurgeModal(true); }}
                       >
                         <Edit2 size={16} /> Sửa
                       </button>

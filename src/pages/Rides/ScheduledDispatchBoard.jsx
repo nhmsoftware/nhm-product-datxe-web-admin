@@ -38,8 +38,13 @@ const ScheduledDispatchBoard = () => {
   const fetchRides = async () => {
     try {
       setLoading(true);
-      const response = await rideService.getScheduledRides({ status: filter.status });
-      setRides(response.data || []);
+      // rideService already returns response.data (HTTP body)
+      // API shape can be: [...] | { data: [...] } | { data: { data: [...] } }
+      const res = await rideService.getScheduledRides({ status: filter.status });
+      const list = Array.isArray(res)
+        ? res
+        : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
+      setRides(list);
     } catch (error) {
       toast.error('Không thể tải danh sách chuyến xe');
     } finally {
@@ -50,8 +55,12 @@ const ScheduledDispatchBoard = () => {
   const fetchInternalDrivers = async () => {
     try {
       setLoadingDrivers(true);
-      const response = await rideService.getInternalDrivers();
-      setInternalDrivers(response.data || []);
+      // rideService already returns response.data (HTTP body)
+      const res = await rideService.getInternalDrivers();
+      const list = Array.isArray(res)
+        ? res
+        : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
+      setInternalDrivers(list);
     } catch (error) {
       toast.error('Không thể tải danh sách tài xế');
     } finally {

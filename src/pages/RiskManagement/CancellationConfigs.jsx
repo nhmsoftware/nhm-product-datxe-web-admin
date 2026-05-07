@@ -19,9 +19,13 @@ const CancellationConfigs = () => {
     try {
       setLoading(true);
       const response = await adminService.getCancellationConfigs();
-      setConfigs(response.data || []);
+      // API may return { data: [...] }, [...], or other shapes — always extract an array
+      const raw = response?.data ?? response;
+      const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+      setConfigs(list);
     } catch (error) {
       toast.error('Không thể tải cấu hình hủy chuyến');
+      setConfigs([]);
     } finally {
       setLoading(false);
     }
