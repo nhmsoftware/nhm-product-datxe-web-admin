@@ -1,49 +1,38 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Car, Settings, LogOut, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle } from 'lucide-react';
 
 const Sidebar = () => {
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
     { icon: <Users size={20} />, label: 'Khách hàng', path: '/customers' },
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
+    { icon: <Ticket size={20} />, label: 'Vouchers', path: '/vouchers' },
     { icon: <Package size={20} />, label: 'Dịch vụ', path: '/services' },
+    { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
+    { icon: <ShieldAlert size={20} />, label: 'Chống gian lận', path: '/risk/anti-fraud' },
+    { icon: <Gavel size={20} />, label: 'Quy tắc xử phạt', path: '/risk/penalty-rules' },
+    { icon: <XCircle size={20} />, label: 'Phí hủy chuyến', path: '/risk/cancellation-configs' },
+    { icon: <ClipboardCheck size={20} />, label: 'Chuyến đặt trước', path: '/rides/scheduled' },
     { icon: <Settings size={20} />, label: 'Cài đặt', path: '/settings' },
+
   ];
 
+
   return (
-    <aside className="sidebar glass" style={{
-      width: 'var(--sidebar-width)',
-      height: '100vh',
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      padding: '2rem 1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 100,
-      borderRadius: '0 24px 24px 0'
-    }}>
+    <aside className="sidebar glass">
+
       <div className="logo" style={{
-        padding: '0 1rem 3rem',
-        fontSize: '1.5rem',
-        fontWeight: 800,
-        color: 'var(--primary)',
+        padding: '0.5rem 1rem 2rem',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.75rem'
+        justifyContent: 'center'
       }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          background: 'var(--primary)',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white'
-        }}>NHM</div>
-        <span>DATXE</span>
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" style={{
+          width: '100%', 
+          maxWidth: '160px', 
+          height: 'auto'
+        }} />
       </div>
 
       <nav style={{ flex: 1 }}>
@@ -51,25 +40,16 @@ const Sidebar = () => {
           <NavLink
             key={item.path}
             to={item.path}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.875rem 1rem',
-              color: isActive ? 'white' : 'var(--text-muted)',
-              textDecoration: 'none',
-              borderRadius: '12px',
-              marginBottom: '0.5rem',
-              background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
-              transition: 'var(--transition)'
-            })}
+            end
+            className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
           >
+
             {item.icon}
-            <span style={{ fontWeight: 500 }}>{item.label}</span>
+            <span style={{ fontWeight: 600 }}>{item.label}</span>
           </NavLink>
         ))}
       </nav>
+
 
       <button className="btn-logout" style={{
         marginTop: 'auto',
