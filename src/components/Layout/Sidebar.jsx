@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle, Store } from 'lucide-react';
 
 const Sidebar = () => {
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
     { icon: <Users size={20} />, label: 'Khách hàng', path: '/customers' },
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
+    { icon: <Store size={20} />, label: 'Nhà cung cấp', path: '/merchants' },
     { icon: <Ticket size={20} />, label: 'Vouchers', path: '/vouchers' },
     { icon: <Package size={20} />, label: 'Dịch vụ', path: '/services' },
     { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },

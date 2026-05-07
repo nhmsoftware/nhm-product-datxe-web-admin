@@ -15,6 +15,7 @@ import AntiFraud from './pages/RiskManagement/AntiFraud';
 import PenaltyRules from './pages/RiskManagement/PenaltyRules';
 import CancellationConfigs from './pages/RiskManagement/CancellationConfigs';
 import Login from './pages/Auth/Login';
+import MerchantList from './pages/Merchants/MerchantList';
 import authService from './services/authService';
 
 
@@ -66,6 +67,12 @@ function App() {
         <Route path="/drivers/pending" element={
           <ProtectedRoute>
             <DriverList />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/merchants" element={
+          <ProtectedRoute>
+            <MerchantList />
           </ProtectedRoute>
         } />
 
