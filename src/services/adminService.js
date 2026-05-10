@@ -7,6 +7,36 @@ export const adminService = {
     return response.data;
   },
 
+  getRevenueReport: async (params) => {
+    const response = await api.get('/v1/admin/dashboard/revenue', { params });
+    return response.data;
+  },
+
+  getAreaReport: async (params) => {
+    const response = await api.get('/v1/admin/dashboard/area', { params });
+    return response.data;
+  },
+
+  getCommissionReport: async (params) => {
+    const response = await api.get('/v1/admin/dashboard/commission', { params });
+    return response.data;
+  },
+
+  getOrderReport: async (params) => {
+    const response = await api.get('/v1/admin/dashboard/orders', { params });
+    return response.data;
+  },
+
+  getDetailedReport: async (params) => {
+    const response = await api.get('/v1/admin/dashboard/detailed', { params });
+    return response.data;
+  },
+
+  getTopDriversReport: async (params) => {
+    const response = await api.get('/v1/admin/dashboard/top-drivers', { params });
+    return response.data;
+  },
+
   // UC-91: Configure Pricing
   getPricingConfigs: async () => {
     const response = await api.get('/v1/admin/pricing/configs');
@@ -52,6 +82,11 @@ export const adminService = {
 
   updateScheduledPricing: async (data) => {
     const response = await api.post('/v1/admin/pricing/scheduled', data);
+    return response.data;
+  },
+
+  toggleScheduledDispatchMode: async (mode) => {
+    const response = await api.post('/v1/admin/pricing/scheduled/toggle-dispatch', { mode });
     return response.data;
   },
 

@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "dashboard": "Tổng quan",
+    "manage_rides": "Quản lý chuyến xe",
+    "pricing": "Cấu hình giá",
+    "inter_province": "Chuyến đi tỉnh",
+    "airport": "Chuyến sân bay",
+    "delivery": "Quản lý giao hàng",
+    "drivers": "Quản lý tài xế",
+    "customers": "Quản lý khách hàng",
+    "merchants": "Quản lý đối tác",
+    "reports": "Báo cáo & Thống kê",
+    "settings": "Cài đặt hệ thống"
+  },
+  "status": {
+    "pending": "Đang chờ",
+    "accepted": "Đã tiếp nhận",
+    "in_progress": "Đang di chuyển",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy"
+  },
+  "driver": {
+    "internal": "Xe nhà",
+    "partner": "Xe khách"
+  },
+  "actions": {
+    "save": "Lưu thay đổi",
+    "confirm": "Xác nhận",
+    "cancel": "Hủy chuyến",
+    "back": "Quay lại",
+    "lock": "Khóa tài khoản",
+    "unlock": "Mở khóa",
+    "re_dispatch": "Điều phối lại",
+    "view_route": "Xem lộ trình",
+    "handle_complaint": "Xử lý khiếu nại"
+  },
+  "reports": {
+    "revenue": "Báo cáo doanh thu",
+    "area": "Thống kê theo khu vực",
+    "commission": "Chi tiết hoa hồng",
+    "filter_day": "Theo Ngày",
+    "filter_month": "Theo Tháng",
+    "filter_year": "Theo Năm"
+  },
+  "validation": {
+    "locked_message": "Tài khoản của bạn đã bị khóa đến ngày {date}. Lý do: {reason}. Vui lòng liên hệ tổng đài để được hỗ trợ."
+  }
+}

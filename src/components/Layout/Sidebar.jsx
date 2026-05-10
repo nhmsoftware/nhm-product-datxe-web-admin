@@ -5,6 +5,7 @@ import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, Clipb
 const Sidebar = () => {
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
+    { icon: <ClipboardCheck size={20} />, label: 'Quản lý chuyến xe', path: '/rides/scheduled' },
     { icon: <Users size={20} />, label: 'Khách hàng', path: '/customers' },
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
     { icon: <Store size={20} />, label: 'Nhà cung cấp', path: '/merchants' },
@@ -14,9 +15,7 @@ const Sidebar = () => {
     { icon: <ShieldAlert size={20} />, label: 'Chống gian lận', path: '/risk/anti-fraud' },
     { icon: <Gavel size={20} />, label: 'Quy tắc xử phạt', path: '/risk/penalty-rules' },
     { icon: <XCircle size={20} />, label: 'Phí hủy chuyến', path: '/risk/cancellation-configs' },
-    { icon: <ClipboardCheck size={20} />, label: 'Chuyến đặt trước', path: '/rides/scheduled' },
     { icon: <Settings size={20} />, label: 'Cài đặt', path: '/settings' },
-
   ];
 
 

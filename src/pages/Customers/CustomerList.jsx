@@ -3,6 +3,95 @@ import { Search, MoreVertical, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smar
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { X } from 'lucide-react';
+
+const LockCustomerModal = ({ customer, onClose, onConfirm }) => {
+  const [reason, setReason] = useState('Vi phạm điều khoản sử dụng');
+  const [duration, setDuration] = useState('7');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    await onConfirm({
+      is_active: false,
+      reason: reason,
+      locked_days: duration === 'permanent' ? 3650 : parseInt(duration)
+    });
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-content" style={{ maxWidth: '450px' }}>
+        <div className="modal-header">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Ban size={22} className="text-error" /> Khóa khách hàng
+          </h2>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-body">
+          <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{customer.full_name}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{customer.phone}</div>
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Lý do khóa</label>
+            <textarea 
+              className="input-custom"
+              style={{ width: '100%', minHeight: '100px', padding: '0.75rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Nhập lý do chi tiết..."
+              required
+            />
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Thời hạn khóa</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {[
+                { label: '1 ngày', value: '1' },
+                { label: '3 ngày', value: '3' },
+                { label: '7 ngày', value: '7' },
+                { label: '30 ngày', value: '30' },
+                { label: '90 ngày', value: '90' },
+                { label: 'Vĩnh viễn', value: 'permanent' },
+              ].map((opt) => (
+                <div 
+                  key={opt.value}
+                  onClick={() => setDuration(opt.value)}
+                  style={{ 
+                    padding: '0.75rem', 
+                    borderRadius: '10px', 
+                    border: duration === opt.value ? '2px solid var(--primary)' : '1px solid var(--border)',
+                    background: duration === opt.value ? 'var(--primary-soft)' : 'var(--bg-soft)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: duration === opt.value ? 'var(--primary)' : 'var(--text)',
+                    transition: '0.2s'
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button type="button" className="btn btn-glass" style={{ flex: 1 }} onClick={onClose}>Hủy</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1, background: 'var(--error)' }} disabled={loading}>
+              {loading ? 'Đang xử lý...' : 'Xác nhận khóa'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
@@ -18,6 +107,8 @@ const CustomerList = () => {
     page: 1,
     per_page: 20
   });
+
+  const [lockTarget, setLockTarget] = useState(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -46,29 +137,26 @@ const CustomerList = () => {
   };
 
   const handleToggleStatus = async (customer) => {
-    const newStatus = !customer.is_active;
-    
+    if (customer.is_active) {
+      setLockTarget(customer);
+      return;
+    }
+
     const result = await Swal.fire({
-      title: newStatus ? 'Mở khóa người dùng?' : 'Khóa người dùng?',
-      text: newStatus ? 'Người dùng sẽ có thể đăng nhập lại vào hệ thống.' : 'Người dùng sẽ bị chặn truy cập tạm thời.',
-      icon: 'warning',
+      title: 'Mở khóa người dùng?',
+      text: 'Người dùng sẽ có thể đăng nhập lại vào hệ thống.',
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: newStatus ? 'var(--success)' : 'var(--error)',
+      confirmButtonColor: 'var(--success)',
       cancelButtonColor: 'var(--border)',
-      confirmButtonText: newStatus ? 'Mở khóa ngay' : 'Khóa tài khoản',
+      confirmButtonText: 'Mở khóa ngay',
       cancelButtonText: 'Hủy bỏ',
-      background: 'var(--bg)',
-      color: 'var(--text)'
     });
 
     if (result.isConfirmed) {
       try {
-        await adminService.updateCustomerStatus(customer.id, {
-          is_active: newStatus,
-          reason: newStatus ? '' : 'Vi phạm chính sách hệ thống',
-          locked_days: 7
-        });
-        toast.success(newStatus ? 'Đã mở khóa khách hàng' : 'Đã khóa khách hàng');
+        await adminService.updateCustomerStatus(customer.id, { is_active: true });
+        toast.success('Đã mở khóa khách hàng');
         fetchCustomers();
       } catch (error) {
         toast.error('Cập nhật trạng thái thất bại');
@@ -76,51 +164,20 @@ const CustomerList = () => {
     }
   };
 
+  const confirmLock = async (data) => {
+    try {
+      await adminService.updateCustomerStatus(lockTarget.id, data);
+      toast.success('Đã khóa khách hàng');
+      setLockTarget(null);
+      fetchCustomers();
+    } catch (error) {
+      toast.error('Không thể khóa khách hàng');
+    }
+  };
+
   return (
     <div className="customers-page" style={{ padding: '2rem' }}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        .pagination-wrapper {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 1.5rem;
-          padding: 1rem 1.5rem;
-          background: var(--bg-soft);
-          border-top: 1px solid var(--border);
-        }
-        .pagination-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-        .btn-page {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 10px;
-          border: 1px solid var(--border);
-          background: var(--card);
-          color: var(--text-muted);
-          font-weight: 700;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-page:hover:not(:disabled) {
-          border-color: var(--primary);
-          color: var(--primary);
-        }
-        .btn-page.active {
-          background: var(--primary);
-          color: white;
-          border-color: var(--primary);
-        }
-        .btn-page:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-      `}} />
+
 
       <div className="page-header" style={{ marginBottom: '2rem' }}>
         <h1 className="page-title">Quản lý Khách hàng</h1>
@@ -281,6 +338,14 @@ const CustomerList = () => {
           </>
         )}
       </div>
+
+      {lockTarget && (
+        <LockCustomerModal 
+          customer={lockTarget} 
+          onClose={() => setLockTarget(null)} 
+          onConfirm={confirmLock} 
+        />
+      )}
     </div>
   );
 };

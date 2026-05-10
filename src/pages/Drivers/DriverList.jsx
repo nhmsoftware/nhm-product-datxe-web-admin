@@ -169,6 +169,7 @@ const DriverList = () => {
   const [params, setParams] = useState({ 
     keyword: '', 
     kyc_status: location.pathname === '/drivers/pending' ? '1' : '', 
+    driver_group_type: '',
     page: 1,
     per_page: 20
   });
@@ -310,49 +311,7 @@ const DriverList = () => {
 
   return (
     <div className="drivers-page" style={{ padding: '2rem' }}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        .pagination-wrapper {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 1.5rem;
-          padding: 1rem 1.5rem;
-          background: var(--bg-soft);
-          border-top: 1px solid var(--border);
-        }
-        .pagination-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-        .btn-page {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 10px;
-          border: 1px solid var(--border);
-          background: var(--card);
-          color: var(--text-muted);
-          font-weight: 700;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-page:hover:not(:disabled) {
-          border-color: var(--primary);
-          color: var(--primary);
-        }
-        .btn-page.active {
-          background: var(--primary);
-          color: white;
-          border-color: var(--primary);
-        }
-        .btn-page:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-      `}} />
+
 
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
         <div>
@@ -412,6 +371,16 @@ const DriverList = () => {
           <option value="3">Từ chối</option>
           <option value="0">Chưa có hồ sơ</option>
         </select>
+        
+        <select 
+          style={{ padding: '0.75rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', minWidth: '150px' }}
+          value={params.driver_group_type}
+          onChange={(e) => setParams({ ...params, driver_group_type: e.target.value, page: 1 })}
+        >
+          <option value="">Tất cả đội xe</option>
+          <option value="1">Đội xe nhà</option>
+          <option value="2">Đối tác</option>
+        </select>
       </div>
 
       <div className="glass" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden' }}>
@@ -424,6 +393,7 @@ const DriverList = () => {
                   <th>Thông tin liên hệ</th>
                   <th>Trạng thái KYC</th>
                   <th>Trạng thái HĐ</th>
+                  <th>Đội xe</th>
                   <th>Ngày gia nhập</th>
                   <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
@@ -433,6 +403,7 @@ const DriverList = () => {
                   <tr key={i}>
                     <td><div className="skeleton" style={{ width: '150px', height: '1.5rem' }}></div></td>
                     <td><div className="skeleton" style={{ width: '120px', height: '1.5rem' }}></div></td>
+                    <td><div className="skeleton" style={{ width: '80px', height: '1.5rem' }}></div></td>
                     <td><div className="skeleton" style={{ width: '80px', height: '1.5rem' }}></div></td>
                     <td><div className="skeleton" style={{ width: '80px', height: '1.5rem' }}></div></td>
                     <td><div className="skeleton" style={{ width: '100px', height: '1.5rem' }}></div></td>
@@ -458,6 +429,7 @@ const DriverList = () => {
                     <th>Thông tin liên hệ</th>
                     <th>Trạng thái KYC</th>
                     <th>Trạng thái HĐ</th>
+                    <th>Đội xe</th>
                     <th>Ngày gia nhập</th>
                     <th style={{ textAlign: 'right' }}>Thao tác</th>
                   </tr>
@@ -505,6 +477,11 @@ const DriverList = () => {
                       <td>
                         <span className={`badge ${driver.is_active ? 'badge-success' : 'badge-error'}`}>
                           {driver.is_active ? 'Hoạt động' : 'Bị khóa'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${driver.driver_group_type === 1 ? 'badge-primary' : 'badge-secondary'}`}>
+                          {driver.group_label}
                         </span>
                       </td>
                       <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>

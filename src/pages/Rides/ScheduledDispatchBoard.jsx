@@ -12,11 +12,14 @@ import {
   UserPlus,
   XCircle,
   MoreVertical,
-  Loader2
+  Loader2,
+  Banknote
 } from 'lucide-react';
 import rideService from '../../services/rideService';
+import { adminService } from '../../services/adminService';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { Users, Monitor } from 'lucide-react';
 
 const ScheduledDispatchBoard = () => {
   const [rides, setRides] = useState([]);
@@ -30,10 +33,54 @@ const ScheduledDispatchBoard = () => {
   const [currentRide, setCurrentRide] = useState(null);
   const [internalDrivers, setInternalDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [dispatchMode, setDispatchMode] = useState(1); // 1: Internal Priority, 2: Open Pool
+  const [togglingDispatch, setTogglingDispatch] = useState(false);
 
   useEffect(() => {
     fetchRides();
+    fetchDispatchSettings();
   }, [filter.status]);
+
+  const fetchDispatchSettings = async () => {
+    try {
+      const res = await adminService.getScheduledPricing();
+      setDispatchMode(res?.data?.dispatch_mode || 1);
+    } catch (error) {
+      console.error('Lỗi khi tải cấu hình phân phối:', error);
+    }
+  };
+
+  const handleToggleDispatchMode = async () => {
+    const newMode = dispatchMode === 1 ? 2 : 1;
+    const modeName = newMode === 2 ? 'PHÁT SÓNG DIỆN RỘNG (Open Pool)' : 'ƯU TIÊN ĐỘI XE NHÀ (Manual)';
+    
+    const result = await Swal.fire({
+      title: 'Thay đổi cơ chế phân phối?',
+      html: `Bạn sắp chuyển sang chế độ <b>${modeName}</b>.<br/><br/>
+             ${newMode === 2 
+               ? "Đơn sẽ được tự động đẩy cho TẤT CẢ tài xế tranh nhận." 
+               : "Đơn sẽ chỉ bắn cho tài xế ĐỘI XE NHÀ hoặc chờ Admin gán."}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: newMode === 2 ? 'var(--success)' : 'var(--primary)',
+      confirmButtonText: 'Xác nhận thay đổi',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setTogglingDispatch(true);
+        await adminService.toggleScheduledDispatchMode(newMode);
+        setDispatchMode(newMode);
+        toast.success(`Đã chuyển sang chế độ ${modeName}`);
+        fetchRides();
+      } catch (error) {
+        toast.error('Lỗi khi cập nhật cơ chế phân phối');
+      } finally {
+        setTogglingDispatch(false);
+      }
+    }
+  };
 
   const fetchRides = async () => {
     try {
@@ -133,11 +180,42 @@ const ScheduledDispatchBoard = () => {
     <div className="dispatch-page">
       <div className="dispatch-header">
         <div>
-          <h1 className="page-title">Điều phối Chuyến đặt trước</h1>
-          <p className="page-subtitle">Quản lý và phân bổ các chuyến xe đi tỉnh, sân bay</p>
+          <h1 className="page-title">Quản lý Chuyến xe</h1>
+          <p className="page-subtitle">Quản lý và điều phối các chuyến xe đi tỉnh, sân bay, giao hàng</p>
         </div>
         
         <div className="header-actions">
+          {/* UC-122: Dispatch Strategy Selector */}
+          <div className="dispatch-strategy-selector">
+            <button 
+              className={`strategy-btn ${dispatchMode === 1 ? 'active' : ''}`}
+              onClick={() => dispatchMode !== 1 && handleToggleDispatchMode()}
+              disabled={togglingDispatch}
+            >
+              <div className="strategy-icon">
+                {togglingDispatch && dispatchMode !== 1 ? <Loader2 size={18} className="animate-spin" /> : <Monitor size={18} />}
+              </div>
+              <div className="strategy-label">
+                <strong>Đội xe nhà</strong>
+                <span>Admin chủ động gán đơn</span>
+              </div>
+            </button>
+
+            <button 
+              className={`strategy-btn ${dispatchMode === 2 ? 'active pool' : ''}`}
+              onClick={() => dispatchMode !== 2 && handleToggleDispatchMode()}
+              disabled={togglingDispatch}
+            >
+              <div className="strategy-icon">
+                {togglingDispatch && dispatchMode !== 2 ? <Loader2 size={18} className="animate-spin" /> : <Users size={18} />}
+              </div>
+              <div className="strategy-label">
+                <strong>Công khai</strong>
+                <span>Tất cả tài xế tự nhận</span>
+              </div>
+            </button>
+          </div>
+
           {selectedRides.length > 0 && (
             <button 
               className="btn btn-primary"
@@ -148,9 +226,9 @@ const ScheduledDispatchBoard = () => {
             </button>
           )}
           
-          <button className="btn btn-premium">
-            <ClipboardCheck size={18} />
-            Lịch sử điều phối
+          <button className="btn btn-premium" onClick={() => window.location.href = '/pricing'}>
+            <Banknote size={18} />
+            Cấu hình giá
           </button>
         </div>
       </div>

@@ -3,7 +3,8 @@ import { adminService } from '../../services/adminService';
 import { 
   Car, Save, Edit2, X, Plus, Trash2, Clock, 
   CloudRain, TrendingUp, Users, Monitor, RefreshCw,
-  Bike, Bus, CarFront, Loader2, ClipboardCheck
+  Bike, Bus, CarFront, Loader2, ClipboardCheck,
+  MapPin, Plane, Package, Banknote
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -17,7 +18,17 @@ const Pricing = () => {
     base_price: 0,
     scheduled_surcharge: 0,
     intercity_base_price: 0,
+    intercity_distance_rate: 0,
+    intercity_time_rate: 0,
+    intercity_min_fare: 0,
     airport_base_price: 0,
+    airport_distance_rate: 0,
+    airport_time_rate: 0,
+    airport_min_fare: 0,
+    delivery_base_price: 0,
+    delivery_distance_rate: 0,
+    delivery_time_rate: 0,
+    delivery_min_fare: 0,
     dispatch_mode: 1
   });
   const [savingScheduled, setSavingScheduled] = useState(false);
@@ -73,7 +84,17 @@ const Pricing = () => {
         base_price: sData?.pricing?.base_price || 0,
         scheduled_surcharge: sData?.pricing?.scheduled_surcharge || 0,
         intercity_base_price: sData?.pricing?.intercity_base_price || 0,
+        intercity_distance_rate: sData?.pricing?.intercity_distance_rate || 0,
+        intercity_time_rate: sData?.pricing?.intercity_time_rate || 0,
+        intercity_min_fare: sData?.pricing?.intercity_min_fare || 0,
         airport_base_price: sData?.pricing?.airport_base_price || 0,
+        airport_distance_rate: sData?.pricing?.airport_distance_rate || 0,
+        airport_time_rate: sData?.pricing?.airport_time_rate || 0,
+        airport_min_fare: sData?.pricing?.airport_min_fare || 0,
+        delivery_base_price: sData?.pricing?.delivery_base_price || 0,
+        delivery_distance_rate: sData?.pricing?.delivery_distance_rate || 0,
+        delivery_time_rate: sData?.pricing?.delivery_time_rate || 0,
+        delivery_min_fare: sData?.pricing?.delivery_min_fare || 0,
         dispatch_mode: sData?.dispatch_mode || 1
       });
     } catch (error) {
@@ -197,7 +218,17 @@ const Pricing = () => {
         base_price: Number(scheduledConfig.base_price),
         scheduled_surcharge: Number(scheduledConfig.scheduled_surcharge),
         intercity_base_price: Number(scheduledConfig.intercity_base_price),
+        intercity_distance_rate: Number(scheduledConfig.intercity_distance_rate),
+        intercity_time_rate: Number(scheduledConfig.intercity_time_rate),
+        intercity_min_fare: Number(scheduledConfig.intercity_min_fare),
         airport_base_price: Number(scheduledConfig.airport_base_price),
+        airport_distance_rate: Number(scheduledConfig.airport_distance_rate),
+        airport_time_rate: Number(scheduledConfig.airport_time_rate),
+        airport_min_fare: Number(scheduledConfig.airport_min_fare),
+        delivery_base_price: Number(scheduledConfig.delivery_base_price),
+        delivery_distance_rate: Number(scheduledConfig.delivery_distance_rate),
+        delivery_time_rate: Number(scheduledConfig.delivery_time_rate),
+        delivery_min_fare: Number(scheduledConfig.delivery_min_fare),
         dispatch_mode: scheduledConfig.dispatch_mode === 2 ? 2 : 1
       };
 
@@ -407,136 +438,74 @@ const Pricing = () => {
         </div>
       </div>
 
-      {/* UC-118: Scheduled Ride Pricing */}
-      <div className="price-card glass mt-8" style={{ padding: '2rem', borderRadius: '24px' }}>
-        <div className="card-top" style={{ marginBottom: '2rem', flexWrap: 'wrap' }}>
-          <div className="icon-badge" style={{ color: 'var(--primary)', width: '64px', height: '64px', background: 'rgba(0, 77, 160, 0.1)' }}>
-            <ClipboardCheck size={32} />
-          </div>
-          <div className="title-box" style={{ flex: 1, marginLeft: '1rem', minWidth: '200px' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>Cấu hình Chuyến đặt trước</h3>
-            <p style={{ fontSize: '0.9rem', color: isEditingScheduled ? 'var(--warning)' : 'var(--text-muted)', fontWeight: isEditingScheduled ? 600 : 400 }}>
-              {isEditingScheduled ? 'Đang trong chế độ chỉnh sửa...' : 'Các thông số phụ phí và cơ chế phát đơn hẹn giờ'}
-            </p>
-          </div>
-          <div className="card-actions" style={{ display: 'flex', gap: '0.75rem', marginTop: window.innerWidth < 640 ? '1rem' : '0' }}>
-            {isEditingScheduled ? (
-              <>
-                <button 
-                  onClick={handleUpdateScheduledConfig}
-                  disabled={savingScheduled}
-                  className="btn-icon"
-                  style={{ color: 'var(--success)', borderColor: 'var(--success)', width: '46px', height: '46px' }}
-                  title="Lưu thay đổi"
-                >
-                  {savingScheduled ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                </button>
-                <button 
-                  className="btn-icon" 
-                  onClick={() => setIsEditingScheduled(false)}
-                  style={{ color: 'var(--error)', borderColor: 'var(--error)', width: '46px', height: '46px' }}
-                  title="Hủy bỏ"
-                >
-                  <X size={20} />
-                </button>
-              </>
-            ) : (
-              <button 
-                className="btn-icon" 
-                onClick={toggleScheduledEdit}
-                style={{ color: 'var(--primary)', borderColor: 'var(--primary)', width: '46px', height: '46px' }}
-                title="Chỉnh sửa cấu hình"
-              >
-                <Edit2 size={20} />
+      {/* UC-118: Scheduled Ride & Service Type Pricing */}
+      <div className="section-divider">
+        <h2 className="section-title">Quản lý Chuyến xe & Dịch vụ</h2>
+        <div className="section-actions">
+          {isEditingScheduled ? (
+            <>
+              <button onClick={handleUpdateScheduledConfig} disabled={savingScheduled} className="btn-premium btn-success">
+                {savingScheduled ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Lưu cấu hình
               </button>
-            )}
+              <button onClick={() => setIsEditingScheduled(false)} className="btn glass text-error">Hủy</button>
+            </>
+          ) : (
+            <button onClick={toggleScheduledEdit} className="btn-premium">
+              <Edit2 size={18} /> Chỉnh sửa cấu hình
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="service-pricing-grid">
+        {/* Đi tỉnh */}
+        <div className="price-card glass service-card">
+          <div className="card-top">
+            <div className="icon-badge intercity-icon"><MapPin size={24} /></div>
+            <div className="title-box">
+              <h3>Dịch vụ Đi tỉnh</h3>
+              <p>Cấu hình chuyến đi liên tỉnh</p>
+            </div>
+          </div>
+          <div className="card-body">
+            <PriceBox label="Giá mở cửa" value={scheduledConfig.intercity_base_price} editing={isEditingScheduled} editValue={scheduledConfig.intercity_base_price} onChange={val => setScheduledConfig({...scheduledConfig, intercity_base_price: val})} unit="đ" />
+            <PriceBox label="Giá tối thiểu" value={scheduledConfig.intercity_min_fare} editing={isEditingScheduled} editValue={scheduledConfig.intercity_min_fare} onChange={val => setScheduledConfig({...scheduledConfig, intercity_min_fare: val})} unit="đ" />
+            <PriceBox label="Giá / km" value={scheduledConfig.intercity_distance_rate} editing={isEditingScheduled} editValue={scheduledConfig.intercity_distance_rate} onChange={val => setScheduledConfig({...scheduledConfig, intercity_distance_rate: val})} unit="đ" />
+            <PriceBox label="Giá / phút" value={scheduledConfig.intercity_time_rate} editing={isEditingScheduled} editValue={scheduledConfig.intercity_time_rate} onChange={val => setScheduledConfig({...scheduledConfig, intercity_time_rate: val})} unit="đ" />
           </div>
         </div>
 
-        <div className="card-body" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
-          <PriceBox 
-            label="Giá cơ bản đặt trước" 
-            value={scheduledConfig.base_price} 
-            editing={isEditingScheduled}
-            editValue={scheduledConfig.base_price}
-            onChange={val => setScheduledConfig({...scheduledConfig, base_price: val})}
-            unit="đ"
-          />
-          <PriceBox 
-            label="Phụ phí đặt trước (Booking Fee)" 
-            value={scheduledConfig.scheduled_surcharge} 
-            editing={isEditingScheduled}
-            editValue={scheduledConfig.scheduled_surcharge}
-            onChange={val => setScheduledConfig({...scheduledConfig, scheduled_surcharge: val})}
-            unit="đ"
-          />
-          <PriceBox 
-            label="Phụ phí đi tỉnh" 
-            value={scheduledConfig.intercity_base_price} 
-            editing={isEditingScheduled}
-            editValue={scheduledConfig.intercity_base_price}
-            onChange={val => setScheduledConfig({...scheduledConfig, intercity_base_price: val})}
-            unit="đ"
-          />
-          <PriceBox 
-            label="Phụ phí sân bay" 
-            value={scheduledConfig.airport_base_price} 
-            editing={isEditingScheduled}
-            editValue={scheduledConfig.airport_base_price}
-            onChange={val => setScheduledConfig({...scheduledConfig, airport_base_price: val})}
-            unit="đ"
-          />
+        {/* Sân bay */}
+        <div className="price-card glass service-card">
+          <div className="card-top">
+            <div className="icon-badge airport-icon"><Plane size={24} /></div>
+            <div className="title-box">
+              <h3>Dịch vụ Sân bay</h3>
+              <p>Cấu hình đón/tiễn sân bay</p>
+            </div>
+          </div>
+          <div className="card-body">
+            <PriceBox label="Giá mở cửa" value={scheduledConfig.airport_base_price} editing={isEditingScheduled} editValue={scheduledConfig.airport_base_price} onChange={val => setScheduledConfig({...scheduledConfig, airport_base_price: val})} unit="đ" />
+            <PriceBox label="Giá tối thiểu" value={scheduledConfig.airport_min_fare} editing={isEditingScheduled} editValue={scheduledConfig.airport_min_fare} onChange={val => setScheduledConfig({...scheduledConfig, airport_min_fare: val})} unit="đ" />
+            <PriceBox label="Giá / km" value={scheduledConfig.airport_distance_rate} editing={isEditingScheduled} editValue={scheduledConfig.airport_distance_rate} onChange={val => setScheduledConfig({...scheduledConfig, airport_distance_rate: val})} unit="đ" />
+            <PriceBox label="Giá / phút" value={scheduledConfig.airport_time_rate} editing={isEditingScheduled} editValue={scheduledConfig.airport_time_rate} onChange={val => setScheduledConfig({...scheduledConfig, airport_time_rate: val})} unit="đ" />
+          </div>
         </div>
 
-        <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px dashed var(--border)' }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', display: 'block', letterSpacing: '1px' }}>
-            Cơ chế phân phối (Dispatch Mode)
-          </label>
-          <div style={{ 
-            background: 'var(--bg-soft)', 
-            padding: '1.5rem', 
-            borderRadius: '16px', 
-            border: `1px solid ${isEditingScheduled ? 'var(--primary)' : 'var(--border)'}`, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            flexWrap: 'wrap', 
-            gap: '1.5rem',
-            transition: 'var(--transition)'
-          }}>
-            <div style={{ flex: 1, minWidth: '250px' }}>
-              <div style={{ 
-                fontWeight: 800, 
-                fontSize: '1.1rem', 
-                color: scheduledConfig.dispatch_mode === 1 ? 'var(--primary)' : 'var(--success)', 
-                marginBottom: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                {scheduledConfig.dispatch_mode === 1 ? <Monitor size={20} /> : <Users size={20} />}
-                {scheduledConfig.dispatch_mode === 1 ? "Ưu tiên Đội xe nhà (Admin Board)" : "Phát sóng diện rộng (Open Pool)"}
-              </div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                {scheduledConfig.dispatch_mode === 1 
-                  ? "Đơn sẽ không nổ trực tiếp cho tài xế. Quản trị viên sẽ là người phân bổ thủ công trên bảng điều khiển để đảm bảo chất lượng." 
-                  : "Đơn được phát sóng trực tiếp cho tất cả tài xế đang hoạt động xung quanh để tranh nhận. Tiết kiệm thời gian điều phối."}
-              </div>
+        {/* Giao hàng */}
+        <div className="price-card glass service-card">
+          <div className="card-top">
+            <div className="icon-badge delivery-icon"><Package size={24} /></div>
+            <div className="title-box">
+              <h3>Dịch vụ Giao hàng</h3>
+              <p>Cấu hình vận chuyển hàng hóa</p>
             </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: isEditingScheduled ? 1 : 0.6, cursor: isEditingScheduled ? 'pointer' : 'not-allowed' }}
-                 onClick={() => {
-                   if (!isEditingScheduled) return;
-                   setScheduledConfig({
-                     ...scheduledConfig, 
-                     dispatch_mode: scheduledConfig.dispatch_mode === 2 ? 1 : 2
-                   });
-                 }}
-            >
-              <div className={`switch-btn ${scheduledConfig.dispatch_mode === 2 ? 'active' : ''}`} style={{ width: '56px', height: '30px', borderRadius: '30px', pointerEvents: 'none' }}>
-                <div className="switch-handle" style={{ width: '24px', height: '24px', top: '3px', left: '3px', transform: scheduledConfig.dispatch_mode === 2 ? 'translateX(26px)' : 'none' }} />
-              </div>
-            </div>
+          </div>
+          <div className="card-body">
+            <PriceBox label="Giá mở cửa" value={scheduledConfig.delivery_base_price} editing={isEditingScheduled} editValue={scheduledConfig.delivery_base_price} onChange={val => setScheduledConfig({...scheduledConfig, delivery_base_price: val})} unit="đ" />
+            <PriceBox label="Giá tối thiểu" value={scheduledConfig.delivery_min_fare} editing={isEditingScheduled} editValue={scheduledConfig.delivery_min_fare} onChange={val => setScheduledConfig({...scheduledConfig, delivery_min_fare: val})} unit="đ" />
+            <PriceBox label="Giá / km" value={scheduledConfig.delivery_distance_rate} editing={isEditingScheduled} editValue={scheduledConfig.delivery_distance_rate} onChange={val => setScheduledConfig({...scheduledConfig, delivery_distance_rate: val})} unit="đ" />
+            <PriceBox label="Giá / phút" value={scheduledConfig.delivery_time_rate} editing={isEditingScheduled} editValue={scheduledConfig.delivery_time_rate} onChange={val => setScheduledConfig({...scheduledConfig, delivery_time_rate: val})} unit="đ" />
           </div>
         </div>
       </div>
@@ -674,6 +643,22 @@ const Pricing = () => {
           .pricing-grid { grid-template-columns: 1fr; }
           .card-body { grid-template-columns: 1fr; }
         }
+
+        .section-divider { display: flex; justify-content: space-between; align-items: center; margin: 4rem 0 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem; }
+        .section-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; }
+        .section-actions { display: flex; gap: 1rem; }
+        .service-pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .service-card { border-top: 4px solid var(--primary); }
+        .service-card:nth-child(2) { border-top-color: var(--secondary); }
+        .service-card:nth-child(3) { border-top-color: var(--success); }
+
+        .intercity-icon { background: rgba(67, 97, 238, 0.1) !important; color: var(--primary) !important; }
+        .airport-icon { background: rgba(247, 37, 133, 0.1) !important; color: var(--secondary) !important; }
+        .delivery-icon { background: rgba(6, 214, 160, 0.1) !important; color: var(--success) !important; }
+
+        .btn-success { background: var(--success) !important; color: white !important; }
+        .text-error { color: var(--error) !important; }
+        .mt-8 { margin-top: 2rem; }
       `}} />
 
     </div>
