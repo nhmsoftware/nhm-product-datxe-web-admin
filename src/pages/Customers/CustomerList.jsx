@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, MoreVertical, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smartphone, MapPin, Calendar, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MoreVertical, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smartphone, MapPin, Calendar, Info, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -93,6 +93,149 @@ const LockCustomerModal = ({ customer, onClose, onConfirm }) => {
   );
 };
 
+const CustomerDetailModal = ({ userId, onClose }) => {
+  const [customer, setCustomer] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [userId]);
+
+  const fetchDetail = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.getCustomerDetail(userId);
+      setCustomer(response.data);
+    } catch (error) {
+      toast.error('Không thể tải chi tiết khách hàng');
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '500px' }}>
+        <div className="modal-body" style={{ textAlign: 'center', padding: '4rem' }}>
+          <div className="skeleton" style={{ width: '80px', height: '80px', borderRadius: '50%', margin: '0 auto 1.5rem' }}></div>
+          <div className="skeleton" style={{ width: '200px', height: '2rem', margin: '0 auto 1rem' }}></div>
+          <div className="skeleton" style={{ width: '150px', height: '1.5rem', margin: '0 auto' }}></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-content" style={{ maxWidth: '550px' }}>
+        <div className="modal-header">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <User size={24} className="text-primary" /> Hồ sơ khách hàng
+          </h2>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+        <div className="modal-body">
+          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center' }}>
+            <div style={{ 
+              width: '100px', 
+              height: '100px', 
+              borderRadius: '24px', 
+              background: customer?.avatar ? `url(${customer.avatar}) center/cover` : 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2.5rem',
+              fontWeight: 800,
+              color: 'white',
+              boxShadow: '0 10px 20px rgba(0, 77, 160, 0.2)'
+            }}>
+              {!customer?.avatar && (customer?.full_name?.[0] || 'U')}
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>{customer?.full_name}</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>ID: {customer?.id}</p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span className={`badge ${customer?.is_active ? 'badge-success' : 'badge-error'}`}>
+                  {customer?.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
+                </span>
+                <span className="badge badge-primary">Khách hàng</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Thông tin liên hệ</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Smartphone size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Số điện thoại</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{customer?.phone}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Mail size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Email</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{customer?.email || 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Thông tin khác</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Calendar size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ngày tham gia</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{customer?.created_at ? new Date(customer.created_at).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MapPin size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Địa chỉ</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{customer?.address || 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {!customer?.is_active && (
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px', marginTop: '1.25rem', border: '1px solid var(--error-soft)', background: 'var(--error-soft)' }}>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <Ban size={20} className="text-error" />
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--error)', fontSize: '0.9rem' }}>Tài khoản đang bị khóa</div>
+                  <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                    <span style={{ fontWeight: 600 }}>Lý do:</span> {customer?.lock_reason}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', marginTop: '0.1rem' }}>
+                    <span style={{ fontWeight: 600 }}>Hết hạn:</span> {customer?.lock_expired_at ? new Date(customer.lock_expired_at).toLocaleString('vi-VN') : 'Vĩnh viễn'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +252,7 @@ const CustomerList = () => {
   });
 
   const [lockTarget, setLockTarget] = useState(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -257,14 +401,25 @@ const CustomerList = () => {
                         </span>
                       </td>
                       <td style={{ padding: '1.25rem 1.5rem' }}>
-                        <div className={`badge ${customer.is_active ? 'badge-success' : 'badge-error'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <div className={`badge ${customer.is_active ? 'badge-success' : 'badge-error'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginBottom: customer.is_active ? 0 : '4px' }}>
                           {customer.is_active ? <ShieldCheck size={14} /> : <ShieldAlert size={14} />}
                           {customer.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
                         </div>
+                        {!customer.is_active && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: '1.2' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--error)' }}>Lý do: {customer.lock_reason || 'N/A'}</div>
+                            <div>Hết hạn: {customer.lock_expired_at ? new Date(customer.lock_expired_at).toLocaleString('vi-VN') : 'Vĩnh viễn'}</div>
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                          <button className="btn-icon" title="Xem chi tiết" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
+                          <button 
+                            onClick={() => setSelectedCustomerId(customer.id)}
+                            className="btn-icon" 
+                            title="Xem chi tiết" 
+                            style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}
+                          >
                             <Info size={18} />
                           </button>
                           <button 
@@ -344,6 +499,13 @@ const CustomerList = () => {
           customer={lockTarget} 
           onClose={() => setLockTarget(null)} 
           onConfirm={confirmLock} 
+        />
+      )}
+
+      {selectedCustomerId && (
+        <CustomerDetailModal 
+          userId={selectedCustomerId} 
+          onClose={() => setSelectedCustomerId(null)} 
         />
       )}
     </div>

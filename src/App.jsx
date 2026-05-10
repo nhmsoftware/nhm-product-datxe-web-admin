@@ -9,7 +9,6 @@ import DriverList from './pages/Drivers/DriverList';
 import VoucherList from './pages/Vouchers/VoucherList';
 import { Toaster } from 'react-hot-toast';
 import Pricing from './pages/Pricing/Pricing';
-import Services from './pages/Services/Services';
 import Settings from './pages/Settings/Settings';
 import AntiFraud from './pages/RiskManagement/AntiFraud';
 import PenaltyRules from './pages/RiskManagement/PenaltyRules';
@@ -89,11 +88,6 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/services" element={
-          <ProtectedRoute>
-            <Services />
-          </ProtectedRoute>
-        } />
 
         <Route path="/settings" element={
           <ProtectedRoute>

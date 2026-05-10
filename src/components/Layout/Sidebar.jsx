@@ -10,7 +10,6 @@ const Sidebar = () => {
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
     { icon: <Store size={20} />, label: 'Nhà cung cấp', path: '/merchants' },
     { icon: <Ticket size={20} />, label: 'Vouchers', path: '/vouchers' },
-    { icon: <Package size={20} />, label: 'Dịch vụ', path: '/services' },
     { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
     { icon: <ShieldAlert size={20} />, label: 'Chống gian lận', path: '/risk/anti-fraud' },
     { icon: <Gavel size={20} />, label: 'Quy tắc xử phạt', path: '/risk/penalty-rules' },

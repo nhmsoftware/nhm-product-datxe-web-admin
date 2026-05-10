@@ -198,15 +198,48 @@ const Dashboard = () => {
   };
 
   const revenueChartOptions = {
-    chart: { type: 'area', toolbar: { show: false }, fontFamily: 'Be Vietnam Pro' },
-    stroke: { curve: 'smooth', width: 3, colors: ['#4361ee'] },
-    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
-    xaxis: {
-      categories: revenueSection.data.map(h => h.period.split('-').reverse().join('/')),
-      labels: { style: { colors: 'var(--text-muted)', fontSize: '10px' } }
+    chart: { 
+      type: 'bar', 
+      toolbar: { show: false }, 
+      fontFamily: 'Be Vietnam Pro',
+      animations: { enabled: true, easing: 'easeinout', speed: 800 }
     },
-    yaxis: { show: false },
-    grid: { show: false },
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        columnWidth: '45%',
+        distributed: false,
+        dataLabels: { position: 'top' }
+      }
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => new Intl.NumberFormat('vi-VN').format(val),
+      offsetY: -20,
+      style: { fontSize: '10px', colors: ['var(--text)'] }
+    },
+    stroke: { show: true, width: 2, colors: ['transparent'] },
+    colors: ['#4361ee'],
+    xaxis: {
+      categories: (revenueSection.data || []).map(h => h.period?.split('-').reverse().join('/') || 'N/A'),
+      labels: { style: { colors: 'var(--text-muted)', fontSize: '10px' } },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: { 
+      show: true,
+      labels: { 
+        style: { colors: 'var(--text-muted)', fontSize: '10px' },
+        formatter: (val) => new Intl.NumberFormat('vi-VN').format(val)
+      }
+    },
+    grid: { 
+      show: true, 
+      borderColor: 'var(--border)', 
+      strokeDashArray: 4,
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true } }
+    },
     tooltip: { theme: 'dark', y: { formatter: (val) => new Intl.NumberFormat('vi-VN').format(val) + 'đ' } }
   };
 
@@ -247,7 +280,7 @@ const Dashboard = () => {
                 <button className="icon-btn sm" onClick={() => exportToExcel('Doanh thu', revenueSection.data)}><Download size={14} /></button>
               </div>
             </div>
-            {revenueSection.loading ? <div className="skeleton" style={{ height: '300px' }}></div> : <Chart options={revenueChartOptions} series={[{ name: 'Doanh thu', data: revenueSection.data.map(h => parseFloat(h.gmv)) }]} type="area" height={300} />}
+            {revenueSection.loading ? <div className="skeleton" style={{ height: '300px' }}></div> : <Chart options={revenueChartOptions} series={[{ name: 'Doanh thu', data: revenueSection.data.map(h => parseFloat(h.gmv)) }]} type="bar" height={300} />}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>

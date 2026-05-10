@@ -77,9 +77,17 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                 }`}>
                   {driver?.kyc_status_label || 'Chưa có hồ sơ'}
                 </span>
-                <span className={`badge ${driver?.is_active ? 'badge-success' : 'badge-error'}`}>
-                  {driver?.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className={`badge ${driver?.is_active ? 'badge-success' : 'badge-error'}`}>
+                    {driver?.is_active ? 'Đang hoạt động' : 'Đang bị khóa'}
+                  </span>
+                  {!driver?.is_active && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: '1.2' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--error)' }}>Lý do: {driver?.lock_reason || 'N/A'}</div>
+                      <div>Hết hạn: {driver?.lock_expired_at ? new Date(driver?.lock_expired_at).toLocaleString('vi-VN') : 'Vĩnh viễn'}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -475,9 +483,15 @@ const DriverList = () => {
                         </span>
                       </td>
                       <td>
-                        <span className={`badge ${driver.is_active ? 'badge-success' : 'badge-error'}`}>
+                        <span className={`badge ${driver.is_active ? 'badge-success' : 'badge-error'}`} style={{ marginBottom: driver.is_active ? 0 : '4px' }}>
                           {driver.is_active ? 'Hoạt động' : 'Bị khóa'}
                         </span>
+                        {!driver.is_active && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: '1.2' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--error)' }}>Lý do: {driver.lock_reason || 'N/A'}</div>
+                            <div>Hết hạn: {driver.lock_expired_at ? new Date(driver.lock_expired_at).toLocaleString('vi-VN') : 'Vĩnh viễn'}</div>
+                          </div>
+                        )}
                       </td>
                       <td>
                         <span className={`badge ${driver.driver_group_type === 1 ? 'badge-primary' : 'badge-secondary'}`}>

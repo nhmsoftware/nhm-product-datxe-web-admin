@@ -112,6 +112,11 @@ export const adminService = {
     return response.data;
   },
 
+  getCustomerDetail: async (userId) => {
+    const response = await api.get(`/v1/admin/users/${userId}`);
+    return response.data;
+  },
+
   // UC-80: Driver Management
   getDrivers: async (params) => {
     const response = await api.get('/v1/admin/drivers', { params });
