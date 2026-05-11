@@ -42,7 +42,7 @@ const Settings = () => {
       <div className="glass" style={{ marginTop: '2rem', padding: '2rem', borderRadius: '24px' }}>
         <div className="empty-state">
           <SettingsIcon size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-          <h3>Đang trong quá trình phát triển</h3>
+          <h3>Những cài đặt trong trang này sẽ áp dụng cho toàn bộ hệ thống.</h3>
           <p>Các tính năng cài đặt chi tiết sẽ sớm được cập nhật.</p>
         </div>
       </div>

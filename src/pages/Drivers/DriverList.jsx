@@ -7,10 +7,26 @@ import Swal from 'sweetalert2';
 
 import { useLocation } from 'react-router-dom';
 
+const ImagePreviewModal = ({ url, title, onClose }) => {
+  if (!url) return null;
+  return (
+    <div className="modal-overlay" style={{ zIndex: 1000, background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
+      <div className="modal-content" style={{ background: 'transparent', boxShadow: 'none', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: 'absolute', top: '-40px', right: '0', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <span style={{ color: 'white', fontWeight: 600 }}>{title}</span>
+          <button className="btn-icon" onClick={onClose} style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}><X size={20} /></button>
+        </div>
+        <img src={url} alt={title} style={{ width: '100%', height: 'auto', maxHeight: '80vh', borderRadius: '12px', objectFit: 'contain' }} />
+      </div>
+    </div>
+  );
+};
+
 const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
 
   const [driver, setDriver] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     fetchDetail();
@@ -29,6 +45,30 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
     }
   };
 
+  const handleAssignGroup = async (groupType) => {
+    const label = groupType === 1 ? 'Đội xe nhà' : 'Tài xế đối tác';
+    const result = await Swal.fire({
+      title: `Gán vào ${label}?`,
+      text: `Bạn có chắc muốn gán tài xế này vào ${label}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: 'var(--primary)',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await adminService.assignDriverGroup(userId, groupType);
+        toast.success('Gán đội xe thành công');
+        fetchDetail();
+        onRefresh();
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Lỗi khi gán đội xe');
+      }
+    }
+  };
+
   if (loading) return (
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '600px' }}>
@@ -43,16 +83,18 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-content">
+      <div className="modal-content" style={{ maxWidth: '800px' }}>
         <div className="modal-header">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Info size={24} className="text-primary" /> Chi tiết hồ sơ tài xế
           </h2>
           <button className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
-        <div className="modal-body">
+        <div className="modal-body" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
           <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-            <div style={{ 
+            <div 
+              onClick={() => driver?.avatar && setPreviewImage({ url: driver.avatar, title: 'Ảnh đại diện' })}
+              style={{ 
               width: '120px', 
               height: '120px', 
               borderRadius: '24px', 
@@ -63,9 +105,23 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
               fontSize: '3rem',
               fontWeight: 800,
               color: 'white',
-              boxShadow: '0 10px 20px rgba(0, 77, 160, 0.3)'
+              boxShadow: '0 10px 20px rgba(0, 77, 160, 0.3)',
+              overflow: 'hidden',
+              cursor: driver?.avatar ? 'pointer' : 'default'
             }}>
-              {driver?.full_name?.[0] || 'D'}
+              {driver?.avatar ? (
+                <img 
+                  src={driver?.avatar} 
+                  alt={driver?.full_name} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerText = driver?.full_name?.[0] || 'D';
+                  }}
+                />
+              ) : (
+                driver?.full_name?.[0] || 'D'
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>{driver?.full_name}</h3>
@@ -124,11 +180,58 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                     <div style={{ fontWeight: 600 }}>{new Date(driver?.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                   <ShieldCheck size={18} className="text-primary" />
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vai trò</div>
-                    <div style={{ fontWeight: 600 }}>Tài xế đối tác</div>
+                    <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{driver.group_label || 'Chưa gán'}</span>
+                        {driver.kyc_status !== 2 && (
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                            (Duyệt hồ sơ để gán đội xe)
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {driver.driver_group_type !== 1 && (
+                          <button 
+                            onClick={() => handleAssignGroup(1)}
+                            disabled={driver.kyc_status !== 2}
+                            style={{ 
+                              padding: '2px 8px', 
+                              fontSize: '0.65rem', 
+                              borderRadius: '6px', 
+                              background: driver.kyc_status === 2 ? 'rgba(67, 97, 238, 0.1)' : 'var(--bg-soft)', 
+                              color: driver.kyc_status === 2 ? 'var(--primary)' : 'var(--text-muted)',
+                              border: `1px solid ${driver.kyc_status === 2 ? 'var(--primary)' : 'var(--border)'}`,
+                              cursor: driver.kyc_status === 2 ? 'pointer' : 'not-allowed',
+                              opacity: driver.kyc_status === 2 ? 1 : 0.5
+                            }}
+                          >
+                            Gán Xe Nhà
+                          </button>
+                        )}
+                        {driver.driver_group_type !== 2 && (
+                          <button 
+                            onClick={() => handleAssignGroup(2)}
+                            disabled={driver.kyc_status !== 2}
+                            style={{ 
+                              padding: '2px 8px', 
+                              fontSize: '0.65rem', 
+                              borderRadius: '6px', 
+                              background: driver.kyc_status === 2 ? 'rgba(247, 37, 133, 0.1)' : 'var(--bg-soft)', 
+                              color: driver.kyc_status === 2 ? 'var(--secondary)' : 'var(--text-muted)',
+                              border: `1px solid ${driver.kyc_status === 2 ? 'var(--secondary)' : 'var(--border)'}`,
+                              cursor: driver.kyc_status === 2 ? 'pointer' : 'not-allowed',
+                              opacity: driver.kyc_status === 2 ? 1 : 0.5
+                            }}
+                          >
+                            Gán Đối Tác
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -138,27 +241,82 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
           <div className="glass" style={{ padding: '1.25rem', borderRadius: '16px', marginTop: '1.5rem' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>HỒ SƠ ĐĂNG KÝ (KYC)</p>
             {driver?.kyc_status ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Bằng lái xe</div>
-                  <div style={{ fontWeight: 600 }}>{driver.license_info?.license_number || 'N/A'}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Trạng thái</div>
+                    <div style={{ fontWeight: 600 }}>{driver.kyc_status_label}</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Ghi chú</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{driver.kyc_cancel_reason || 'Không'}</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Trạng thái</div>
-                  <div style={{ fontWeight: 600 }}>{driver.kyc_status_label}</div>
-                </div>
-                <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Ghi chú</div>
-                  <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{driver.kyc_cancel_reason || 'Không'}</div>
-                </div>
+
+                {driver.kyc_photos && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>Tài liệu đã tải lên</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                      {[
+                        { key: 'portrait_url', label: 'Ảnh chân dung' },
+                        { key: 'driver_license_url', label: 'Bằng lái xe' },
+                        { key: 'cccd_front_url', label: 'CCCD Mặt trước' },
+                        { key: 'cccd_back_url', label: 'CCCD Mặt sau' },
+                        { key: 'vehicle_reg_url', label: 'Cà vẹt xe' },
+                        { key: 'insurance_url', label: 'Bảo hiểm' },
+                        { key: 'criminal_record_url', label: 'Lý lịch tư pháp' },
+                        { key: 'health_cert_url', label: 'Giấy khám sức khỏe' },
+                      ].map((item) => {
+                        const url = driver.kyc_photos[item.key];
+                        if (!url) return null;
+                        return (
+                          <div 
+                            key={item.key}
+                            onClick={() => setPreviewImage({ url, title: item.label })}
+                            style={{ 
+                              border: '1px solid var(--border)', 
+                              borderRadius: '12px', 
+                              overflow: 'hidden',
+                              cursor: 'pointer',
+                              transition: 'transform 0.2s',
+                              background: 'var(--bg-soft)'
+                            }}
+                            className="hover-scale"
+                          >
+                             <div style={{ height: '120px', overflow: 'hidden' }}>
+                               <img 
+                                 src={url} 
+                                 alt={item.label} 
+                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                 onError={(e) => {
+                                   e.target.src = 'https://placehold.co/400x300?text=Lỗi+tải+ảnh';
+                                 }}
+                               />
+                             </div>
+                             <div style={{ textAlign: 'center', padding: '0.4rem', background: 'var(--bg)', fontSize: '0.7rem', fontWeight: 600, borderTop: '1px solid var(--border)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                               {item.label}
+                             </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
+
               <p style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>Chưa có hồ sơ đăng ký nào.</p>
             )}
           </div>
-
         </div>
       </div>
+      {previewImage && (
+        <ImagePreviewModal 
+          url={previewImage.url} 
+          title={previewImage.title} 
+          onClose={() => setPreviewImage(null)} 
+        />
+      )}
     </div>
   );
 };
@@ -213,7 +371,7 @@ const DriverList = () => {
   const handleApprove = async (driver) => {
     const result = await Swal.fire({
       title: 'Duyệt tài xế?',
-      text: `Bạn có chắc chắn muốn duyệt hồ sơ cho ${driver.name}?`,
+      text: `Bạn có chắc chắn muốn duyệt hồ sơ cho tài xế: "${driver.full_name}" không?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Đồng ý duyệt',

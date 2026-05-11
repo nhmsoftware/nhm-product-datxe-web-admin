@@ -263,7 +263,6 @@ const VoucherList = () => {
         return;
       }
       
-      // Lấy phần text trong ngoặc đơn (ví dụ: (1 thành công, 0 bỏ qua))
       const match = res.message?.match(/\(([^)]+)\)/);
       const resultText = match ? match[0] : res.message;
       
@@ -276,7 +275,7 @@ const VoucherList = () => {
       Swal.fire({
         icon: 'success',
         title: 'Gán voucher thành công',
-        text: `Kết quả: ${resultText}`,
+        text: `${resultText}`,
         confirmButtonColor: 'var(--primary)',
         timer: 4000
       });

@@ -144,6 +144,11 @@ export const adminService = {
     return response.data;
   },
 
+  assignDriverGroup: async (userId, groupType) => {
+    const response = await api.post(`/v1/admin/drivers/${userId}/assign-group`, { group_type: groupType });
+    return response.data;
+  },
+
   exportDrivers: async (params) => {
     const response = await api.get('/v1/admin/drivers/export', { 
       params,
