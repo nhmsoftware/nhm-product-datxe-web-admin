@@ -98,12 +98,10 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
               width: '120px', 
               height: '120px', 
               borderRadius: '24px', 
-              background: 'linear-gradient(45deg, var(--primary), var(--secondary))',
+              background: 'linear-gradient(45deg, var(--primary), #4cc9f0)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '3rem',
-              fontWeight: 800,
               color: 'white',
               boxShadow: '0 10px 20px rgba(0, 77, 160, 0.3)',
               overflow: 'hidden',
@@ -116,11 +114,11 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.parentElement.innerText = driver?.full_name?.[0] || 'D';
+                    e.target.parentElement.innerHTML = '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
                   }}
                 />
               ) : (
-                driver?.full_name?.[0] || 'D'
+                <User size={56} />
               )}
             </div>
             <div style={{ flex: 1 }}>
@@ -609,14 +607,15 @@ const DriverList = () => {
                             width: '44px', 
                             height: '44px', 
                             borderRadius: '12px', 
-                            background: 'linear-gradient(45deg, var(--primary), var(--secondary))',
+                            background: 'linear-gradient(45deg, var(--primary), #4cc9f0)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontWeight: 700,
                             color: 'white',
                             boxShadow: '0 4px 10px rgba(0, 77, 160, 0.2)'
-                          }}>{driver.full_name?.[0] || 'D'}</div>
+                          }}>
+                            <User size={22} />
+                          </div>
                           <div>
                             <div style={{ fontWeight: 700 }}>{driver.full_name}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {driver.id.slice(-8)}</div>

@@ -141,16 +141,14 @@ const CustomerDetailModal = ({ userId, onClose }) => {
               width: '100px', 
               height: '100px', 
               borderRadius: '24px', 
-              background: customer?.avatar ? `url(${customer.avatar}) center/cover` : 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              background: customer?.avatar ? `url(${customer.avatar}) center/cover` : 'linear-gradient(45deg, var(--primary), #4cc9f0)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '2.5rem',
-              fontWeight: 800,
               color: 'white',
               boxShadow: '0 10px 20px rgba(0, 77, 160, 0.2)'
             }}>
-              {!customer?.avatar && (customer?.full_name?.[0] || 'U')}
+              {customer?.avatar ? null : <User size={48} />}
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>{customer?.full_name}</h3>
@@ -372,15 +370,15 @@ const CustomerList = () => {
                             width: '44px', 
                             height: '44px', 
                             borderRadius: '12px', 
-                            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                            background: 'linear-gradient(45deg, var(--primary), #4cc9f0)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
-                            fontWeight: 700,
-                            fontSize: '1.1rem',
                             boxShadow: '0 4px 10px rgba(0, 77, 160, 0.2)'
-                          }}>{customer.full_name?.[0] || 'U'}</div>
+                          }}>
+                            <User size={22} />
+                          </div>
                           <div>
                             <div style={{ fontWeight: 700, color: 'var(--text)' }}>{customer.full_name}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {customer.id.toString().substring(0, 8)}...</div>

@@ -15,6 +15,7 @@ import PenaltyRules from './pages/RiskManagement/PenaltyRules';
 import CancellationConfigs from './pages/RiskManagement/CancellationConfigs';
 import Login from './pages/Auth/Login';
 import MerchantList from './pages/Merchants/MerchantList';
+import Services from './pages/Services/Services';
 import authService from './services/authService';
 
 
@@ -116,6 +117,12 @@ function App() {
         <Route path="/rides/scheduled" element={
           <ProtectedRoute>
             <ScheduledDispatchBoard />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/services" element={
+          <ProtectedRoute>
+            <Services />
           </ProtectedRoute>
         } />
 
