@@ -20,7 +20,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
 const formatDate = (dateStr) => {
@@ -61,6 +61,7 @@ const VoucherList = () => {
   const [foundUsers, setFoundUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [searchingUsers, setSearchingUsers] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     fetchVouchers();
@@ -223,6 +224,7 @@ const VoucherList = () => {
     setSearchUserKeyword('');
     setFoundUsers([]);
     setSelectedUserIds([]);
+    setHasSearched(false);
     setShowAssignModal(true);
   };
 
@@ -230,6 +232,7 @@ const VoucherList = () => {
     if (!searchUserKeyword) return;
     try {
       setSearchingUsers(true);
+      setHasSearched(true);
       const res = await adminService.getCustomers({ keyword: searchUserKeyword });
       setFoundUsers(res.data.data || []);
     } catch (error) {
@@ -245,14 +248,47 @@ const VoucherList = () => {
       return;
     }
     try {
-      await voucherService.assignVoucher({
+      const res = await voucherService.assignVoucher({
         voucher_id: currentVoucher.id,
         user_ids: selectedUserIds
       });
-      toast.success('Gán voucher thành công');
+
+      if (res.success === false) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gán voucher thất bại',
+          text: res.message || 'Người dùng đã có voucher này hoặc lỗi không xác định',
+          confirmButtonColor: '#ef4444',
+        });
+        return;
+      }
+      
+      // Lấy phần text trong ngoặc đơn (ví dụ: (1 thành công, 0 bỏ qua))
+      const match = res.message?.match(/\(([^)]+)\)/);
+      const resultText = match ? match[0] : res.message;
+      
       setShowAssignModal(false);
+      setSelectedUserIds([]);
+      setFoundUsers([]);
+      setSearchUserKeyword('');
+      setHasSearched(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Gán voucher thành công',
+        text: `Kết quả: ${resultText}`,
+        confirmButtonColor: 'var(--primary)',
+        timer: 4000
+      });
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Lỗi khi gán voucher');
+      console.error('Assign voucher error:', error);
+      const errorMessage = error.response?.data?.message || 'Lỗi khi gán voucher';
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi hệ thống',
+        text: errorMessage,
+        confirmButtonColor: '#ef4444',
+      });
     }
   };
 
@@ -676,7 +712,10 @@ const VoucherList = () => {
                       className="input" 
                       placeholder="SĐT, Email hoặc ID..."
                       value={searchUserKeyword}
-                      onChange={(e) => setSearchUserKeyword(e.target.value)}
+                      onChange={(e) => {
+                        setSearchUserKeyword(e.target.value);
+                        setHasSearched(false);
+                      }}
                       onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
                     />
                   </div>
@@ -711,7 +750,7 @@ const VoucherList = () => {
                         </div>
                       </div>
                     ))
-                  ) : searchUserKeyword && !searchingUsers ? (
+                  ) : hasSearched && !searchingUsers ? (
                     <div className="text-center text-muted py-8" style={{ background: 'var(--bg-soft)', borderRadius: '12px' }}>
                       Không tìm thấy kết quả
                     </div>
