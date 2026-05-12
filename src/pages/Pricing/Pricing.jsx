@@ -4,7 +4,7 @@ import {
   Car, Save, Edit2, X, Plus, Trash2, Clock, 
   CloudRain, TrendingUp, Users, Monitor, RefreshCw,
   Bike, Bus, CarFront, Loader2, ClipboardCheck,
-  MapPin, Plane, Package, Banknote
+  MapPin, Plane, Package, Banknote, User
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -249,6 +249,7 @@ const Pricing = () => {
     2: { name: 'Ô tô 4 chỗ (Car 4)', icon: <Car size={22} />, color: '#10b981' },
     3: { name: 'Ô tô 7 chỗ (Car 7)', icon: <CarFront size={22} />, color: '#f59e0b' },
     4: { name: 'Ô tô 9 chỗ (Car 9)', icon: <Bus size={22} />, color: '#ef4444' },
+    6: { name: 'Dịch vụ Lái hộ', icon: <User size={22} />, color: '#6366f1' },
   };
 
   const SURGE_CONDITIONS = [

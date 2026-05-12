@@ -17,6 +17,7 @@ import Login from './pages/Auth/Login';
 import MerchantList from './pages/Merchants/MerchantList';
 import Services from './pages/Services/Services';
 import CommissionConfig from './pages/Finance/CommissionConfig';
+import ChauffeurRides from './pages/Chauffeur/ChauffeurRides';
 import authService from './services/authService';
 
 
@@ -130,6 +131,12 @@ function App() {
         <Route path="/finance/commissions" element={
           <ProtectedRoute>
             <CommissionConfig />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/chauffeur/rides" element={
+          <ProtectedRoute>
+            <ChauffeurRides />
           </ProtectedRoute>
         } />
 

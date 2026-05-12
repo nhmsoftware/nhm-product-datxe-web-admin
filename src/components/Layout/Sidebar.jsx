@@ -7,6 +7,7 @@ const Sidebar = () => {
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
     { icon: <ClipboardCheck size={20} />, label: 'Quản lý chuyến xe', path: '/rides/scheduled' },
     { icon: <Package size={20} />, label: 'Quản lý Dịch vụ', path: '/services' },
+    { icon: <Car size={20} />, label: 'Quản lý Lái hộ', path: '/chauffeur/rides' },
     { icon: <Users size={20} />, label: 'Khách hàng', path: '/customers' },
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
     { icon: <Store size={20} />, label: 'Nhà cung cấp', path: '/merchants' },
