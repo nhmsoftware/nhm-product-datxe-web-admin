@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, MoreVertical, CheckCircle, XCircle, Check, X, Ban, Unlock, Car, Eye, MapPin, Calendar, Smartphone, ShieldCheck, Mail, Info, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, MoreVertical, CheckCircle, XCircle, Check, X, Ban, Unlock, Car, Eye, MapPin, Calendar, Smartphone, ShieldCheck, Mail, Info, Package, ChevronLeft, ChevronRight, User } from 'lucide-react';
 
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';

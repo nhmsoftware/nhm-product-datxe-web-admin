@@ -43,7 +43,6 @@ const Pricing = () => {
     timeRate: 0,
     minFare: 0,
     surgeMultiplier: 1,
-    commissionRate: 0
   });
 
   // State cho việc quản lý Surge Rules
@@ -114,7 +113,6 @@ const Pricing = () => {
       timeRate: config.time_rate,
       minFare: config.min_fare,
       surgeMultiplier: config.surge_multiplier,
-      commissionRate: config.commission_rate
     });
   };
 
@@ -127,7 +125,6 @@ const Pricing = () => {
         time_rate: configForm.timeRate,
         min_fare: configForm.minFare,
         surge_multiplier: configForm.surgeMultiplier,
-        commission_rate: configForm.commissionRate
       });
       setEditingConfigId(null);
       fetchData();
@@ -341,13 +338,6 @@ const Pricing = () => {
                 editValue={configForm.surgeMultiplier}
                 onChange={val => setConfigForm({...configForm, surgeMultiplier: val})}
                 unit="x" step="0.1"
-              />
-              <PriceBox 
-                label="Hoa hồng" value={config.commission_rate} 
-                editing={editingConfigId === config.vehicle_type}
-                editValue={configForm.commissionRate}
-                onChange={val => setConfigForm({...configForm, commissionRate: val})}
-                unit="%"
               />
             </div>
           </div>

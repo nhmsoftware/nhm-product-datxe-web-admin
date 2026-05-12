@@ -801,9 +801,9 @@ const VoucherList = () => {
         }
 
         .btn-primary {
-          background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+          background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%);
           color: white;
-          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+          box-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
         }
 
         .btn-primary:hover {
@@ -813,9 +813,9 @@ const VoucherList = () => {
         }
 
         .btn-premium {
-          background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+          background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%);
           color: white;
-          box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+          box-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
         }
 
         .btn-premium:hover {

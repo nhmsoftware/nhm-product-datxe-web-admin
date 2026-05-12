@@ -486,13 +486,13 @@ const PenaltyRules = () => {
         .header-icon-main {
           width: 64px;
           height: 64px;
-          background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+          background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%);
           color: white;
           border-radius: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+          box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
         }
 
         .page-title {
@@ -771,8 +771,8 @@ const PenaltyRules = () => {
         .btn-save { padding: 1.25rem 2.5rem; border-radius: 18px; border: none; background: var(--primary); color: #ffffff; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2); transition: all 0.2s; }
         .btn-save:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3); filter: brightness(1.1); }
 
-        .btn-premium { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; padding: 1rem 2.25rem; border-radius: 20px; font-weight: 850; font-size: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 10px 20px rgba(0, 77, 160, 0.25); }
-        .btn-premium:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4); }
+        .btn-premium { background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%); color: white; border: none; padding: 1rem 2.25rem; border-radius: 20px; font-weight: 850; font-size: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 10px 20px rgba(0, 77, 160, 0.25); }
+        .btn-premium:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(67, 97, 238, 0.4); }
 
         /* Empty State */
         .empty-state-full { padding: 6rem 3rem; text-align: center; border-radius: 40px; border: 2px dashed var(--border); background: var(--card); grid-column: 1 / -1; }

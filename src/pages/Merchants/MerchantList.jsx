@@ -59,7 +59,7 @@ const MerchantDetailModal = ({ merchantId, onClose, onRefresh }) => {
               width: '140px', 
               height: '140px', 
               borderRadius: '28px', 
-              background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              background: 'linear-gradient(135deg, var(--primary), #4895ef)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -374,7 +374,7 @@ const MerchantList = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ 
                           width: '44px', height: '44px', borderRadius: '12px', 
-                          background: 'linear-gradient(45deg, var(--primary), var(--secondary))',
+                          background: 'linear-gradient(45deg, var(--primary), #4895ef)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'white'
                         }}>
                           {m.store_name?.[0]}

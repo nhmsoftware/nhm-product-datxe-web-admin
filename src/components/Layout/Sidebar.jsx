@@ -12,6 +12,7 @@ const Sidebar = () => {
     { icon: <Store size={20} />, label: 'Nhà cung cấp', path: '/merchants' },
     { icon: <Ticket size={20} />, label: 'Vouchers', path: '/vouchers' },
     { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
+    { icon: <Banknote size={20} />, label: 'Cấu hình hoa hồng', path: '/finance/commissions' },
     { icon: <ShieldAlert size={20} />, label: 'Chống gian lận', path: '/risk/anti-fraud' },
     { icon: <Gavel size={20} />, label: 'Quy tắc xử phạt', path: '/risk/penalty-rules' },
     { icon: <XCircle size={20} />, label: 'Phí hủy chuyến', path: '/risk/cancellation-configs' },

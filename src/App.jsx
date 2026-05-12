@@ -16,6 +16,7 @@ import CancellationConfigs from './pages/RiskManagement/CancellationConfigs';
 import Login from './pages/Auth/Login';
 import MerchantList from './pages/Merchants/MerchantList';
 import Services from './pages/Services/Services';
+import CommissionConfig from './pages/Finance/CommissionConfig';
 import authService from './services/authService';
 
 
@@ -123,6 +124,12 @@ function App() {
         <Route path="/services" element={
           <ProtectedRoute>
             <Services />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/finance/commissions" element={
+          <ProtectedRoute>
+            <CommissionConfig />
           </ProtectedRoute>
         } />
 

@@ -176,7 +176,7 @@ const Services = () => {
       <div className="dispatch-header">
         <div>
           <h1 className="page-title">Quản lý Dịch vụ</h1>
-          <p className="page-subtitle">Điều phối đơn Giao đồ ăn & Giao hàng (UC-123)</p>
+          <p className="page-subtitle">Điều phối đơn Giao đồ ăn &amp; Giao hàng</p>
         </div>
         
         <div className="header-actions">
@@ -284,9 +284,9 @@ const Services = () => {
                   checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
                 />
               </th>
-              <th>Khách hàng & Đơn hàng</th>
-              <th>Lộ trình (Lấy -> Giao)</th>
-              <th>Dịch vụ & Giá</th>
+              <th>Khách hàng &amp; Đơn hàng</th>
+              <th>Lộ trình (Lấy &rarr; Giao)</th>
+              <th>Dịch vụ &amp; Giá</th>
               <th>Trạng thái</th>
               <th style={{ textAlign: 'right' }}>Thao tác</th>
             </tr>
