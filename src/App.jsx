@@ -18,6 +18,9 @@ import MerchantList from './pages/Merchants/MerchantList';
 import Services from './pages/Services/Services';
 import CommissionConfig from './pages/Finance/CommissionConfig';
 import ChauffeurRides from './pages/Chauffeur/ChauffeurRides';
+import ComplaintList from './pages/Operations/ComplaintList';
+import RefundList from './pages/Operations/RefundList';
+import ViolationList from './pages/Operations/ViolationList';
 import authService from './services/authService';
 
 
@@ -137,6 +140,24 @@ function App() {
         <Route path="/chauffeur/rides" element={
           <ProtectedRoute>
             <ChauffeurRides />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/operations/complaints" element={
+          <ProtectedRoute>
+            <ComplaintList />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/operations/refunds" element={
+          <ProtectedRoute>
+            <RefundList />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/operations/violations" element={
+          <ProtectedRoute>
+            <ViolationList />
           </ProtectedRoute>
         } />
 

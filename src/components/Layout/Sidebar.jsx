@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle, Store } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle, Store, MessageSquare, Undo2, AlertTriangle } from 'lucide-react';
 
 const Sidebar = () => {
   const menuItems = [
@@ -14,6 +14,9 @@ const Sidebar = () => {
     { icon: <Ticket size={20} />, label: 'Vouchers', path: '/vouchers' },
     { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
     { icon: <Banknote size={20} />, label: 'Cấu hình hoa hồng', path: '/finance/commissions' },
+    { icon: <MessageSquare size={20} />, label: 'Khiếu nại', path: '/operations/complaints' },
+    { icon: <Undo2 size={20} />, label: 'Hoàn tiền', path: '/operations/refunds' },
+    { icon: <AlertTriangle size={20} />, label: 'Vi phạm & Cảnh báo', path: '/operations/violations' },
     { icon: <ShieldAlert size={20} />, label: 'Chống gian lận', path: '/risk/anti-fraud' },
     { icon: <Gavel size={20} />, label: 'Quy tắc xử phạt', path: '/risk/penalty-rules' },
     { icon: <XCircle size={20} />, label: 'Phí hủy chuyến', path: '/risk/cancellation-configs' },
