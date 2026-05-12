@@ -5,93 +5,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { X } from 'lucide-react';
 
-const LockCustomerModal = ({ customer, onClose, onConfirm }) => {
-  const [reason, setReason] = useState('Vi phạm điều khoản sử dụng');
-  const [duration, setDuration] = useState('7');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    await onConfirm({
-      is_active: false,
-      reason: reason,
-      locked_days: duration === 'permanent' ? 3650 : parseInt(duration)
-    });
-    setLoading(false);
-  };
-
-  return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-content" style={{ maxWidth: '450px' }}>
-        <div className="modal-header">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Ban size={22} className="text-error" /> Khóa khách hàng
-          </h2>
-          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="modal-body">
-          <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{customer.full_name}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{customer.phone}</div>
-          </div>
-
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Lý do khóa</label>
-            <textarea 
-              className="input-custom"
-              style={{ width: '100%', minHeight: '100px', padding: '0.75rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Nhập lý do chi tiết..."
-              required
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Thời hạn khóa</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              {[
-                { label: '1 ngày', value: '1' },
-                { label: '3 ngày', value: '3' },
-                { label: '7 ngày', value: '7' },
-                { label: '30 ngày', value: '30' },
-                { label: '90 ngày', value: '90' },
-                { label: 'Vĩnh viễn', value: 'permanent' },
-              ].map((opt) => (
-                <div 
-                  key={opt.value}
-                  onClick={() => setDuration(opt.value)}
-                  style={{ 
-                    padding: '0.75rem', 
-                    borderRadius: '10px', 
-                    border: duration === opt.value ? '2px solid var(--primary)' : '1px solid var(--border)',
-                    background: duration === opt.value ? 'var(--primary-soft)' : 'var(--bg-soft)',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: duration === opt.value ? 'var(--primary)' : 'var(--text)',
-                    transition: '0.2s'
-                  }}
-                >
-                  {opt.label}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button type="button" className="btn btn-glass" style={{ flex: 1 }} onClick={onClose}>Hủy</button>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1, background: 'var(--error)' }} disabled={loading}>
-              {loading ? 'Đang xử lý...' : 'Xác nhận khóa'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+// Removed LockCustomerModal to use standardized Swal.fire form logic.
 
 const CustomerDetailModal = ({ userId, onClose }) => {
   const [customer, setCustomer] = useState(null);
@@ -279,41 +193,77 @@ const CustomerList = () => {
   };
 
   const handleToggleStatus = async (customer) => {
-    if (customer.is_active) {
-      setLockTarget(customer);
-      return;
-    }
+    const isLocking = customer.is_active;
 
-    const result = await Swal.fire({
-      title: 'Mở khóa người dùng?',
-      text: 'Người dùng sẽ có thể đăng nhập lại vào hệ thống.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: 'var(--success)',
-      cancelButtonColor: 'var(--border)',
-      confirmButtonText: 'Mở khóa ngay',
-      cancelButtonText: 'Hủy bỏ',
-    });
+    if (isLocking) {
+      const { value: formValues } = await Swal.fire({
+        title: 'Khóa tài khoản khách hàng',
+        html: `
+          <div style="text-align: left;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Lý do khóa <span style="color: var(--error);">*</span></label>
+            <textarea id="lock-reason" class="swal2-textarea" style="margin: 0; width: 100%;" placeholder="Nhập lý do khóa..."></textarea>
+            
+            <label style="display: block; margin-top: 1.5rem; margin-bottom: 8px; font-weight: 600;">Số ngày khóa (Mặc định 2 ngày)</label>
+            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="1" value="2">
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Xác nhận khóa',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: 'var(--error)',
+        preConfirm: () => {
+          const reason = document.getElementById('lock-reason').value;
+          const days = document.getElementById('lock-days').value;
+          
+          if (!reason) {
+            Swal.showValidationMessage('Vui lòng nhập lý do khóa tài khoản.');
+            return false;
+          }
+          
+          return {
+            reason: reason,
+            locked_days: days ? parseInt(days) : 2
+          };
+        }
+      });
 
-    if (result.isConfirmed) {
-      try {
-        await adminService.updateCustomerStatus(customer.id, { is_active: true });
-        toast.success('Đã mở khóa khách hàng');
-        fetchCustomers();
-      } catch (error) {
-        toast.error('Cập nhật trạng thái thất bại');
+      if (formValues) {
+        try {
+          const loadingToast = toast.loading('Đang xử lý...');
+          await adminService.updateCustomerStatus(customer.id, {
+            is_active: false,
+            ...formValues
+          });
+          toast.dismiss(loadingToast);
+          toast.success('Đã khóa khách hàng');
+          fetchCustomers();
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Không thể khóa khách hàng');
+        }
       }
-    }
-  };
+    } else {
+      const result = await Swal.fire({
+        title: 'Mở khóa khách hàng?',
+        text: `Bạn có chắc chắn muốn mở khóa cho khách hàng: "${customer.full_name}" không?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Đồng ý mở khóa',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: 'var(--success)'
+      });
 
-  const confirmLock = async (data) => {
-    try {
-      await adminService.updateCustomerStatus(lockTarget.id, data);
-      toast.success('Đã khóa khách hàng');
-      setLockTarget(null);
-      fetchCustomers();
-    } catch (error) {
-      toast.error('Không thể khóa khách hàng');
+      if (result.isConfirmed) {
+        try {
+          const loadingToast = toast.loading('Đang xử lý...');
+          await adminService.updateCustomerStatus(customer.id, { is_active: true });
+          toast.dismiss(loadingToast);
+          toast.success('Đã mở khóa khách hàng');
+          fetchCustomers();
+        } catch (error) {
+          toast.error('Cập nhật trạng thái thất bại');
+        }
+      }
     }
   };
 
@@ -492,13 +442,7 @@ const CustomerList = () => {
         )}
       </div>
 
-      {lockTarget && (
-        <LockCustomerModal 
-          customer={lockTarget} 
-          onClose={() => setLockTarget(null)} 
-          onConfirm={confirmLock} 
-        />
-      )}
+      {/* lockTarget modal removed as it's replaced by Swal.fire form */}
 
       {selectedCustomerId && (
         <CustomerDetailModal 

@@ -246,53 +246,68 @@ const MerchantList = () => {
   };
 
   const handleToggleLock = async (m) => {
-    const isCurrentlyActive = m.user?.is_active;
+    const isLocking = m.user?.is_active;
     
-    if (isCurrentlyActive) {
-      // Logic Khóa
+    if (isLocking) {
       const { value: formValues } = await Swal.fire({
         title: 'Khóa tài khoản Merchant',
-        html:
-          '<input id="swal-input1" class="swal2-input" placeholder="Lý do khóa">' +
-          '<input id="swal-input2" type="number" class="swal2-input" placeholder="Số ngày khóa (mặc định 2)">',
+        html: `
+          <div style="text-align: left;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Lý do khóa <span style="color: var(--error);">*</span></label>
+            <textarea id="lock-reason" class="swal2-textarea" style="margin: 0; width: 100%;" placeholder="Nhập lý do khóa..."></textarea>
+            
+            <label style="display: block; margin-top: 1.5rem; margin-bottom: 8px; font-weight: 600;">Số ngày khóa (Mặc định 2 ngày)</label>
+            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="1" value="2">
+          </div>
+        `,
         focusConfirm: false,
-        preConfirm: () => {
-          return [
-            document.getElementById('swal-input1').value,
-            document.getElementById('swal-input2').value
-          ]
-        },
         showCancelButton: true,
-        confirmButtonText: 'Khóa ngay',
-        confirmButtonColor: '#ef4444'
+        confirmButtonText: 'Xác nhận khóa',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: 'var(--error)',
+        preConfirm: () => {
+          const reason = document.getElementById('lock-reason').value;
+          const days = document.getElementById('lock-days').value;
+          
+          if (!reason) {
+            Swal.showValidationMessage('Vui lòng nhập lý do khóa tài khoản.');
+            return false;
+          }
+          
+          return {
+            reason: reason,
+            locked_days: days ? parseInt(days) : 2
+          };
+        }
       });
 
       if (formValues) {
-        const [reason, days] = formValues;
-        if (!reason) return toast.error('Vui lòng nhập lý do');
-        
         try {
-          await merchantService.toggleLock(m.id, true, reason, days ? parseInt(days) : null);
-          toast.success('Đã khóa tài khoản');
+          const loadingToast = toast.loading('Đang xử lý...');
+          await merchantService.toggleLock(m.id, true, formValues.reason, formValues.locked_days);
+          toast.dismiss(loadingToast);
+          toast.success('Đã khóa tài khoản Merchant');
           fetchMerchants();
         } catch (error) {
           toast.error(error.response?.data?.message || 'Lỗi khi khóa');
         }
       }
     } else {
-      // Logic Mở khóa
       const result = await Swal.fire({
-        title: 'Mở khóa tài khoản?',
-        text: `Mở khóa cho Merchant "${m.store_name}"?`,
-        icon: 'warning',
+        title: 'Mở khóa Merchant?',
+        text: `Bạn có chắc chắn muốn mở khóa cho Merchant "${m.store_name}" không?`,
+        icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Mở khóa',
-        confirmButtonColor: '#00906a'
+        confirmButtonText: 'Đồng ý mở khóa',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: 'var(--success)'
       });
 
       if (result.isConfirmed) {
         try {
+          const loadingToast = toast.loading('Đang xử lý...');
           await merchantService.toggleLock(m.id, false);
+          toast.dismiss(loadingToast);
           toast.success('Mở khóa tài khoản thành công');
           fetchMerchants();
         } catch (error) {
@@ -399,9 +414,15 @@ const MerchantList = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${m.user?.is_active ? 'badge-success' : 'badge-error'}`}>
+                      <span className={`badge ${m.user?.is_active ? 'badge-success' : 'badge-error'}`} style={{ marginBottom: m.user?.is_active ? 0 : '4px' }}>
                         {m.user?.is_active ? 'Kích hoạt' : 'Bị khóa'}
                       </span>
+                      {!m.user?.is_active && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: '1.2' }}>
+                          <div style={{ fontWeight: 600, color: 'var(--error)' }}>Lý do: {m.user?.lock_reason || 'N/A'}</div>
+                          <div>Hết hạn: {m.user?.lock_expired_at ? new Date(m.user.lock_expired_at).toLocaleString('vi-VN') : 'Vĩnh viễn'}</div>
+                        </div>
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
