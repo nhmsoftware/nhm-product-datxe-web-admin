@@ -356,28 +356,85 @@ const DriverList = () => {
   };
 
   const handleToggleStatus = async (driver) => {
-    const newStatus = !driver.is_active;
-    const result = await Swal.fire({
-      title: newStatus ? 'Mở khóa tài xế?' : 'Khóa tài xế?',
-      text: newStatus ? `Mở khóa quyền hoạt động cho ${driver.name}` : `Tạm dừng quyền hoạt động của ${driver.name}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy',
-      confirmButtonColor: newStatus ? '#00906a' : '#ef4444'
-    });
+    const isLocking = driver.is_active; // Nếu đang active thì là thao tác Khóa
 
-    if (result.isConfirmed) {
-      try {
-        await adminService.updateDriverStatus(driver.id, {
-          is_active: newStatus,
-          lock_reason: newStatus ? '' : 'Vi phạm quy định',
-          locked_days: 7
-        });
-        toast.success(newStatus ? 'Đã mở khóa tài xế' : 'Đã khóa tài xế');
-        fetchDrivers();
-      } catch (error) {
-        toast.error('Cập nhật thất bại');
+    if (isLocking) {
+      // Flow Khóa tài xế (Form nhập lý do và số ngày)
+      const { value: formValues } = await Swal.fire({
+        title: 'Khóa tài khoản tài xế',
+        html: `
+          <div style="text-align: left;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Lý do khóa <span style="color: var(--error);">*</span></label>
+            <textarea id="lock-reason" class="swal2-textarea" style="margin: 0; width: 100%;" placeholder="Nhập lý do khóa..."></textarea>
+            
+            <label style="display: block; margin-top: 1.5rem; margin-bottom: 8px; font-weight: 600;">Số ngày khóa (Mặc định 2 ngày)</label>
+            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="1" value="2">
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Xác nhận khóa',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: 'var(--error)',
+        preConfirm: () => {
+          const reason = document.getElementById('lock-reason').value;
+          const days = document.getElementById('lock-days').value;
+          
+          if (!reason) {
+            Swal.showValidationMessage('Vui lòng nhập lý do khóa tài khoản.');
+            return false;
+          }
+          
+          if (days && (parseInt(days) <= 0 || isNaN(parseInt(days)))) {
+            Swal.showValidationMessage('Số ngày khóa không hợp lệ.');
+            return false;
+          }
+          
+          return {
+            lock_reason: reason,
+            locked_days: days ? parseInt(days) : 2
+          };
+        }
+      });
+
+      if (formValues) {
+        try {
+          const loadingToast = toast.loading('Đang xử lý...');
+          await adminService.updateDriverStatus(driver.id, {
+            is_active: false,
+            ...formValues
+          });
+          toast.dismiss(loadingToast);
+          toast.success('Khóa tài khoản tài xế thành công.');
+          fetchDrivers();
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại.');
+        }
+      }
+    } else {
+      // Flow Mở khóa (Confirm đơn giản)
+      const result = await Swal.fire({
+        title: 'Mở khóa tài xế?',
+        text: `Bạn có chắc chắn muốn mở khóa quyền hoạt động cho tài xế: "${driver.full_name}" không?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Đồng ý mở khóa',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: 'var(--success)'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const loadingToast = toast.loading('Đang xử lý...');
+          await adminService.updateDriverStatus(driver.id, {
+            is_active: true
+          });
+          toast.dismiss(loadingToast);
+          toast.success('Mở khóa tài khoản tài xế thành công.');
+          fetchDrivers();
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Cập nhật thất bại');
+        }
       }
     }
   };
