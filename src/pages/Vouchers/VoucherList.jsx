@@ -6,7 +6,6 @@ import {
   Plus, 
   Search, 
   Filter, 
-  MoreVertical, 
   Edit2, 
   Trash2, 
   UserPlus, 
@@ -801,7 +800,7 @@ const VoucherList = () => {
         }
 
         .btn-primary {
-          background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%);
+          background: var(--primary);
           color: white;
           box-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
         }
@@ -813,7 +812,7 @@ const VoucherList = () => {
         }
 
         .btn-premium {
-          background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%);
+          background: var(--primary);
           color: white;
           box-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
         }
@@ -1006,7 +1005,7 @@ const VoucherList = () => {
 
         .progress-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, var(--primary), #818cf8);
+          background: var(--primary);
           border-radius: 10px;
           transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
         }

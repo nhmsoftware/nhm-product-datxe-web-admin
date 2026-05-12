@@ -118,8 +118,8 @@ const AntiFraud = () => {
   };
 
   const chartData = stats?.risk_level_summary ? [
-    { name: 'Thấp', value: parseInt(stats.risk_level_summary['1'] || 0), color: '#10b981' },
-    { name: 'Trung bình', value: parseInt(stats.risk_level_summary['2'] || 0), color: '#f59e0b' },
+    { name: 'Thấp', value: parseInt(stats.risk_level_summary['1'] || 0), color: '#00906a' },
+    { name: 'Trung bình', value: parseInt(stats.risk_level_summary['2'] || 0), color: '#b78300' },
     { name: 'Cao', value: parseInt(stats.risk_level_summary['3'] || 0), color: '#f97316' },
     { name: 'Nghiêm trọng', value: parseInt(stats.risk_level_summary['4'] || 0), color: '#ef4444' },
   ].filter(d => d.value > 0) : [];
@@ -444,7 +444,7 @@ const AntiFraud = () => {
 
         .stat-card.critical .stat-icon-wrapper { background: rgba(239, 68, 68, 0.1); color: var(--red); }
         .stat-card.warning .stat-icon-wrapper { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
-        .stat-card.success .stat-icon-wrapper { background: rgba(16, 185, 129, 0.1); color: var(--green); }
+        .stat-card.success .stat-icon-wrapper { background: rgba(0, 144, 106, 0.1); color: var(--success); }
         .stat-card.info .stat-icon-wrapper { background: rgba(99, 102, 241, 0.1); color: var(--primary); }
 
         .stat-label {
@@ -668,16 +668,16 @@ const AntiFraud = () => {
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
         .detail-item label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; }
         .detail-value { padding: 1rem; background: var(--bg-soft); border-radius: 14px; font-weight: 700; border: 1px solid var(--border); color: var(--text); }
-        .detail-value.behavior { color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+        .detail-value.behavior { color: var(--primary); background: rgba(0, 73, 172, 0.1); }
 
         .metadata-box { background: #0f172a; color: #38bdf8; padding: 1.5rem; border-radius: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); }
 
         .modal-footer { padding: 1.5rem 2rem; background: var(--bg-soft); border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
 
         .btn-secondary { background: var(--card); border: 1px solid var(--border); padding: 0.875rem 1.5rem; border-radius: 14px; font-weight: 700; cursor: pointer; color: var(--text-muted); }
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 0.875rem 1.5rem; border-radius: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2); transition: all 0.2s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(99, 102, 241, 0.3); background: var(--primary-dark); }
-        .btn-warn { background: rgba(245, 158, 11, 0.1); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.2); padding: 0.875rem 1.5rem; border-radius: 14px; font-weight: 700; cursor: pointer; margin-right: 0.75rem; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 0.875rem 1.5rem; border-radius: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 20px rgba(0, 73, 172, 0.2); transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(0, 73, 172, 0.3); background: var(--primary-hover); }
+        .btn-warn { background: rgba(183, 131, 0, 0.1); color: #b78300; border: 1px solid rgba(183, 131, 0, 0.2); padding: 0.875rem 1.5rem; border-radius: 14px; font-weight: 700; cursor: pointer; margin-right: 0.75rem; }
 
         .footer-actions { display: flex; }
 

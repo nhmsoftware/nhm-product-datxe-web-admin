@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, MoreVertical, CheckCircle, XCircle, Check, X, Ban, Unlock, Car, Eye, MapPin, Calendar, Smartphone, ShieldCheck, Mail, Info, Package, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Search, Filter, CheckCircle, XCircle, Check, X, Ban, Unlock, Car, Eye, MapPin, Calendar, Smartphone, ShieldCheck, Mail, Info, Package, ChevronLeft, ChevronRight, User } from 'lucide-react';
 
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
@@ -98,12 +98,12 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
               width: '120px', 
               height: '120px', 
               borderRadius: '24px', 
-              background: 'linear-gradient(45deg, var(--primary), #4cc9f0)',
+              background: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              boxShadow: '0 10px 20px rgba(0, 77, 160, 0.3)',
+              boxShadow: '0 10px 20px rgba(0, 73, 172, 0.3)',
               overflow: 'hidden',
               cursor: driver?.avatar ? 'pointer' : 'default'
             }}>
@@ -374,7 +374,7 @@ const DriverList = () => {
       showCancelButton: true,
       confirmButtonText: 'Đồng ý duyệt',
       cancelButtonText: 'Hủy',
-      confirmButtonColor: '#10b981'
+      confirmButtonColor: '#00906a'
     });
 
     if (result.isConfirmed) {
@@ -423,7 +423,7 @@ const DriverList = () => {
       showCancelButton: true,
       confirmButtonText: 'Xác nhận',
       cancelButtonText: 'Hủy',
-      confirmButtonColor: newStatus ? '#10b981' : '#ef4444'
+      confirmButtonColor: newStatus ? '#00906a' : '#ef4444'
     });
 
     if (result.isConfirmed) {
@@ -607,12 +607,12 @@ const DriverList = () => {
                             width: '44px', 
                             height: '44px', 
                             borderRadius: '12px', 
-                            background: 'linear-gradient(45deg, var(--primary), #4cc9f0)',
+                            background: 'var(--primary)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
-                            boxShadow: '0 4px 10px rgba(0, 77, 160, 0.2)'
+                            boxShadow: '0 4px 10px rgba(0, 73, 172, 0.2)'
                           }}>
                             <User size={22} />
                           </div>
@@ -684,7 +684,7 @@ const DriverList = () => {
                             style={{ background: 'transparent', border: '1px solid var(--border)' }}
                             title={driver.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                           >
-                            {driver.is_active ? <Ban size={18} color="#ef4444" /> : <Unlock size={18} color="#10b981" />}
+                            {driver.is_active ? <Ban size={18} color="#ef4444" /> : <Unlock size={18} color="#00906a" />}
                           </button>
                         </div>
                       </td>

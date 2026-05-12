@@ -379,9 +379,6 @@ const ScheduledDispatchBoard = () => {
                           </button>
                         </>
                       )}
-                      <button className="btn-action default" onClick={(e) => e.stopPropagation()}>
-                        <MoreVertical size={16} />
-                      </button>
                     </div>
                   </td>
                 </tr>

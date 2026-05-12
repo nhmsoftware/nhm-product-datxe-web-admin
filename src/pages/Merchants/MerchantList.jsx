@@ -59,14 +59,14 @@ const MerchantDetailModal = ({ merchantId, onClose, onRefresh }) => {
               width: '140px', 
               height: '140px', 
               borderRadius: '28px', 
-              background: 'linear-gradient(135deg, var(--primary), #4895ef)',
+              background: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '3.5rem',
               fontWeight: 800,
               color: 'white',
-              boxShadow: '0 15px 30px rgba(0, 77, 160, 0.25)',
+              boxShadow: '0 15px 30px rgba(0, 73, 172, 0.25)',
               overflow: 'hidden'
             }}>
               {merchant.store_image ? (
@@ -209,7 +209,7 @@ const MerchantList = () => {
       showCancelButton: true,
       confirmButtonText: 'Đồng ý',
       cancelButtonText: 'Hủy',
-      confirmButtonColor: '#10b981'
+      confirmButtonColor: '#00906a'
     });
 
     if (result.isConfirmed) {
@@ -287,7 +287,7 @@ const MerchantList = () => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Mở khóa',
-        confirmButtonColor: '#10b981'
+        confirmButtonColor: '#00906a'
       });
 
       if (result.isConfirmed) {
@@ -374,7 +374,7 @@ const MerchantList = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ 
                           width: '44px', height: '44px', borderRadius: '12px', 
-                          background: 'linear-gradient(45deg, var(--primary), #4895ef)',
+                          background: 'var(--primary)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'white'
                         }}>
                           {m.store_name?.[0]}

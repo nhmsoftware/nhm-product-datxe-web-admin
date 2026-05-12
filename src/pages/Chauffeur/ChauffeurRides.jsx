@@ -96,7 +96,6 @@ const ChauffeurRides = () => {
            <button 
             onClick={handleExport}
             className="btn btn-primary px-6 flex items-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
           >
             <Download size={18} />
             Xuất Excel
@@ -222,9 +221,6 @@ const ChauffeurRides = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="btn-action default" onClick={(e) => e.stopPropagation()}>
-                      <MoreVertical size={16} />
-                    </button>
                   </td>
                 </tr>
               ))

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, MoreVertical, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smartphone, MapPin, Calendar, Info, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smartphone, MapPin, Calendar, Info, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -141,7 +141,7 @@ const CustomerDetailModal = ({ userId, onClose }) => {
               width: '100px', 
               height: '100px', 
               borderRadius: '24px', 
-              background: customer?.avatar ? `url(${customer.avatar}) center/cover` : 'linear-gradient(45deg, var(--primary), #4cc9f0)',
+              background: customer?.avatar ? `url(${customer.avatar}) center/cover` : 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -370,7 +370,7 @@ const CustomerList = () => {
                             width: '44px', 
                             height: '44px', 
                             borderRadius: '12px', 
-                            background: 'linear-gradient(45deg, var(--primary), #4cc9f0)',
+                            background: 'var(--primary)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -425,7 +425,7 @@ const CustomerList = () => {
                             className={`btn-icon ${customer.is_active ? 'btn-action-reject' : 'btn-action-approve'}`}
                             title={customer.is_active ? 'Khóa khách hàng' : 'Mở khóa khách hàng'}
                             style={{ 
-                              background: customer.is_active ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                              background: customer.is_active ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 144, 106, 0.1)',
                               color: customer.is_active ? 'var(--error)' : 'var(--success)'
                             }}
                           >

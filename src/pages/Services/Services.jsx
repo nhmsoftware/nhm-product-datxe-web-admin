@@ -9,7 +9,6 @@ import {
   Send,
   UserPlus,
   XCircle,
-  MoreVertical,
   Loader2,
   DollarSign,
   Coffee,
@@ -23,56 +22,9 @@ import {
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-const mockOrders = [
-  {
-    id: "ORD-12345",
-    order_code: "FD12345",
-    type: "Food",
-    customer_name: "Nguyễn Văn A",
-    merchant_name: "Phở Hùng - Nguyễn Trãi",
-    pickup_address: "123 Nguyễn Trãi, Q5",
-    destination_address: "456 Lê Lợi, Q1",
-    total_amount: 85000,
-    status: 'waiting', // waiting, assigned, completed, canceled
-    driver_name: null,
-    auto_dispatch: false,
-    created_at: "20:30"
-  },
-  {
-    id: "DEL-98765",
-    order_code: "DV98765",
-    type: "Delivery",
-    customer_name: "Trần Thị B",
-    merchant_name: null,
-    pickup_address: "Vincom Đồng Khởi, Q1",
-    destination_address: "Landmark 81, Bình Thạnh",
-    total_amount: 45000,
-    status: 'waiting',
-    driver_name: null,
-    auto_dispatch: true,
-    created_at: "20:15"
-  },
-  {
-    id: "ORD-54321",
-    order_code: "FD54321",
-    type: "Food",
-    customer_name: "Lê Văn C",
-    merchant_name: "Highlands Coffee",
-    pickup_address: "789 Điện Biên Phủ, Q3",
-    destination_address: "321 Nguyễn Đình Chiểu, Q3",
-    total_amount: 120000,
-    status: 'assigned',
-    driver_name: "Phạm Tài Xế",
-    auto_dispatch: false,
-    created_at: "19:45"
-  }
-];
+const mockOrders = [];
 
-const mockDrivers = [
-  { id: "DRV-001", full_name: "Nguyễn Tài Xế 1", rating: 4.9, distance: "1.2 km", phone: "0901234567" },
-  { id: "DRV-002", full_name: "Trần Tài Xế 2", rating: 4.8, distance: "2.5 km", phone: "0907654321" },
-  { id: "DRV-003", full_name: "Lê Tài Xế 3", rating: 5.0, distance: "0.8 km", phone: "0908888999" }
-];
+const mockDrivers = [];
 
 const Services = () => {
   const [orders, setOrders] = useState(mockOrders);
@@ -381,9 +333,6 @@ const Services = () => {
                           </button>
                         </>
                       )}
-                      <button className="btn-action default" onClick={(e) => e.stopPropagation()}>
-                        <MoreVertical size={16} />
-                      </button>
                     </div>
                   </td>
                 </tr>

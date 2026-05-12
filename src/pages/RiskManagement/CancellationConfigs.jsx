@@ -388,7 +388,7 @@ const CancellationConfigs = () => {
           font-size: 0.8rem;
           font-weight: 600;
         }
-        .cancellation-page .status-badge.active { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .cancellation-page .status-badge.active { background: rgba(0, 144, 106, 0.1); color: var(--success); }
         .cancellation-page .status-badge.inactive { background: rgba(100, 116, 139, 0.1); color: var(--text-muted); }
 
         /* Action Buttons */
@@ -531,7 +531,7 @@ const CancellationConfigs = () => {
         }
         .cancellation-page .btn-cancel:hover { background: var(--bg-soft); }
 
-        .cancellation-page .skeleton-row { height: 60px; background: linear-gradient(90deg, var(--bg-soft) 25%, var(--border) 50%, var(--bg-soft) 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 12px; }
+        .cancellation-page .skeleton-row { height: 60px; background: var(--bg-soft); animation: pulse 1.5s infinite; border-radius: 12px; }
         @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }

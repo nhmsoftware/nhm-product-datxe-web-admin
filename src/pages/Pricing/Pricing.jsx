@@ -166,7 +166,7 @@ const Pricing = () => {
       text: newStatus ? 'Tài xế sẽ nhận 100% doanh thu (0% hoa hồng).' : 'Hệ thống sẽ thu hoa hồng theo cấu hình chuẩn.',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#10b981',
+      confirmButtonColor: '#00906a',
       confirmButtonText: 'Xác nhận',
       background: document.body.className.includes('dark') ? '#1e293b' : '#fff',
       color: document.body.className.includes('dark') ? '#fff' : '#000',
@@ -246,8 +246,8 @@ const Pricing = () => {
 
   const VEHICLE_INFO = {
     1: { name: 'Xe máy (Bike)', icon: <Bike size={22} />, color: 'var(--primary)' },
-    2: { name: 'Ô tô 4 chỗ (Car 4)', icon: <Car size={22} />, color: '#10b981' },
-    3: { name: 'Ô tô 7 chỗ (Car 7)', icon: <CarFront size={22} />, color: '#f59e0b' },
+    2: { name: 'Ô tô 4 chỗ (Car 4)', icon: <Car size={22} />, color: '#00906a' },
+    3: { name: 'Ô tô 7 chỗ (Car 7)', icon: <CarFront size={22} />, color: '#b78300' },
     4: { name: 'Ô tô 9 chỗ (Car 9)', icon: <Bus size={22} />, color: '#ef4444' },
     6: { name: 'Dịch vụ Lái hộ', icon: <User size={22} />, color: '#6366f1' },
   };
@@ -575,7 +575,7 @@ const Pricing = () => {
 
         .free-mode-wrapper { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 1rem; background: var(--bg-soft); border-radius: 12px; }
         .switch-btn { width: 44px; height: 24px; border-radius: 12px; background: #cbd5e1; border: none; cursor: pointer; position: relative; transition: background 0.3s; }
-        .switch-btn.active { background: var(--success); }
+        .switch-btn.active { background: #00906a; }
         .switch-handle { width: 18px; height: 18px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; }
         .switch-btn.active .switch-handle { transform: translateX(20px); }
 
@@ -620,7 +620,7 @@ const Pricing = () => {
         .multiplier-text { font-weight: 800; color: var(--warning); font-size: 1.1rem; }
         
         .status-tag { padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(239, 68, 68, 0.1); color: var(--error); }
-        .status-tag.active { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .status-tag.active { background: rgba(0, 144, 106, 0.1); color: #00906a; }
 
         .conditions-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; background: var(--bg-soft); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
         .cond-checkbox { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 6px; transition: background 0.2s; }

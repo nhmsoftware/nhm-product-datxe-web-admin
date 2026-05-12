@@ -11,7 +11,6 @@ import {
   MessageSquare, 
   Coins, 
   History,
-  MoreVertical,
   Edit2,
   Trash2,
   Power,
@@ -486,13 +485,13 @@ const PenaltyRules = () => {
         .header-icon-main {
           width: 64px;
           height: 64px;
-          background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%);
+          background: var(--primary);
           color: white;
           border-radius: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+          box-shadow: 0 10px 25px rgba(0, 73, 172, 0.3);
         }
 
         .page-title {
@@ -500,7 +499,7 @@ const PenaltyRules = () => {
           font-weight: 850;
           margin: 0;
           letter-spacing: -0.03em;
-          background: linear-gradient(135deg, var(--text) 0%, var(--primary) 100%);
+          background: var(--text);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -581,8 +580,8 @@ const PenaltyRules = () => {
         }
 
         .action-btn:hover { background: var(--border); color: var(--primary); transform: scale(1.1); }
-        .action-btn.toggle.active { color: #10b981; background: rgba(16, 185, 129, 0.1); }
-        .action-btn.delete:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .action-btn.toggle.active { color: #00906a; background: rgba(0, 144, 106, 0.1); }
+        .action-btn.delete:hover { color: #ff4d6d; background: rgba(255, 77, 109, 0.1); }
 
         .rule-badge-group {
           display: flex;
@@ -665,12 +664,12 @@ const PenaltyRules = () => {
         }
 
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
-        .dot.pulse { background: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); animation: statusPulse 2s infinite; }
+        .dot.pulse { background: #00906a; box-shadow: 0 0 0 0 rgba(0, 144, 106, 0.7); animation: statusPulse 2s infinite; }
 
         @keyframes statusPulse {
-          0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+          0% { box-shadow: 0 0 0 0 rgba(0, 144, 106, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(0, 144, 106, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(0, 144, 106, 0); }
         }
 
         .arrow-icon { color: var(--border); transition: all 0.3s; }
@@ -759,7 +758,7 @@ const PenaltyRules = () => {
         .toggle-container input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
         .toggle-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .toggle-slider { background-color: #10b981; }
+        input:checked + .toggle-slider { background-color: #00906a; }
         input:checked + .toggle-slider:before { transform: translateX(26px); }
 
         .toggle-title { display: block; font-weight: 800; font-size: 1rem; color: var(--text); }
@@ -771,8 +770,8 @@ const PenaltyRules = () => {
         .btn-save { padding: 1.25rem 2.5rem; border-radius: 18px; border: none; background: var(--primary); color: #ffffff; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2); transition: all 0.2s; }
         .btn-save:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3); filter: brightness(1.1); }
 
-        .btn-premium { background: linear-gradient(135deg, var(--primary) 0%, #4895ef 100%); color: white; border: none; padding: 1rem 2.25rem; border-radius: 20px; font-weight: 850; font-size: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 10px 20px rgba(0, 77, 160, 0.25); }
-        .btn-premium:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(67, 97, 238, 0.4); }
+        .btn-premium { background: var(--primary); color: white; border: none; padding: 1rem 2.25rem; border-radius: 20px; font-weight: 850; font-size: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 10px 20px rgba(0, 73, 172, 0.25); }
+        .btn-premium:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(0, 73, 172, 0.4); }
 
         /* Empty State */
         .empty-state-full { padding: 6rem 3rem; text-align: center; border-radius: 40px; border: 2px dashed var(--border); background: var(--card); grid-column: 1 / -1; }
@@ -782,8 +781,7 @@ const PenaltyRules = () => {
 
         /* Skeletons */
         .skeleton-card { background: var(--card); border-radius: 32px; padding: 2rem; border: 1px solid var(--border); }
-        .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: skeletonPulse 1.5s infinite; }
-        @keyframes skeletonPulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .skeleton { background: var(--bg-soft); animation: pulse 1.5s infinite; border-radius: 8px; }
 
         .animate-slide-down { animation: slideDown 0.3s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }

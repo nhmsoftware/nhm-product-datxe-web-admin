@@ -4,7 +4,7 @@ import {
   Banknote, Plus, Search, Edit2, Trash2, 
   CheckCircle2, AlertCircle, Calendar, 
   MapPin, Globe, Utensils, Bike, Package,
-  MoreVertical, Filter, X, Save, Loader2
+  Filter, X, Save, Loader2
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -132,7 +132,7 @@ const CommissionConfig = () => {
   const SERVICE_TYPES = {
     1: { label: 'Chuyến xe', icon: <Bike size={16} />, color: 'var(--primary)', bg: 'rgba(67, 97, 238, 0.1)' },
     2: { label: 'Nhà hàng (Food)', icon: <Utensils size={16} />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-    3: { label: 'Giao hàng', icon: <Package size={16} />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' }
+    3: { label: 'Giao hàng', icon: <Package size={16} />, color: '#00906a', bg: 'rgba(0, 144, 106, 0.1)' }
   };
 
   const filteredRules = rules.filter(r => filterType === 'all' || r.service_type === parseInt(filterType));
@@ -162,7 +162,7 @@ const CommissionConfig = () => {
           </div>
         </div>
         <div className="stat-card glass">
-          <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+          <div className="stat-icon" style={{ background: 'rgba(0, 144, 106, 0.1)', color: '#00906a' }}>
             <CheckCircle2 size={24} />
           </div>
           <div className="stat-info">
@@ -386,7 +386,7 @@ const CommissionConfig = () => {
         .date-info { font-size: 0.75rem; display: flex; flex-direction: column; gap: 2px; font-weight: 600; color: var(--text-muted); }
         
         .status-pill { padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #fee2e2; color: #ef4444; }
-        .status-pill.active { background: #d1fae5; color: #10b981; }
+        .status-pill.active { background: #d1fae5; color: #00906a; }
 
         .action-btns { display: flex; gap: 0.5rem; }
         .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); transition: 0.2s; background: white; }
