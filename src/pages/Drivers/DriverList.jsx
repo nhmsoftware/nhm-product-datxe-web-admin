@@ -45,29 +45,7 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
     }
   };
 
-  const handleAssignGroup = async (groupType) => {
-    const label = groupType === 1 ? 'Đội xe nhà' : 'Tài xế đối tác';
-    const result = await Swal.fire({
-      title: `Gán vào ${label}?`,
-      text: `Bạn có chắc muốn gán tài xế này vào ${label}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Đồng ý',
-      cancelButtonText: 'Hủy',
-      confirmButtonColor: 'var(--primary)',
-    });
 
-    if (result.isConfirmed) {
-      try {
-        await adminService.assignDriverGroup(userId, groupType);
-        toast.success('Gán đội xe thành công');
-        fetchDetail();
-        onRefresh();
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Lỗi khi gán đội xe');
-      }
-    }
-  };
 
   if (loading) return (
     <div className="modal-overlay">
@@ -191,44 +169,6 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                           </span>
                         )}
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {driver.driver_group_type !== 1 && (
-                          <button 
-                            onClick={() => handleAssignGroup(1)}
-                            disabled={driver.kyc_status !== 2}
-                            style={{ 
-                              padding: '2px 8px', 
-                              fontSize: '0.65rem', 
-                              borderRadius: '6px', 
-                              background: driver.kyc_status === 2 ? 'rgba(67, 97, 238, 0.1)' : 'var(--bg-soft)', 
-                              color: driver.kyc_status === 2 ? 'var(--primary)' : 'var(--text-muted)',
-                              border: `1px solid ${driver.kyc_status === 2 ? 'var(--primary)' : 'var(--border)'}`,
-                              cursor: driver.kyc_status === 2 ? 'pointer' : 'not-allowed',
-                              opacity: driver.kyc_status === 2 ? 1 : 0.5
-                            }}
-                          >
-                            Gán Xe Nhà
-                          </button>
-                        )}
-                        {driver.driver_group_type !== 2 && (
-                          <button 
-                            onClick={() => handleAssignGroup(2)}
-                            disabled={driver.kyc_status !== 2}
-                            style={{ 
-                              padding: '2px 8px', 
-                              fontSize: '0.65rem', 
-                              borderRadius: '6px', 
-                              background: driver.kyc_status === 2 ? 'rgba(247, 37, 133, 0.1)' : 'var(--bg-soft)', 
-                              color: driver.kyc_status === 2 ? 'var(--secondary)' : 'var(--text-muted)',
-                              border: `1px solid ${driver.kyc_status === 2 ? 'var(--secondary)' : 'var(--border)'}`,
-                              cursor: driver.kyc_status === 2 ? 'pointer' : 'not-allowed',
-                              opacity: driver.kyc_status === 2 ? 1 : 0.5
-                            }}
-                          >
-                            Gán Đối Tác
-                          </button>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -339,6 +279,7 @@ const DriverList = () => {
   });
 
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedDrivers, setSelectedDrivers] = useState([]);
 
   useEffect(() => {
     fetchDrivers();
@@ -441,6 +382,79 @@ const DriverList = () => {
     }
   };
 
+  const handleAssignGroup = async (userId, groupType) => {
+    const label = groupType === 1 ? 'Đội xe nhà' : 'Tài xế đối tác';
+    const result = await Swal.fire({
+      title: `Gán vào ${label}?`,
+      text: `Bạn có chắc muốn gán tài xế này vào ${label}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: 'var(--primary)',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await adminService.assignDriverGroup(userId, groupType);
+        toast.success('Gán đội xe thành công');
+        fetchDrivers();
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Lỗi khi gán đội xe');
+      }
+    }
+  };
+
+  const handleBulkAssignGroup = async (groupType) => {
+    if (selectedDrivers.length === 0) {
+       toast.error('Chưa có tài xế nào được tích');
+       return;
+    }
+    const label = groupType === 1 ? 'Đội xe nhà' : 'Tài xế đối tác';
+    const result = await Swal.fire({
+      title: `Gán ${selectedDrivers.length} tài xế vào ${label}?`,
+      text: `Bạn có chắc muốn gán những tài xế đã chọn vào ${label}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: 'var(--primary)',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const loadingToast = toast.loading('Đang xử lý...');
+        for(let id of selectedDrivers) {
+            await adminService.assignDriverGroup(id, groupType);
+        }
+        toast.dismiss(loadingToast);
+        toast.success(`Đã gán thành công ${selectedDrivers.length} tài xế`);
+        setSelectedDrivers([]);
+        fetchDrivers();
+      } catch (error) {
+        toast.dismiss();
+        toast.error('Có lỗi xảy ra khi gán đội xe');
+      }
+    }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const validDrivers = drivers.filter(d => d.kyc_status === 2).map(d => d.id);
+      setSelectedDrivers(validDrivers);
+    } else {
+      setSelectedDrivers([]);
+    }
+  };
+
+  const handleSelectDriver = (e, driverId) => {
+    if (e.target.checked) {
+      setSelectedDrivers([...selectedDrivers, driverId]);
+    } else {
+      setSelectedDrivers(selectedDrivers.filter(id => id !== driverId));
+    }
+  };
+
   const handleExport = async () => {
     try {
       toast.loading('Đang chuẩn bị file...');
@@ -483,6 +497,9 @@ const DriverList = () => {
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Hệ thống quản lý thông tin và xét duyệt hồ sơ tài xế.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn btn-primary" onClick={() => handleBulkAssignGroup(1)}>
+            <Car size={18} /> {selectedDrivers.length > 0 ? `Gán ${selectedDrivers.length} tài xế vào Xe nhà` : 'Gán vào Xe nhà'}
+          </button>
           <button className="btn btn-glass" onClick={() => fetchDrivers()}>
             <Filter size={18} /> Làm mới
           </button>
@@ -521,6 +538,7 @@ const DriverList = () => {
             placeholder="Tìm kiếm theo tên, SĐT hoặc email..." 
             style={{ width: '100%', padding: '0.875rem 1rem 0.875rem 2.75rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', transition: 'var(--transition)' }}
             className="input-focus"
+            value={params.keyword || ''}
             onChange={(e) => setParams({ ...params, keyword: e.target.value, page: 1 })}
           />
         </div>
@@ -549,10 +567,13 @@ const DriverList = () => {
 
       <div className="glass" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden' }}>
         {loading ? (
-          <div className="table-container">
+          <div className="table-container" key="loading-state">
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>
+                    <input type="checkbox" disabled checked={false} readOnly />
+                  </th>
                   <th>Họ và tên</th>
                   <th>Thông tin liên hệ</th>
                   <th>Trạng thái KYC</th>
@@ -565,6 +586,7 @@ const DriverList = () => {
               <tbody>
                 {[1, 2, 3, 4, 5].map(i => (
                   <tr key={i}>
+                    <td style={{ textAlign: 'center' }}><input type="checkbox" disabled checked={false} readOnly /></td>
                     <td><div className="skeleton" style={{ width: '150px', height: '1.5rem' }}></div></td>
                     <td><div className="skeleton" style={{ width: '120px', height: '1.5rem' }}></div></td>
                     <td><div className="skeleton" style={{ width: '80px', height: '1.5rem' }}></div></td>
@@ -585,10 +607,17 @@ const DriverList = () => {
           </div>
         ) : (
           <>
-            <div className="table-container">
+            <div className="table-container" key="data-state">
               <table>
                 <thead>
                   <tr>
+                    <th style={{ width: '40px', textAlign: 'center' }}>
+                      <input 
+                        type="checkbox" 
+                        onChange={handleSelectAll}
+                        checked={!!(drivers.length > 0 && selectedDrivers.length > 0 && selectedDrivers.length === drivers.filter(d => d.kyc_status === 2).length)}
+                      />
+                    </th>
                     <th>Họ và tên</th>
                     <th>Thông tin liên hệ</th>
                     <th>Trạng thái KYC</th>
@@ -601,6 +630,14 @@ const DriverList = () => {
                 <tbody>
                   {drivers.map(driver => (
                     <tr key={driver.id} className="glass-hover">
+                      <td style={{ textAlign: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          disabled={driver.kyc_status !== 2}
+                          checked={!!selectedDrivers.includes(driver.id)}
+                          onChange={(e) => handleSelectDriver(e, driver.id)}
+                        />
+                      </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           <div style={{ 
@@ -660,6 +697,24 @@ const DriverList = () => {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                          {driver.kyc_status === 2 && driver.driver_group_type !== 1 && (
+                            <button 
+                              onClick={() => handleAssignGroup(driver.id, 1)} 
+                              className="btn-action"
+                              style={{ background: 'rgba(67, 97, 238, 0.1)', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                            >
+                              <Car size={16} /> Gán Xe Nhà
+                            </button>
+                          )}
+                          {driver.kyc_status === 2 && driver.driver_group_type !== 2 && (
+                            <button 
+                              onClick={() => handleAssignGroup(driver.id, 2)} 
+                              className="btn-action"
+                              style={{ background: 'rgba(247, 37, 133, 0.1)', color: 'var(--secondary)', borderColor: 'var(--secondary)' }}
+                            >
+                              <Car size={16} /> Gán Đối Tác
+                            </button>
+                          )}
                           <button 
                             onClick={() => setSelectedUserId(driver.id)} 
                             className="btn-action btn-action-view"

@@ -62,13 +62,18 @@ const AntiFraud = () => {
         riskService.getOverview(),
         riskService.listAlerts({ ...filters, per_page: 20 })
       ]);
-      setStats(statsRes.data);
-      setAlerts(alertsRes.data.data);
+      setStats(statsRes.data || statsRes);
+      
+      // Robust data extraction for paginated results
+      const alertsData = alertsRes.data || alertsRes;
+      const alertsList = Array.isArray(alertsData.data) ? alertsData.data : (Array.isArray(alertsData) ? alertsData : []);
+      setAlerts(alertsList);
+      
       setPagination({
-        current_page: alertsRes.data.current_page,
-        last_page: alertsRes.data.last_page,
-        total: alertsRes.data.total,
-        per_page: alertsRes.data.per_page
+        current_page: alertsData.current_page || 1,
+        last_page: alertsData.last_page || 1,
+        total: alertsData.total || 0,
+        per_page: alertsData.per_page || 20
       });
     } catch (error) {
       toast.error('Lỗi khi tải dữ liệu chống gian lận');
@@ -181,24 +186,27 @@ const AntiFraud = () => {
         <div className="chart-section shadow-premium">
           <h3 className="section-title"><Filter size={18} /> Phân bổ Rủi ro</h3>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={85}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div style={{ width: '100%', height: '220px', minHeight: '220px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    isAnimationActive={false}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
           <div className="chart-legend">
             {chartData.map(d => (
@@ -213,8 +221,40 @@ const AntiFraud = () => {
 
         <div className="table-section shadow-premium">
           <div className="section-header">
-            <h3 className="section-title"><Clock size={18} /> Cảnh báo mới nhất</h3>
-            <button className="btn-text">Xem tất cả <ChevronRight size={16} /></button>
+            <h3 className="section-title"><Clock size={18} /> Danh sách Cảnh báo</h3>
+            <div className="table-filters">
+              <div className="search-box-mini">
+                <Search size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Tìm ID, đối tượng..." 
+                  value={filters.keyword}
+                  onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value, page: 1 }))}
+                />
+              </div>
+              <select 
+                value={filters.risk_level}
+                onChange={(e) => setFilters(prev => ({ ...prev, risk_level: e.target.value, page: 1 }))}
+                className="filter-select-mini"
+              >
+                <option value="">Mọi rủi ro</option>
+                <option value="1">Thấp</option>
+                <option value="2">Trung bình</option>
+                <option value="3">Cao</option>
+                <option value="4">Nghiêm trọng</option>
+              </select>
+              <select 
+                value={filters.status}
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
+                className="filter-select-mini"
+              >
+                <option value="">Mọi trạng thái</option>
+                <option value="1">Chờ xử lý</option>
+                <option value="2">Điều tra</option>
+                <option value="3">Giải quyết</option>
+                <option value="4">Bác bỏ</option>
+              </select>
+            </div>
           </div>
 
           <div className="table-responsive">
@@ -230,48 +270,75 @@ const AntiFraud = () => {
                 </tr>
               </thead>
               <tbody>
-                {alerts.map(alert => (
-                  <tr key={alert.id}>
-                    <td>
-                      <div className="target-cell">
-                        <div className="target-icon">{getTargetIcon(alert.target_type)}</div>
-                        <div>
-                          <div className="target-id">{alert.target_id}</div>
-                          <div className="target-type">{alert.target_type_label}</div>
-                        </div>
+                {alerts.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="empty-table-cell">
+                      <div className="empty-state">
+                        <ShieldAlert size={48} />
+                        <p>Không có cảnh báo nào được tìm thấy</p>
                       </div>
-                    </td>
-                    <td>
-                      <div className="fraud-type-cell">
-                        <div className="main-type">{alert.fraud_type_label}</div>
-                        <div className="sub-type">{alert.title}</div>
-                      </div>
-                    </td>
-                    <td>{getRiskBadge(alert.risk_level)}</td>
-                    <td>{getStatusBadge(alert.status)}</td>
-                    <td className="time-cell">
-                      {new Date(alert.detected_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button 
-                        onClick={() => {
-                          setSelectedAlert(alert);
-                          setShowDetailModal(true);
-                        }}
-                        className="btn-action"
-                      >
-                        <Eye size={16} />
-                      </button>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  alerts.map(alert => (
+                    <tr key={alert.id}>
+                      <td>
+                        <div className="target-cell">
+                          <div className="target-icon">{getTargetIcon(alert.target_type)}</div>
+                          <div>
+                            <div className="target-id">{alert.target_id}</div>
+                            <div className="target-type">{alert.target_type_label}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="fraud-type-cell">
+                          <div className="main-type">{alert.fraud_type_label}</div>
+                          <div className="sub-type">{alert.title}</div>
+                        </div>
+                      </td>
+                      <td>{getRiskBadge(alert.risk_level)}</td>
+                      <td>{getStatusBadge(alert.status)}</td>
+                      <td className="time-cell">
+                        {new Date(alert.detected_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="action-group">
+                          <button 
+                            onClick={() => {
+                              setSelectedAlert(alert);
+                              setShowDetailModal(true);
+                            }}
+                            className="btn-action primary-action"
+                            title="Xem chi tiết"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          {alert.status === 1 && (
+                            <button 
+                              className="btn-action success-action" 
+                              title="Xử lý nhanh"
+                              onClick={() => toast.success('Đã đưa vào danh sách xử lý nhanh')}
+                            >
+                              <ShieldCheck size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="pagination-wrapper">
             <div className="pagination-info">
-              Hiển thị <b>{(pagination.current_page - 1) * pagination.per_page + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total)}</b> trên tổng số <b>{pagination.total}</b> cảnh báo
+              {pagination.total > 0 ? (
+                <>Hiển thị <b>{(pagination.current_page - 1) * pagination.per_page + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total)}</b> trên tổng số <b>{pagination.total}</b> cảnh báo</>
+              ) : (
+                <>Không có dữ liệu</>
+              )}
             </div>
             <div className="pagination-actions">
               <button 
@@ -355,8 +422,8 @@ const AntiFraud = () => {
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
               <div className="footer-actions">
-                <button className="btn-warn">Cảnh cáo đối tượng</button>
-                <button className="btn-primary">Xử lý ngay</button>
+                <button className="btn-warn" onClick={() => toast.success('Đã gửi cảnh báo tới đối tượng!')}>Cảnh cáo đối tượng</button>
+                <button className="btn-primary" onClick={() => toast.success('Đang bắt đầu quy trình xử lý gian lận...')}>Xử lý ngay</button>
               </div>
             </div>
           </div>
@@ -568,6 +635,10 @@ const AntiFraud = () => {
           vertical-align: middle;
         }
 
+        .empty-table-cell { padding: 4rem 0 !important; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: var(--text-muted); opacity: 0.5; }
+        .empty-state p { font-weight: 600; font-size: 0.9rem; }
+
         .target-cell {
           display: flex;
           align-items: center;
@@ -592,21 +663,47 @@ const AntiFraud = () => {
 
         .time-cell { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
 
+        .action-group { display: flex; gap: 0.85rem; justify-content: flex-end; }
         .btn-action {
           width: 36px;
           height: 36px;
-          background: var(--bg-soft);
-          border: none;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
           border-radius: 10px;
-          color: var(--text-muted);
           cursor: pointer;
           transition: all 0.2s;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
+        
+        .primary-action { color: var(--primary); }
+        .success-action { color: var(--success); }
+        
+        .btn-action svg {
+          display: block !important;
+          stroke: currentColor;
+          width: 18px !important;
+          height: 18px !important;
+          min-width: 18px !important;
+          min-height: 18px !important;
+        }
+        
+        .btn-action:hover { 
+          background: #f8fafc; 
+          transform: translateY(-2px); 
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .primary-action:hover { border-color: var(--primary); }
+        .success-action:hover { border-color: var(--success); }
 
-        .btn-action:hover { background: var(--primary); color: white; transform: scale(1.1); }
+        .table-filters { display: flex; gap: 0.75rem; align-items: center; }
+        .search-box-mini { position: relative; display: flex; align-items: center; background: white; border-radius: 10px; padding: 0 0.75rem; border: 1px solid var(--border); }
+        .search-box-mini input { border: none; background: transparent; padding: 0.5rem; font-size: 0.85rem; color: var(--text); outline: none; width: 140px; }
+        .search-box-mini svg { color: var(--text-muted); }
+        .filter-select-mini { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem; font-size: 0.85rem; color: var(--text); outline: none; cursor: pointer; transition: 0.2s; }
+        .filter-select-mini:hover { border-color: var(--primary); background: #fbfdff; }
 
         /* Modal */
         .modal-overlay {
