@@ -1,18 +1,19 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle, Store, MessageSquare, Undo2, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, Car, Settings, LogOut, Package, Banknote, ClipboardCheck, Ticket, ShieldAlert, Gavel, XCircle, Store, MessageSquare, Undo2, AlertTriangle, Landmark } from 'lucide-react';
 
 const Sidebar = () => {
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
+    { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: '/' },
     { icon: <ClipboardCheck size={20} />, label: 'Quản lý chuyến xe', path: '/rides/scheduled' },
     { icon: <Package size={20} />, label: 'Quản lý Dịch vụ', path: '/services' },
     { icon: <Car size={20} />, label: 'Quản lý Lái hộ', path: '/chauffeur/rides' },
     { icon: <Users size={20} />, label: 'Khách hàng', path: '/customers' },
     { icon: <Car size={20} />, label: 'Tài xế', path: '/drivers' },
     { icon: <Store size={20} />, label: 'Nhà cung cấp', path: '/merchants' },
-    { icon: <Ticket size={20} />, label: 'Vouchers', path: '/vouchers' },
+    { icon: <Ticket size={20} />, label: 'Mã giảm giá', path: '/vouchers' },
     { icon: <Banknote size={20} />, label: 'Cấu hình giá', path: '/pricing' },
+    { icon: <Landmark size={20} />, label: 'Tài chính tài xế', path: '/finance/driver-summary' },
     { icon: <Banknote size={20} />, label: 'Cấu hình hoa hồng', path: '/finance/commissions' },
     { icon: <MessageSquare size={20} />, label: 'Khiếu nại', path: '/operations/complaints' },
     { icon: <Undo2 size={20} />, label: 'Hoàn tiền', path: '/operations/refunds' },

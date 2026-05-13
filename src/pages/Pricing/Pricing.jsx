@@ -6,7 +6,7 @@ import {
   Bike, Bus, CarFront, Loader2, ClipboardCheck,
   MapPin, Plane, Package, Banknote, User
 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
 const Pricing = () => {
@@ -265,7 +265,6 @@ const Pricing = () => {
 
   return (
     <div className="pricing-page">
-      <Toaster position="top-right" reverseOrder={false} />
       
       <div className="header-info">
         <h1 className="main-title">Cấu hình giá cước</h1>

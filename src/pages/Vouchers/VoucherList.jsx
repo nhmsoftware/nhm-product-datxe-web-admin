@@ -425,7 +425,7 @@ const VoucherList = () => {
                   </td>
                   <td>
                     <span className={`badge ${voucher.is_active ? 'badge-success' : 'badge-error'}`}>
-                      {voucher.is_active ? 'Active' : 'Inactive'}
+                      {voucher.is_active ? 'Đang chạy' : 'Đã dừng'}
                     </span>
                   </td>
                   <td>

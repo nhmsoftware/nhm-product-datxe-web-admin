@@ -252,14 +252,14 @@ const Dashboard = () => {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{currentTime.toLocaleTimeString('vi-VN')}</div>
-          <div className="badge badge-success animate-pulse" style={{ marginTop: '0.5rem' }}><Activity size={12} /> Live</div>
+          <div className="badge badge-success animate-pulse" style={{ marginTop: '0.5rem' }}><Activity size={12} /> Trực tiếp</div>
         </div>
       </div>
 
       <div className="stats-grid" style={{ marginBottom: '2.5rem' }}>
         <StatTile icon={<Users />} label="Người dùng" value={stats?.total_users || 0} trend="+12%" color="#4361ee" loading={loading} />
         <StatTile icon={<ShoppingBag />} label="Chuyến đi" value={stats?.total_orders || 0} trend="+8.5%" color="#f72585" loading={loading} />
-        <StatTile icon={<Car />} label="Tài xế Online" value={stats?.active_drivers || 0} trend="+3.2%" color="#06d6a0" loading={loading} />
+        <StatTile icon={<Car />} label="Tài xế đang trực tuyến" value={stats?.active_drivers || 0} trend="+3.2%" color="#06d6a0" loading={loading} />
         <StatTile icon={<DollarSign />} label="Doanh thu" value={stats?.total_revenue || '0đ'} trend="+15.4%" color="#ffb703" loading={loading} isCurrency />
       </div>
 

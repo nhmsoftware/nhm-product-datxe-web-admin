@@ -21,6 +21,9 @@ import ChauffeurRides from './pages/Chauffeur/ChauffeurRides';
 import ComplaintList from './pages/Operations/ComplaintList';
 import RefundList from './pages/Operations/RefundList';
 import ViolationList from './pages/Operations/ViolationList';
+import DriverFinanceDashboard from './pages/Finance/DriverFinanceDashboard';
+import CreditWalletConfig from './pages/Finance/CreditWalletConfig';
+import SubscriptionPackageConfig from './pages/Finance/SubscriptionPackageConfig';
 import authService from './services/authService';
 
 
@@ -45,7 +48,13 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter basename={import.meta.env.DEV ? '/' : '/admin'} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster 
+        position="top-right" 
+        reverseOrder={false} 
+        containerStyle={{
+          zIndex: 99999,
+        }}
+      />
 
 
       <Routes>
@@ -140,6 +149,24 @@ function App() {
         <Route path="/chauffeur/rides" element={
           <ProtectedRoute>
             <ChauffeurRides />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/finance/driver-summary" element={
+          <ProtectedRoute>
+            <DriverFinanceDashboard />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/finance/credit-wallet-config" element={
+          <ProtectedRoute>
+            <CreditWalletConfig />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/finance/subscription-packages" element={
+          <ProtectedRoute>
+            <SubscriptionPackageConfig />
           </ProtectedRoute>
         } />
 

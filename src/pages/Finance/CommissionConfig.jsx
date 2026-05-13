@@ -4,12 +4,13 @@ import {
   Banknote, Plus, Search, Edit2, Trash2, 
   CheckCircle2, AlertCircle, Calendar, 
   MapPin, Globe, Utensils, Bike, Package,
-  Filter, X, Save, Loader2
+  Filter, X, Save, Loader2, User, Store,
+  Info, TrendingUp, DollarSign, ArrowRight
 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-// Native helpers to replace date-fns
+// Native helpers
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
@@ -17,22 +18,33 @@ const formatDateForInput = (dateStr) => {
 };
 
 const formatDisplayDate = (dateStr) => {
-  if (!dateStr) return 'N/A';
-  return new Date(dateStr).toLocaleDateString('vi-VN');
+  if (!dateStr) return 'Vô thời hạn';
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 const CommissionConfig = () => {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
+  const [filterTarget, setFilterTarget] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // Simulation state
+  const [simAmount, setSimAmount] = useState(100000);
+
   const [form, setForm] = useState({
     name: '',
-    service_type: 2, // Default to Food (Merchant) as requested
-    scope: 1, // System
+    target_type: 1, // 1: Driver, 2: Merchant
+    service_type: 1, // 1: Ride, 2: Food, 3: Delivery
+    scope: 1, // 1: System, 2: Regional
     area_id: '',
     commission_rate: 20,
     min_commission: '',
@@ -70,7 +82,8 @@ const CommissionConfig = () => {
       setEditingRule(null);
       setForm({
         name: '',
-        service_type: 2,
+        target_type: 1,
+        service_type: 1,
         scope: 1,
         area_id: '',
         commission_rate: 20,
@@ -84,7 +97,7 @@ const CommissionConfig = () => {
     setShowModal(true);
   };
 
-  const handleSave = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSaving(true);
@@ -108,13 +121,13 @@ const CommissionConfig = () => {
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Xác nhận xóa?',
-      text: "Hành động này sẽ hủy kích hoạt và xóa quy tắc này.",
+      text: "Quy tắc này sẽ bị gỡ bỏ khỏi hệ thống.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       confirmButtonText: 'Xác nhận xóa',
       cancelButtonText: 'Hủy',
-      background: document.body.className.includes('dark') ? '#1e293b' : '#fff',
+      background: document.body.className.includes('dark') ? '#111823' : '#fff',
       color: document.body.className.includes('dark') ? '#fff' : '#000',
     });
 
@@ -130,291 +143,562 @@ const CommissionConfig = () => {
   };
 
   const SERVICE_TYPES = {
-    1: { label: 'Chuyến xe', icon: <Bike size={16} />, color: 'var(--primary)', bg: 'rgba(67, 97, 238, 0.1)' },
-    2: { label: 'Nhà hàng (Food)', icon: <Utensils size={16} />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+    1: { label: 'Chuyến xe', icon: <Bike size={16} />, color: 'var(--primary)', bg: 'rgba(0, 73, 172, 0.1)' },
+    2: { label: 'Ăn uống', icon: <Utensils size={16} />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
     3: { label: 'Giao hàng', icon: <Package size={16} />, color: '#00906a', bg: 'rgba(0, 144, 106, 0.1)' }
   };
 
-  const filteredRules = rules.filter(r => filterType === 'all' || r.service_type === parseInt(filterType));
+  const TARGET_TYPES = {
+    1: { label: 'Tài xế', icon: <User size={14} />, color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
+    2: { label: 'Cửa hàng / Đối tác', icon: <Store size={14} />, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }
+  };
+
+  const filteredRules = rules.filter(r => {
+    const typeMatch = filterType === 'all' || r.service_type === parseInt(filterType);
+    const targetMatch = filterTarget === 'all' || r.target_type === parseInt(filterTarget);
+    return typeMatch && targetMatch;
+  });
+
+  const calculateSim = () => {
+    const rate = form.commission_rate / 100;
+    let commission = simAmount * rate;
+    if (form.min_commission && commission < form.min_commission) commission = parseFloat(form.min_commission);
+    if (form.max_commission && commission > form.max_commission) commission = parseFloat(form.max_commission);
+    return {
+      commission,
+      net: simAmount - commission
+    };
+  };
+
+  const simResult = calculateSim();
 
   return (
     <div className="commission-page">
-      <Toaster position="top-right" />
       
-      <div className="page-header">
-        <div className="header-text">
-          <h1 className="title">Cấu hình Hoa hồng hệ thống</h1>
-          <p className="subtitle">Quản lý tỷ lệ chiết khấu cho Tài xế, Nhà hàng và Giao hàng</p>
+      <div className="page-header-container">
+        <div className="header-left">
+           <div className="header-icon-main">
+              <TrendingUp size={28} />
+           </div>
+           <div>
+              <h1 className="page-title">Quản lý Mô hình Hoa hồng</h1>
+              <p className="page-subtitle">Thiết lập tỷ lệ chiết khấu cho Tài xế đối tác và Merchant (UC-119)</p>
+           </div>
         </div>
-        <button className="btn-premium" onClick={() => handleOpenModal()}>
+        <button className="btn btn-premium" onClick={() => handleOpenModal()}>
           <Plus size={20} /> Tạo cấu hình mới
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-card glass">
-          <div className="stat-icon" style={{ background: 'rgba(67, 97, 238, 0.1)', color: 'var(--primary)' }}>
-            <Banknote size={24} />
+      <div className="stats-grid">
+        <div className="stat-card glass glass-hover">
+          <div className="stat-icon" style={{ background: 'rgba(0, 73, 172, 0.1)', color: 'var(--primary)' }}>
+            <TrendingUp size={24} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Tổng quy tắc</span>
+            <span className="stat-label">Tổng số quy tắc:</span>
             <span className="stat-value">{rules.length}</span>
           </div>
         </div>
-        <div className="stat-card glass">
+        <div className="stat-card glass glass-hover">
+          <div className="stat-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1' }}>
+            <User size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Hoa hồng Tài xế:</span>
+            <span className="stat-value">{rules.filter(r => r.target_type === 1).length}</span>
+          </div>
+        </div>
+        <div className="stat-card glass glass-hover">
+          <div className="stat-icon" style={{ background: 'rgba(236, 72, 153, 0.1)', color: '#ec4899' }}>
+            <Store size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Hoa hồng Đối tác:</span>
+            <span className="stat-value">{rules.filter(r => r.target_type === 2).length}</span>
+          </div>
+        </div>
+        <div className="stat-card glass glass-hover">
           <div className="stat-icon" style={{ background: 'rgba(0, 144, 106, 0.1)', color: '#00906a' }}>
             <CheckCircle2 size={24} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Đang hoạt động</span>
+            <span className="stat-label">Đang hoạt động:</span>
             <span className="stat-value">{rules.filter(r => r.is_active).length}</span>
           </div>
         </div>
-        <div className="stat-card glass">
-          <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
-            <Utensils size={24} />
+      </div>
+
+      <div className="filter-board glass mt-8">
+        <div className="filter-row flex items-center">
+          <div className="filter-group">
+            <span className="filter-label"><Filter size={14} /> LOẠI DỊCH VỤ:</span>
+            <div className="tabs-container m-0">
+              <button className={`tab-item ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>Tất cả</button>
+              <button className={`tab-item ${filterType === '1' ? 'active' : ''}`} onClick={() => setFilterType('1')}>Chuyến xe</button>
+              <button className={`tab-item ${filterType === '2' ? 'active' : ''}`} onClick={() => setFilterType('2')}>Nhà hàng</button>
+              <button className={`tab-item ${filterType === '3' ? 'active' : ''}`} onClick={() => setFilterType('3')}>Giao hàng</button>
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Hoa hồng Nhà hàng</span>
-            <span className="stat-value">{rules.filter(r => r.service_type === 2).length}</span>
+          <div className="filter-group ml-8">
+            <span className="filter-label"><User size={14} /> ĐỐI TƯỢNG:</span>
+            <div className="tabs-container m-0">
+              <button className={`tab-item ${filterTarget === 'all' ? 'active' : ''}`} onClick={() => setFilterTarget('all')}>Tất cả</button>
+              <button className={`tab-item ${filterTarget === '1' ? 'active' : ''}`} onClick={() => setFilterTarget('1')}>Tài xế</button>
+              <button className={`tab-item ${filterTarget === '2' ? 'active' : ''}`} onClick={() => setFilterTarget('2')}>Đối tác</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="content-card glass">
-        <div className="card-header">
-          <div className="filter-group">
-            <div className={`filter-item ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>Tất cả</div>
-            <div className={`filter-item ${filterType === '1' ? 'active' : ''}`} onClick={() => setFilterType('1')}>Chuyến xe</div>
-            <div className={`filter-item ${filterType === '2' ? 'active' : ''}`} onClick={() => setFilterType('2')}>Nhà hàng</div>
-            <div className={`filter-item ${filterType === '3' ? 'active' : ''}`} onClick={() => setFilterType('3')}>Giao hàng</div>
-          </div>
-        </div>
-
-        <div className="table-responsive">
-          <table>
-            <thead>
+      <div className="table-container glass mt-4">
+        <table className="animate-fade-in">
+          <thead>
+            <tr>
+               <th className="whitespace-nowrap">Cấu hình & ID</th>
+               <th className="whitespace-nowrap">Đối tượng</th>
+               <th className="whitespace-nowrap">Dịch vụ</th>
+               <th className="whitespace-nowrap">Phạm vi</th>
+               <th className="whitespace-nowrap">Hoa hồng (%)</th>
+               <th className="whitespace-nowrap">Giới hạn (Min/Max)</th>
+               <th className="whitespace-nowrap">Hiệu lực</th>
+               <th className="whitespace-nowrap">Trạng thái</th>
+              <th className="text-right whitespace-nowrap">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
               <tr>
-                <th>Tên cấu hình</th>
-                <th>Dịch vụ</th>
-                <th>Phạm vi</th>
-                <th>Tỷ lệ (%)</th>
-                <th>Min/Max</th>
-                <th>Hiệu lực</th>
-                <th>Trạng thái</th>
-                <th className="text-right">Thao tác</th>
+                <td colSpan="9" className="text-center py-12">
+                  <Loader2 className="animate-spin inline-block mr-3 text-primary" size={32} />
+                  <span className="text-muted font-medium">Đang tải dữ liệu hoa hồng...</span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="8" className="text-center py-8">
-                    <Loader2 className="animate-spin inline-block mr-2" /> Đang tải...
-                  </td>
-                </tr>
-              ) : filteredRules.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="text-center py-8 text-muted">
-                    Chưa có cấu hình nào.
-                  </td>
-                </tr>
-              ) : filteredRules.map(rule => (
-                <tr key={rule.id}>
-                  <td>
-                    <div className="rule-name">{rule.name || 'Cấu hình mặc định'}</div>
-                    <div className="rule-id">{rule.id}</div>
-                  </td>
-                  <td>
-                    <span className="service-badge" style={{ background: SERVICE_TYPES[rule.service_type]?.bg, color: SERVICE_TYPES[rule.service_type]?.color }}>
-                      {SERVICE_TYPES[rule.service_type]?.icon}
-                      {SERVICE_TYPES[rule.service_type]?.label}
-                    </span>
-                  </td>
-                  <td>
-                    {rule.scope === 1 ? (
-                      <span className="scope-badge system"><Globe size={12} /> Hệ thống</span>
-                    ) : (
-                      <span className="scope-badge regional"><MapPin size={12} /> {rule.area_id || 'Khu vực'}</span>
-                    )}
-                  </td>
-                  <td className="rate-cell">{rule.commission_rate}%</td>
-                  <td>
-                    <div className="min-max">
-                      <span>Min: {rule.min_commission ? Number(rule.min_commission).toLocaleString() : 'N/A'}</span>
-                      <span>Max: {rule.max_commission ? Number(rule.max_commission).toLocaleString() : 'N/A'}</span>
+            ) : filteredRules.length === 0 ? (
+              <tr>
+                <td colSpan="9" className="text-center py-12 text-muted">
+                  <div className="flex flex-col items-center">
+                    <AlertCircle size={48} className="mb-3 opacity-20" />
+                    <p>Không tìm thấy cấu hình hoa hồng nào phù hợp.</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredRules.map(rule => (
+              <tr key={rule.id} className="hover-row">
+                <td>
+                  <div className="font-bold text-sm">{rule.name || 'Cấu hình mặc định'}</div>
+                  <div className="text-xs text-muted font-mono">{rule.id.substring(0, 8)}...</div>
+                </td>
+                <td>
+                  <span className="badge" style={{ background: TARGET_TYPES[rule.target_type]?.bg, color: TARGET_TYPES[rule.target_type]?.color }}>
+                    {TARGET_TYPES[rule.target_type]?.icon}
+                    {TARGET_TYPES[rule.target_type]?.label}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap">
+                  <span className="badge" style={{ background: SERVICE_TYPES[rule.service_type]?.bg, color: SERVICE_TYPES[rule.service_type]?.color, whiteSpace: 'nowrap' }}>
+                    {SERVICE_TYPES[rule.service_type]?.icon}
+                    {SERVICE_TYPES[rule.service_type]?.label}
+                  </span>
+                </td>
+                <td>
+                  {rule.scope === 1 ? (
+                    <span className="flex items-center gap-1.5 text-primary text-xs font-bold"><Globe size={14} /> Toàn quốc</span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-secondary text-xs font-bold"><MapPin size={14} /> {rule.area_id}</span>
+                  )}
+                </td>
+                <td>
+                  <div className="text-lg font-black text-primary">{rule.commission_rate}%</div>
+                </td>
+                <td>
+                  <div className="flex flex-col text-[11px] text-muted font-medium">
+                    <span>Min: {rule.min_commission ? Number(rule.min_commission).toLocaleString() : '—'} ₫</span>
+                    <span>Max: {rule.max_commission ? Number(rule.max_commission).toLocaleString() : '—'} ₫</span>
+                  </div>
+                </td>
+                <td className="whitespace-nowrap">
+                  <div className="flex flex-col gap-1.5 py-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(0,144,106,0.5)]"></div>
+                      <span className="text-[11px] font-bold text-success">Bắt đầu: {formatDisplayDate(rule.effective_from)}</span>
                     </div>
-                  </td>
-                  <td>
-                    <div className="date-info">
-                      <span>Từ: {formatDisplayDate(rule.effective_from)}</span>
-                      {rule.effective_to && <span>Đến: {formatDisplayDate(rule.effective_to)}</span>}
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted/50"></div>
+                      <span className="text-[11px] font-bold text-muted">Kết thúc: {rule.effective_to ? formatDisplayDate(rule.effective_to) : 'Vô thời hạn'}</span>
                     </div>
-                  </td>
-                  <td>
-                    <span className={`status-pill ${rule.is_active ? 'active' : ''}`}>
-                      {rule.is_active ? 'Kích hoạt' : 'Tạm dừng'}
-                    </span>
-                  </td>
-                  <td className="text-right">
-                    <div className="action-btns">
-                      <button className="icon-btn edit" onClick={() => handleOpenModal(rule)}><Edit2 size={16} /></button>
-                      <button className="icon-btn delete" onClick={() => handleDelete(rule.id)}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </td>
+                <td>
+                  <span className={`badge ${rule.is_active ? 'badge-success' : 'badge-error'}`}>
+                    {rule.is_active ? 'Đang chạy' : 'Đã dừng'}
+                  </span>
+                </td>
+                <td className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <button className="icon-btn edit" title="Chỉnh sửa" onClick={() => handleOpenModal(rule)}><Edit2 size={16} /></button>
+                    <button className="icon-btn delete" title="Xóa" onClick={() => handleDelete(rule.id)}><Trash2 size={16} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-card glass shadow-2xl">
-            <div className="modal-header">
-              <h3>{editingRule ? 'Chỉnh sửa cấu hình' : 'Tạo cấu hình mới'}</h3>
-              <button className="close-btn" onClick={() => setShowModal(false)}><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSave}>
-              <div className="modal-body">
-                <div className="form-grid">
-                  <div className="form-group full">
-                    <label>Tên cấu hình (Ghi chú)</label>
-                    <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="VD: Hoa hồng Nhà hàng nội thành" />
+        <div className="modal-root">
+          <div className="modal-backdrop" onClick={() => setShowModal(false)}></div>
+          <div className="modal-wrapper" style={{ maxWidth: '1150px' }}>
+            <div className="modal-container-premium">
+              <div className="modal-header-premium">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                    <Plus size={20} />
                   </div>
-                  
-                  <div className="form-group">
-                    <label>Loại dịch vụ</label>
-                    <select value={form.service_type} onChange={e => setForm({...form, service_type: parseInt(e.target.value)})}>
-                      <option value={1}>Chuyến xe (Ride)</option>
-                      <option value={2}>Nhà hàng (Food Merchant)</option>
-                      <option value={3}>Giao hàng (Delivery)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Phạm vi áp dụng</label>
-                    <select value={form.scope} onChange={e => setForm({...form, scope: parseInt(e.target.value)})}>
-                      <option value={1}>Toàn hệ thống</option>
-                      <option value={2}>Theo khu vực</option>
-                    </select>
-                  </div>
-
-                  {form.scope === 2 && (
-                    <div className="form-group full">
-                      <label>Mã khu vực (Area ID)</label>
-                      <input type="text" value={form.area_id} onChange={e => setForm({...form, area_id: e.target.value})} placeholder="VD: HCM_01" />
-                    </div>
-                  )}
-
-                  <div className="form-group">
-                    <label>Tỷ lệ hoa hồng (%)</label>
-                    <input type="number" step="0.1" value={form.commission_rate} onChange={e => setForm({...form, commission_rate: parseFloat(e.target.value)})} required />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Thời gian hiệu lực (Bắt đầu)</label>
-                    <input type="datetime-local" value={form.effective_from} onChange={e => setForm({...form, effective_from: e.target.value})} required />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Hoa hồng tối thiểu (Min)</label>
-                    <input type="number" value={form.min_commission} onChange={e => setForm({...form, min_commission: e.target.value})} placeholder="Không giới hạn" />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Hoa hồng tối đa (Max)</label>
-                    <input type="number" value={form.max_commission} onChange={e => setForm({...form, max_commission: e.target.value})} placeholder="Không giới hạn" />
-                  </div>
-
-                  <div className="form-group full">
-                    <label className="toggle-label">
-                      <input type="checkbox" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} />
-                      <span>Kích hoạt cấu hình ngay</span>
-                    </label>
-                  </div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>{editingRule ? 'Cập nhật cấu hình' : 'Tạo cấu hình mới'}</h2>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Hủy bỏ</button>
-                <button type="submit" className="btn-save" disabled={saving}>
-                  {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Lưu cấu hình
+                <button className="btn-icon" onClick={() => setShowModal(false)}>
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+            
+              <form onSubmit={handleSubmit} className="premium-form m-0">
+                <div className="modal-scroll-area p-0" style={{ overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', padding: '2rem' }}>
+                      {/* Column 1: Thông tin cơ bản */}
+                      <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                            <Info size={16} />
+                          </div>
+                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>Cơ bản</h4>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tên cấu hình</label>
+                            <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Tên quy tắc..." required />
+                          </div>
+                          <div>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Đối tượng</label>
+                            <select className="premium-select" style={{ padding: '0.65rem 1rem' }} value={form.target_type} onChange={e => setForm({...form, target_type: parseInt(e.target.value)})}>
+                              <option value={1}>Tài xế đối tác</option>
+                              <option value={2}>Merchant / Store</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Dịch vụ</label>
+                            <select className="premium-select" style={{ padding: '0.65rem 1rem' }} value={form.service_type} onChange={e => setForm({...form, service_type: parseInt(e.target.value)})}>
+                              <option value={1}>Chuyến xe (Ride)</option>
+                              <option value={2}>Ăn uống (Food)</option>
+                              <option value={3}>Giao hàng (Ship)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Column 2: Thông số tài chính */}
+                      <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--success-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)' }}>
+                            <DollarSign size={16} />
+                          </div>
+                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>Tài chính</h4>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div>
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Phạm vi</label>
+                              <select className="premium-select" style={{ padding: '0.65rem 1rem' }} value={form.scope} onChange={e => setForm({...form, scope: parseInt(e.target.value)})}>
+                                <option value={1}>Toàn quốc</option>
+                                <option value={2}>Khu vực</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Mã vùng</label>
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} disabled={form.scope === 1} type="text" value={form.area_id} onChange={e => setForm({...form, area_id: e.target.value})} placeholder="Mã vùng..." />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tỷ lệ hoa hồng (%)</label>
+                            <div className="relative">
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem', fontWeight: 800, color: 'var(--primary)' }} type="number" step="0.1" value={form.commission_rate} onChange={e => setForm({...form, commission_rate: parseFloat(e.target.value)})} required />
+                              <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: 'var(--primary)', fontSize: '0.8rem' }}>%</span>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div>
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Min (₫)</label>
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" value={form.min_commission} onChange={e => setForm({...form, min_commission: e.target.value})} placeholder="0" />
+                            </div>
+                            <div>
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Max (₫)</label>
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" value={form.max_commission} onChange={e => setForm({...form, max_commission: e.target.value})} placeholder="∞" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Column 3: Hiệu lực */}
+                      <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--warning-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--warning)' }}>
+                            <Calendar size={16} />
+                          </div>
+                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>Hiệu lực</h4>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Bắt đầu</label>
+                            <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="datetime-local" value={form.effective_from} onChange={e => setForm({...form, effective_from: e.target.value})} required />
+                          </div>
+                          <div>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Kết thúc</label>
+                            <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="datetime-local" value={form.effective_to} onChange={e => setForm({...form, effective_to: e.target.value})} />
+                          </div>
+                          <div className="form-toggle-section" style={{ padding: '0.65rem', borderRadius: '12px', background: 'var(--bg-soft)', marginTop: '0.25rem' }}>
+                             <label className="toggle-container" style={{ width: '36px', height: '18px' }}>
+                               <input type="checkbox" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} />
+                               <span className="toggle-slider" style={{ borderRadius: '18px' }}></span>
+                             </label>
+                             <div className="toggle-text">
+                               <span className="toggle-title" style={{ fontSize: '0.8rem' }}>Kích hoạt ngay</span>
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row: Simulation (Horizontal) */}
+                    <div style={{ padding: '0 2rem 2rem 2rem' }}>
+                      <div className="glass" style={{ padding: '1.25rem 2rem', borderRadius: '24px', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', gap: '3rem', border: '1px dashed var(--primary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                            <TrendingUp size={20} />
+                          </div>
+                          <div style={{ whiteSpace: 'nowrap' }}>
+                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 850 }}>Giả lập dòng tiền</h4>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Xem trước kết quả</p>
+                          </div>
+                        </div>
+
+                        <div style={{ flex: 1, maxWidth: '200px' }}>
+                          <label className="premium-label" style={{ fontSize: '0.6rem', marginBottom: '0.25rem', whiteSpace: 'nowrap' }}>Đơn hàng mẫu (₫)</label>
+                          <div style={{ position: 'relative' }}>
+                            <input 
+                              type="text" 
+                              style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0.5rem 1rem', fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', outline: 'none' }}
+                              value={simAmount.toLocaleString('vi-VN')}
+                              onChange={e => {
+                                const raw = e.target.value.replace(/\D/g, '');
+                                setSimAmount(parseInt(raw) || 0);
+                              }}
+                            />
+                            <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.8rem' }}>₫</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flex: 2, minWidth: 'fit-content' }}>
+                           <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Khấu trừ hoa hồng</span>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--error)' }}>-{simResult.commission.toLocaleString()} ₫</div>
+                           </div>
+                           <div style={{ height: '30px', width: '1px', background: 'var(--border)', flexShrink: 0 }}></div>
+                           <div style={{ whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>Đối tác thực nhận</span>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--success)' }}>{simResult.net.toLocaleString()} ₫</div>
+                           </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.75rem 0', background: 'rgba(0, 73, 172, 0.03)', borderTop: '1px solid var(--border)', opacity: 0.8 }}>
+                        <div style={{ color: 'var(--primary)', display: 'flex' }}><Info size={14} /></div>
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Mẹo hệ thống: Quy tắc cấp khu vực sẽ được ưu tiên áp dụng trước quy tắc toàn quốc.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer-premium">
+                  <button type="button" className="btn-cancel-new" onClick={() => setShowModal(false)}>Hủy bỏ</button>
+                  <button type="submit" className="btn-save-new" disabled={saving} style={{ padding: '0.85rem 3.5rem' }}>
+                    {saving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} style={{ marginRight: '8px' }} />}
+                    {editingRule ? 'Cập nhật thay đổi' : 'Lưu cấu hình'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .commission-page { padding: 1.5rem; animation: slideUp 0.4s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; }
-        .title { font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem; letter-spacing: -0.5px; }
-        .subtitle { color: var(--text-muted); font-size: 1rem; }
-
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
-        .stat-card { padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1.25rem; border: 1px solid var(--border); transition: transform 0.2s; }
-        .stat-card:hover { transform: scale(1.02); }
-        .stat-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
-        .stat-label { font-size: 0.85rem; color: var(--text-muted); display: block; font-weight: 600; }
-        .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--text); }
-
-        .content-card { border-radius: 24px; border: 1px solid var(--border); overflow: hidden; background: var(--card); }
-        .card-header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); background: rgba(var(--primary-rgb), 0.02); }
-        .filter-group { display: flex; gap: 0.5rem; }
-        .filter-item { padding: 0.5rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
-        .filter-item:hover { background: var(--bg-soft); color: var(--text); }
-        .filter-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); }
-
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 1.25rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 800; border-bottom: 2px solid var(--border); }
-        td { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        tr:hover td { background: rgba(var(--primary-rgb), 0.01); }
-
-        .rule-name { font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
-        .rule-id { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
+        .commission-page { padding: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .ml-8 { margin-left: 2rem; }
+        .m-0 { margin: 0; }
+        .p-0 { padding: 0 !important; }
+        .p-8 { padding: 2rem !important; }
+        .px-8 { padding-left: 2rem; padding-right: 2rem; }
+        .px-10 { padding-left: 2.5rem; padding-right: 2.5rem; }
         
-        .service-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; border-radius: 10px; font-size: 0.8rem; font-weight: 700; }
-        .scope-badge { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; }
-        .scope-badge.system { color: var(--primary); }
-        .scope-badge.regional { color: var(--secondary); }
+        .page-header-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 3.5rem;
+        }
 
-        .rate-cell { font-size: 1.25rem; font-weight: 800; color: var(--primary); }
-        .min-max { font-size: 0.75rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px; }
-        .date-info { font-size: 0.75rem; display: flex; flex-direction: column; gap: 2px; font-weight: 600; color: var(--text-muted); }
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+
+        .header-icon-main {
+          width: 64px;
+          height: 64px;
+          background: var(--primary);
+          color: white;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 10px 25px rgba(0, 73, 172, 0.3);
+        }
+
+        .page-title {
+          font-size: 2.25rem;
+          font-weight: 850;
+          margin: 0;
+          letter-spacing: -0.03em;
+          background: var(--text);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .page-subtitle {
+          color: var(--text-muted);
+          margin-top: 0.25rem;
+          font-size: 1.05rem;
+          font-weight: 500;
+        }
+
+        .filter-board { padding: 1rem 1.5rem; border-radius: 20px; }
+        .filter-row { display: flex; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 1rem; }
+        .filter-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; }
+
+        .table-container { border-radius: 24px; overflow: hidden; border: 1px solid var(--border); }
+        .hover-row:hover td { background: rgba(0, 73, 172, 0.02); }
         
-        .status-pill { padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #fee2e2; color: #ef4444; }
-        .status-pill.active { background: #d1fae5; color: #00906a; }
+        /* Modal Styles */
+        .modal-root { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+        .modal-backdrop { position: absolute; inset: 0; background: rgba(10, 14, 20, 0.6); backdrop-filter: blur(16px); animation: fadeIn 0.3s; }
+        .modal-wrapper { position: relative; width: 100%; z-index: 10; margin-left: 0; } /* Ensure it's not shifted by sidebar if fixed root works */
 
-        .action-btns { display: flex; gap: 0.5rem; }
-        .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); transition: 0.2s; background: white; }
-        .icon-btn.edit:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
-        .icon-btn.delete:hover { border-color: var(--error); color: var(--error); transform: translateY(-2px); }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-        .modal-card { width: 100%; max-width: 650px; background: var(--card); border-radius: 28px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
-        .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 2rem; max-height: 70vh; overflow-y: auto; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        .form-group.full { grid-column: span 2; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; }
-        .form-group input, .form-group select { width: 100%; padding: 0.85rem; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text); outline: none; font-weight: 600; }
-        .form-group input:focus { border-color: var(--primary); background: var(--bg); }
+        .modal-container-premium { background: var(--card); border-radius: 40px; box-shadow: 0 40px 100px rgba(0,0,0,0.3); overflow: hidden; border: 1px solid var(--border); animation: modalSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
         
-        .toggle-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
-        .toggle-label input { width: 20px; height: 20px; }
-        
-        .modal-footer { padding: 1.5rem 2rem; background: var(--bg-soft); display: flex; justify-content: flex-end; gap: 1rem; }
-        .btn-cancel { padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; color: var(--text-muted); transition: 0.2s; }
-        .btn-cancel:hover { color: var(--text); }
-        .btn-save { padding: 0.75rem 2rem; border-radius: 12px; background: var(--primary); color: white; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); }
-        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4); }
+        .modal-header-premium {
+          padding: 1.25rem 2.5rem;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--bg-soft);
+        }
 
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        .premium-form { margin: 0; }
+        .modal-scroll-area { max-height: 80vh; overflow-y: auto; }
+        .modal-scroll-area::-webkit-scrollbar { width: 6px; }
+        .modal-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .premium-label { font-size: 0.8rem; font-weight: 750; color: var(--text-muted); margin-bottom: 0.5rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+        .premium-input, .premium-select { 
+           width: 100%;
+           background: var(--bg-soft); 
+           border: 1.5px solid var(--border); 
+           border-radius: 14px; 
+           padding: 0.85rem 1.15rem; 
+           font-size: 0.9rem; 
+           color: var(--text);
+           font-weight: 600;
+           transition: all 0.2s;
+           outline: none;
+        }
+        .premium-input:focus, .premium-select:focus {
+           background: var(--card);
+           border-color: var(--primary);
+           box-shadow: 0 0 0 4px rgba(0, 73, 172, 0.1);
+        }
+
+        .btn-save-new {
+           background: var(--primary);
+           color: #ffffff;
+           padding: 0.85rem 2.5rem;
+           border-radius: 14px;
+           font-weight: 800;
+           font-size: 0.95rem;
+           border: none;
+           cursor: pointer;
+           transition: all 0.2s;
+           box-shadow: 0 8px 20px rgba(0, 73, 172, 0.25);
+           display: flex;
+           align-items: center;
+           justify-content: center;
+        }
+        .btn-save-new:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 12px 25px rgba(0, 73, 172, 0.35); }
+        .btn-save-new:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .btn-cancel-new {
+           background: var(--card);
+           color: var(--text-muted);
+           padding: 0.85rem 2rem;
+           border-radius: 14px;
+           font-weight: 700;
+           border: 1.5px solid var(--border);
+           cursor: pointer;
+           transition: all 0.2s;
+           font-size: 0.95rem;
+        }
+        .btn-cancel-new:hover { background: var(--bg-soft); color: var(--text); }
+
+        .modal-footer-premium { padding: 1.5rem 2.5rem; background: var(--bg-soft); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 1.25rem; }
+
+        /* Simulation Styles */
+        .simulation-container { background: var(--bg-soft); border-radius: 28px; padding: 1.5rem; height: 100%; border: 1.5px dashed var(--border); display: flex; flex-direction: column; justify-content: center; }
+        .glass-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); }
+        .simulation-card { padding: 1.25rem; }
+        .simulation-input-wrapper { position: relative; display: flex; align-items: baseline; }
+        .simulation-input { background: transparent; border: none; outline: none; font-weight: 900; color: var(--primary); width: 100%; padding: 0; }
+        .currency-label { margin-left: 0.5rem; font-weight: 700; color: var(--text-muted); }
+        .result-item { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
+        .divider-icon { width: 28px; height: 28px; background: var(--bg-soft); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); margin: 0.25rem auto; border: 1px solid var(--border); }
+        .result-final { padding: 1.25rem; border-radius: 20px; background: rgba(0, 73, 172, 0.05); border: 2px solid rgba(0, 73, 172, 0.1); display: flex; flex-direction: column; align-items: center; }
+        .final-value { font-size: 1.75rem; font-weight: 900; color: var(--primary); }
+
+        /* Toggle Styles */
+        .form-toggle-section { display: flex; align-items: center; gap: 1rem; padding: 0.85rem; background: var(--card); border-radius: 14px; border: 1.5px solid var(--border); }
+        .toggle-container { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .toggle-container input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: var(--success); }
+        input:checked + .toggle-slider:before { transform: translateX(22px); }
+        .toggle-title { font-weight: 700; color: var(--text); display: block; font-size: 0.9rem; }
+        .toggle-desc { font-size: 0.7rem; color: var(--text-muted); margin: 0; }
+        
+        @keyframes modalSlideUp { from { opacity: 0; transform: translateY(40px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}} />
     </div>
   );

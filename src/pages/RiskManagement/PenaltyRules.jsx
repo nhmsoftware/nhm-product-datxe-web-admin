@@ -264,7 +264,9 @@ const PenaltyRules = () => {
                     <span className="logic-label">Chế tài:</span>
                     <span className="logic-value-result">
                       {PenaltyTypeLabels[rule.penalty_type]}
-                      {rule.penalty_duration && <span className="duration">({rule.penalty_duration}p)</span>}
+                      {rule.penalty_type === 2 && rule.penalty_duration && <span className="duration">: {rule.penalty_duration} phút</span>}
+                      {rule.penalty_type === 4 && rule.monetary_amount && <span className="duration">: {Number(rule.monetary_amount).toLocaleString()}đ</span>}
+                      {rule.penalty_type === 5 && rule.reputation_points && <span className="duration">: -{rule.reputation_points} điểm</span>}
                     </span>
                   </div>
                 </div>
