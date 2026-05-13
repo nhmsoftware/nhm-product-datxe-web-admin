@@ -276,10 +276,13 @@ const CommissionConfig = () => {
               </tr>
             ) : filteredRules.length === 0 ? (
               <tr>
-                <td colSpan="9" className="text-center py-12 text-muted">
-                  <div className="flex flex-col items-center">
-                    <AlertCircle size={48} className="mb-3 opacity-20" />
-                    <p>Không tìm thấy cấu hình hoa hồng nào phù hợp.</p>
+                <td colSpan="9" style={{ border: 'none', padding: '5rem 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', textAlign: 'center' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginBottom: '1rem', border: '1px dashed var(--border)', marginLeft: 'auto', marginRight: 'auto' }}>
+                      <AlertCircle size={32} style={{ opacity: 0.3 }} />
+                    </div>
+                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Không tìm thấy cấu hình hoa hồng phù hợp</h4>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)', opacity: 0.6 }}>Vui lòng kiểm tra lại bộ lọc hoặc tạo cấu hình mới.</p>
                   </div>
                 </td>
               </tr>
@@ -335,9 +338,21 @@ const CommissionConfig = () => {
                   </span>
                 </td>
                 <td className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <button className="icon-btn edit" title="Chỉnh sửa" onClick={() => handleOpenModal(rule)}><Edit2 size={16} /></button>
-                    <button className="icon-btn delete" title="Xóa" onClick={() => handleDelete(rule.id)}><Trash2 size={16} /></button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', alignItems: 'center' }}>
+                    <button 
+                      style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid var(--primary)', background: 'rgba(0, 73, 172, 0.05)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }} 
+                      title="Chỉnh sửa" 
+                      onClick={() => handleOpenModal(rule)}
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button 
+                      style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid var(--error)', background: 'rgba(239, 68, 68, 0.05)', color: 'var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }} 
+                      title="Xóa" 
+                      onClick={() => handleDelete(rule.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </td>
               </tr>
