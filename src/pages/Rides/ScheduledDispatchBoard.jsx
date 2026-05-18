@@ -455,10 +455,15 @@ const ScheduledDispatchBoard = () => {
                 <div className="list-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Chọn tài xế khả dụng:</span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    ({internalDrivers.filter(d => 
-                      d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
-                      d.phone?.includes(driverSearch)
-                    ).length} tài xế)
+                    ({internalDrivers.filter(d => {
+                      const matchesSearch = d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
+                                           d.phone?.includes(driverSearch);
+                      if (!matchesSearch) return false;
+
+                      const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
+                      const isVehicleMatch = d.vehicle_type_label === currentRide?.vehicle_type_name;
+                      return hasCompleteProfile && isVehicleMatch;
+                    }).length} tài xế)
                   </span>
                 </div>
 
@@ -487,31 +492,64 @@ const ScheduledDispatchBoard = () => {
                 <div className="driver-scroll-list" style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.625rem', paddingRight: '4px' }}>
                   {loadingDrivers ? (
                     <div className="loading-spinner"><Loader2 size={32} className="spinner-icon" /></div>
-                  ) : internalDrivers.filter(d => 
-                    d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
-                    d.phone?.includes(driverSearch)
-                  ).length === 0 ? (
-                    <p className="empty-drivers">Không có tài xế phù hợp</p>
+                  ) : internalDrivers.filter(d => {
+                    const matchesSearch = d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
+                                         d.phone?.includes(driverSearch);
+                    if (!matchesSearch) return false;
+
+                    const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
+                    const isVehicleMatch = d.vehicle_type_label === currentRide?.vehicle_type_name;
+                    return hasCompleteProfile && isVehicleMatch;
+                  }).length === 0 ? (
+                    <p className="empty-drivers">Không có tài xế phù hợp và khả dụng</p>
                   ) : (
-                    internalDrivers.filter(d => 
-                      d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
-                      d.phone?.includes(driverSearch)
-                    ).map(driver => (
+                    internalDrivers.filter(d => {
+                      const matchesSearch = d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
+                                           d.phone?.includes(driverSearch);
+                      if (!matchesSearch) return false;
+
+                      const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
+                      const isVehicleMatch = d.vehicle_type_label === currentRide?.vehicle_type_name;
+                      return hasCompleteProfile && isVehicleMatch;
+                    }).map(driver => (
                       <div 
                         key={driver.id} 
-                        className="driver-card"
+                        className="driver-card eligible"
+                        style={{
+                          border: '1px solid var(--border)',
+                          backgroundColor: 'var(--card)',
+                          padding: '0.75rem',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
                         onClick={() => handleAssignDriver(driver.id)}
                       >
-                        <div className="driver-info">
-                          <div className="driver-avatar">
-                            {driver.avatar_url ? <img src={driver.avatar_url} alt="" /> : <User size={20} />}
+                        <div className="driver-info" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                          <div className="driver-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            {driver.avatar_url ? <img src={driver.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} style={{ color: 'var(--text-muted)' }} />}
                           </div>
-                          <div>
-                            <div className="driver-name">{driver.full_name}</div>
-                            <div className="driver-phone">{driver.phone}</div>
+                          <div style={{ textAlign: 'left' }}>
+                            <div className="driver-name" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>{driver.full_name}</div>
+                            <div className="driver-phone" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{driver.phone}</div>
+                            
+                            <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <span>🚗 {driver.vehicle_name} ({driver.vehicle_number})</span>
+                              <span style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: 'rgba(74, 222, 128, 0.1)', color: '#16a34a' }}>
+                                {driver.vehicle_type_label}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="driver-status">Online</div>
+
+                        <div className="driver-status">
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '6px', backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#16a34a' }}>
+                            Sẵn sàng
+                          </span>
+                        </div>
                       </div>
                     ))
                   )}
