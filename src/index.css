@@ -957,6 +957,33 @@ input::placeholder {
 .strategy-btn.pool.active .strategy-icon { background: var(--primary); color: white; }
 .strategy-btn.pool.active .strategy-label strong { color: var(--primary); }
 
+/* Assign Driver Modal Premium Styles */
+.dispatch-page .modal-container.assign-driver-modal {
+  max-width: 580px;
+  width: 95%;
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.assign-driver-modal .modal-body {
+  padding: 1.75rem;
+}
+
+.assign-driver-modal .driver-scroll-list {
+  max-height: 350px !important;
+}
+
+.assign-driver-modal .driver-card.eligible {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.assign-driver-modal .driver-card.eligible:hover {
+  border-color: var(--primary);
+  background-color: rgba(67, 97, 238, 0.04) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px -6px rgba(67, 97, 238, 0.15);
+}
+
 /* Ride Detail Modal Premium Styles */
 .dispatch-page .modal-container.ride-detail-modal {
   max-width: 720px;

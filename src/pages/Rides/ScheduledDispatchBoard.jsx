@@ -77,6 +77,16 @@ const ScheduledDispatchBoard = () => {
     fetchDispatchSettings();
   }, [filter.status]);
 
+  useEffect(() => {
+    if (showAssignModal) {
+      const delayDebounceFn = setTimeout(() => {
+        fetchInternalDrivers(driverSearch);
+      }, 300);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [driverSearch, showAssignModal]);
+
   const fetchDispatchSettings = async () => {
     try {
       const res = await adminService.getScheduledPricing();
@@ -136,11 +146,11 @@ const ScheduledDispatchBoard = () => {
     }
   };
 
-  const fetchInternalDrivers = async () => {
+  const fetchInternalDrivers = async (keyword = '') => {
     try {
       setLoadingDrivers(true);
       // rideService already returns response.data (HTTP body)
-      const res = await rideService.getInternalDrivers();
+      const res = await rideService.getInternalDrivers(keyword);
       const list = Array.isArray(res)
         ? res
         : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
@@ -182,7 +192,6 @@ const ScheduledDispatchBoard = () => {
     setCurrentRide(ride);
     setShowAssignModal(true);
     setDriverSearch('');
-    fetchInternalDrivers();
   };
 
   const handleAssignDriver = async (driverId) => {
@@ -439,7 +448,7 @@ const ScheduledDispatchBoard = () => {
       {/* Assign Driver Modal */}
       {showAssignModal && (
         <div className="modal-backdrop" onClick={(e) => e.target.className === 'modal-backdrop' && setShowAssignModal(false)}>
-          <div className="modal-container">
+          <div className="modal-container assign-driver-modal">
             <div className="modal-header">
               <h2>Gán tài xế đội nhà</h2>
               <button className="close-btn" onClick={() => setShowAssignModal(false)}><XCircle size={20} /></button>
@@ -456,12 +465,8 @@ const ScheduledDispatchBoard = () => {
                   <span>Chọn tài xế khả dụng:</span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     ({internalDrivers.filter(d => {
-                      const matchesSearch = d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
-                                           d.phone?.includes(driverSearch);
-                      if (!matchesSearch) return false;
-
                       const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
-                      const isVehicleMatch = d.vehicle_type_label === currentRide?.vehicle_type_name;
+                      const isVehicleMatch = Number(d.vehicle_type) === Number(currentRide?.vehicle_type);
                       return hasCompleteProfile && isVehicleMatch;
                     }).length} tài xế)
                   </span>
@@ -493,23 +498,15 @@ const ScheduledDispatchBoard = () => {
                   {loadingDrivers ? (
                     <div className="loading-spinner"><Loader2 size={32} className="spinner-icon" /></div>
                   ) : internalDrivers.filter(d => {
-                    const matchesSearch = d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
-                                         d.phone?.includes(driverSearch);
-                    if (!matchesSearch) return false;
-
                     const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
-                    const isVehicleMatch = d.vehicle_type_label === currentRide?.vehicle_type_name;
+                    const isVehicleMatch = Number(d.vehicle_type) === Number(currentRide?.vehicle_type);
                     return hasCompleteProfile && isVehicleMatch;
                   }).length === 0 ? (
                     <p className="empty-drivers">Không có tài xế phù hợp và khả dụng</p>
                   ) : (
                     internalDrivers.filter(d => {
-                      const matchesSearch = d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
-                                           d.phone?.includes(driverSearch);
-                      if (!matchesSearch) return false;
-
                       const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
-                      const isVehicleMatch = d.vehicle_type_label === currentRide?.vehicle_type_name;
+                      const isVehicleMatch = Number(d.vehicle_type) === Number(currentRide?.vehicle_type);
                       return hasCompleteProfile && isVehicleMatch;
                     }).map(driver => (
                       <div 
@@ -528,25 +525,27 @@ const ScheduledDispatchBoard = () => {
                         }}
                         onClick={() => handleAssignDriver(driver.id)}
                       >
-                        <div className="driver-info" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                          <div className="driver-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        <div className="driver-info" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                          <div className="driver-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                             {driver.avatar_url ? <img src={driver.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} style={{ color: 'var(--text-muted)' }} />}
                           </div>
-                          <div style={{ textAlign: 'left' }}>
-                            <div className="driver-name" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>{driver.full_name}</div>
+                          <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
+                            <div className="driver-name" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{driver.full_name}</div>
                             <div className="driver-phone" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{driver.phone}</div>
                             
-                            <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                              <span>🚗 {driver.vehicle_name} ({driver.vehicle_number})</span>
-                              <span style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: 'rgba(74, 222, 128, 0.1)', color: '#16a34a' }}>
+                            <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                🚗 {driver.vehicle_name} ({driver.vehicle_number})
+                              </span>
+                              <span style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: 'rgba(74, 222, 128, 0.1)', color: '#16a34a', whiteSpace: 'nowrap', display: 'inline-block' }}>
                                 {driver.vehicle_type_label}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="driver-status">
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '6px', backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#16a34a' }}>
+                        <div className="driver-status" style={{ flexShrink: 0, marginLeft: '0.75rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '6px', backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#16a34a', whiteSpace: 'nowrap' }}>
                             Sẵn sàng
                           </span>
                         </div>

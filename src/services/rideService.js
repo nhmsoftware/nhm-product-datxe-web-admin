@@ -30,10 +30,14 @@ const rideService = {
     return response.data;
   },
 
-  // Admin: Get available internal drivers
-  getInternalDrivers: async () => {
+  getInternalDrivers: async (keyword = '') => {
     const response = await api.get('/v1/admin/drivers', { 
-      params: { type: 'internal', status: 'verified' } 
+      params: { 
+        driver_group_type: 1, // 1 = Xe nhà
+        kyc_status: 2,        // 2 = Đã duyệt KYC
+        keyword: keyword,
+        per_page: 50          // Giới hạn 50 tài xế phù hợp nhất mỗi trang để tối ưu
+      } 
     });
     return response.data;
   }
