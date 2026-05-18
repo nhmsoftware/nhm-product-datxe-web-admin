@@ -13,7 +13,11 @@ import {
   XCircle,
   MoreVertical,
   Loader2,
-  Banknote
+  Banknote,
+  Eye,
+  Info,
+  Map,
+  Phone
 } from 'lucide-react';
 import rideService from '../../services/rideService';
 import { adminService } from '../../services/adminService';
@@ -37,6 +41,36 @@ const ScheduledDispatchBoard = () => {
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [dispatchMode, setDispatchMode] = useState(1); // 1: Internal Priority, 2: Open Pool
   const [togglingDispatch, setTogglingDispatch] = useState(false);
+  const [waitingCount, setWaitingCount] = useState(0);
+  const [assignedCount, setAssignedCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [driverSearch, setDriverSearch] = useState('');
+
+  const openDetailModal = (ride) => {
+    setCurrentRide(ride);
+    setShowDetailModal(true);
+  };
+
+  const fetchCounts = async () => {
+    try {
+      const [waitingRes, assignedRes, completedRes] = await Promise.all([
+        rideService.getScheduledRides({ status: 'waiting', per_page: 1 }),
+        rideService.getScheduledRides({ status: 'assigned', per_page: 1 }),
+        rideService.getScheduledRides({ status: 'completed', per_page: 1 })
+      ]);
+      
+      const wCount = waitingRes?.data?.meta?.total ?? (Array.isArray(waitingRes) ? waitingRes.length : (Array.isArray(waitingRes?.data) ? waitingRes.data.length : (Array.isArray(waitingRes?.data?.data) ? waitingRes.data.data.length : 0)));
+      const aCount = assignedRes?.data?.meta?.total ?? (Array.isArray(assignedRes) ? assignedRes.length : (Array.isArray(assignedRes?.data) ? assignedRes.data.length : (Array.isArray(assignedRes?.data?.data) ? assignedRes.data.data.length : 0)));
+      const cCount = completedRes?.data?.meta?.total ?? (Array.isArray(completedRes) ? completedRes.length : (Array.isArray(completedRes?.data) ? completedRes.data.length : (Array.isArray(completedRes?.data?.data) ? completedRes.data.data.length : 0)));
+      
+      setWaitingCount(wCount);
+      setAssignedCount(aCount);
+      setCompletedCount(cCount);
+    } catch (error) {
+      console.error('Lỗi khi tải số lượng chuyến xe:', error);
+    }
+  };
 
   useEffect(() => {
     fetchRides();
@@ -94,6 +128,7 @@ const ScheduledDispatchBoard = () => {
         ? res
         : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
       setRides(list);
+      fetchCounts();
     } catch (error) {
       toast.error('Không thể tải danh sách chuyến xe');
     } finally {
@@ -134,7 +169,7 @@ const ScheduledDispatchBoard = () => {
     if (result.isConfirmed) {
       try {
         await rideService.pushToPool(rideIds);
-        toast.success('Đã đẩy đơn ra pool thành công');
+        toast.success('Đã đẩy đơn ra cho tất cả tài xế thành công');
         fetchRides();
         setSelectedRides([]);
       } catch (error) {
@@ -146,6 +181,7 @@ const ScheduledDispatchBoard = () => {
   const openAssignModal = (ride) => {
     setCurrentRide(ride);
     setShowAssignModal(true);
+    setDriverSearch('');
     fetchInternalDrivers();
   };
 
@@ -224,7 +260,7 @@ const ScheduledDispatchBoard = () => {
               onClick={() => handlePushToPool(selectedRides)}
             >
               <Send size={18} />
-              Đẩy {selectedRides.length} đơn ra Pool
+              Đẩy {selectedRides.length} đơn ra cho tất cả tài xế
             </button>
           )}
           
@@ -243,19 +279,19 @@ const ScheduledDispatchBoard = () => {
               className={`tab-item ${filter.status === 'waiting' ? 'active' : ''}`}
               onClick={() => setFilter({...filter, status: 'waiting'})}
             >
-              Đang chờ ({rides.filter(r => r.status === 'waiting').length})
+              Đang chờ ({waitingCount})
             </button>
             <button 
               className={`tab-item ${filter.status === 'assigned' ? 'active' : ''}`}
               onClick={() => setFilter({...filter, status: 'assigned'})}
             >
-              Đã gán
+              Đã gán ({assignedCount})
             </button>
             <button 
               className={`tab-item ${filter.status === 'completed' ? 'active' : ''}`}
               onClick={() => setFilter({...filter, status: 'completed'})}
             >
-              Lịch sử
+              Hoàn thành ({completedCount})
             </button>
           </div>
 
@@ -362,6 +398,16 @@ const ScheduledDispatchBoard = () => {
                   <td>{getStatusBadge(ride.status)}</td>
                   <td>
                     <div className="action-buttons">
+                      <button 
+                        className="btn-action edit-outline" 
+                        title="Xem chi tiết"
+                        onClick={(e) => { e.stopPropagation(); openDetailModal(ride); }}
+                        style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', borderColor: 'rgba(99, 102, 241, 0.2)' }}
+                      >
+                        <Eye size={16} />
+                        <span style={{ fontSize: '0.8rem', marginLeft: '4px', fontWeight: 'bold' }}>Chi tiết</span>
+                      </button>
+
                       {ride.status === 'waiting' && (
                         <>
                           <button 
@@ -406,30 +452,248 @@ const ScheduledDispatchBoard = () => {
               </div>
 
               <div className="driver-list-container">
-                <div className="list-title">Chọn tài xế khả dụng:</div>
-                {loadingDrivers ? (
-                  <div className="loading-spinner"><Loader2 size={32} className="spinner-icon" /></div>
-                ) : internalDrivers.length === 0 ? (
-                  <p className="empty-drivers">Không có tài xế đội nhà khả dụng</p>
-                ) : (
-                  internalDrivers.map(driver => (
-                    <div 
-                      key={driver.id} 
-                      className="driver-card"
-                      onClick={() => handleAssignDriver(driver.id)}
-                    >
-                      <div className="driver-info">
-                        <div className="driver-avatar">
-                          {driver.avatar_url ? <img src={driver.avatar_url} alt="" /> : <User size={20} />}
+                <div className="list-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Chọn tài xế khả dụng:</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    ({internalDrivers.filter(d => 
+                      d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
+                      d.phone?.includes(driverSearch)
+                    ).length} tài xế)
+                  </span>
+                </div>
+
+                {/* Driver Search Box */}
+                <div className="search-box" style={{ marginBottom: '0.75rem', width: '100%', minWidth: 'auto', position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm theo tên hoặc SĐT..." 
+                    className="search-input"
+                    value={driverSearch}
+                    onChange={(e) => setDriverSearch(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem 1rem 0.5rem 2.25rem', 
+                      borderRadius: '10px', 
+                      fontSize: '0.85rem',
+                      height: '38px',
+                      backgroundColor: 'var(--bg-soft)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)'
+                    }}
+                  />
+                </div>
+
+                <div className="driver-scroll-list" style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.625rem', paddingRight: '4px' }}>
+                  {loadingDrivers ? (
+                    <div className="loading-spinner"><Loader2 size={32} className="spinner-icon" /></div>
+                  ) : internalDrivers.filter(d => 
+                    d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
+                    d.phone?.includes(driverSearch)
+                  ).length === 0 ? (
+                    <p className="empty-drivers">Không có tài xế phù hợp</p>
+                  ) : (
+                    internalDrivers.filter(d => 
+                      d.full_name?.toLowerCase().includes(driverSearch.toLowerCase()) || 
+                      d.phone?.includes(driverSearch)
+                    ).map(driver => (
+                      <div 
+                        key={driver.id} 
+                        className="driver-card"
+                        onClick={() => handleAssignDriver(driver.id)}
+                      >
+                        <div className="driver-info">
+                          <div className="driver-avatar">
+                            {driver.avatar_url ? <img src={driver.avatar_url} alt="" /> : <User size={20} />}
+                          </div>
+                          <div>
+                            <div className="driver-name">{driver.full_name}</div>
+                            <div className="driver-phone">{driver.phone}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="driver-name">{driver.full_name}</div>
-                          <div className="driver-phone">{driver.phone}</div>
-                        </div>
+                        <div className="driver-status">Online</div>
                       </div>
-                      <div className="driver-status">Online</div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Ride Modal */}
+      {showDetailModal && currentRide && (
+        <div className="modal-backdrop" onClick={(e) => e.target.className === 'modal-backdrop' && setShowDetailModal(false)}>
+          <div className="modal-container ride-detail-modal">
+            <div className="modal-header">
+              <div>
+                <h2>Chi tiết chuyến đi #{currentRide.ride_code}</h2>
+                <div style={{ marginTop: '0.35rem' }}>{getStatusBadge(currentRide.status)}</div>
+              </div>
+              <button className="close-btn" onClick={() => setShowDetailModal(false)}><XCircle size={20} /></button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="ride-detail-grid">
+                {/* Left Side: Route and Info */}
+                <div className="ride-detail-col left">
+                  <h3 className="detail-section-title">
+                    <Map size={18} /> Lộ trình &amp; Dịch vụ
+                  </h3>
+                  
+                  <div className="detail-route-container">
+                    <div className="detail-route-item">
+                      <div className="detail-route-icon">
+                        <MapPin size={16} style={{ color: 'var(--primary)' }} />
+                      </div>
+                      <div className="detail-route-content">
+                        <div className="detail-route-label">Điểm đón</div>
+                        <div className="detail-route-value">{currentRide.pickup_address}</div>
+                      </div>
                     </div>
-                  ))
+                    
+                    <div className="detail-route-item">
+                      <div className="detail-route-icon">
+                        <MapPin size={16} style={{ color: 'var(--error)' }} />
+                      </div>
+                      <div className="detail-route-content">
+                        <div className="detail-route-label">Điểm đến</div>
+                        <div className="detail-route-value">{currentRide.destination_address}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="detail-info-card">
+                    <div className="detail-info-block">
+                      <div className="detail-info-label">Dịch vụ</div>
+                      <div className="detail-info-value">{currentRide.ride_type_name}</div>
+                    </div>
+                    <div className="detail-info-block">
+                      <div className="detail-info-label">Loại xe</div>
+                      <div className="detail-info-value">{currentRide.vehicle_type_name}</div>
+                    </div>
+                    <div className="detail-info-block">
+                      <div className="detail-info-label">Khoảng cách</div>
+                      <div className="detail-info-value">{currentRide.distance_km} km</div>
+                    </div>
+                    <div className="detail-info-block">
+                      <div className="detail-info-label">Thời gian</div>
+                      <div className="detail-info-value">{currentRide.duration_minutes} phút</div>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div>Ngày đặt: {new Date(currentRide.created_at).toLocaleString('vi-VN')}</div>
+                    {currentRide.pickup_time_formatted && (
+                      <div style={{ fontWeight: 700, color: 'var(--primary)', marginTop: '0.15rem' }}>
+                        Lịch xuất phát: {currentRide.pickup_hour} - {currentRide.pickup_time_formatted}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Side: Parties and Fare */}
+                <div className="ride-detail-col">
+                  <h3 className="detail-section-title">
+                    <Users size={18} /> Thành viên &amp; Cước
+                  </h3>
+                  
+                  <div className="detail-party-section">
+                    {/* Customer Info */}
+                    <div className="detail-party-item">
+                      <div className="detail-party-avatar customer">
+                        {currentRide.customer_name?.charAt(0) || 'U'}
+                      </div>
+                      <div className="detail-party-info">
+                        <div className="detail-party-role">Khách hàng</div>
+                        <div className="detail-party-name">{currentRide.customer_name}</div>
+                        <a href={`tel:${currentRide.customer_phone}`} className="detail-party-phone">
+                          <Phone size={12} /> {currentRide.customer_phone || 'N/A'}
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Driver Info */}
+                    <div className="detail-party-item" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.25rem' }}>
+                      {currentRide.driver_name ? (
+                        <>
+                          <div className="detail-party-avatar driver">
+                            {currentRide.driver_name?.charAt(0) || 'D'}
+                          </div>
+                          <div className="detail-party-info">
+                            <div className="detail-party-role">Tài xế</div>
+                            <div className="detail-party-name">{currentRide.driver_name}</div>
+                            <a href={`tel:${currentRide.driver_phone}`} className="detail-party-phone">
+                              <Phone size={12} /> {currentRide.driver_phone || 'N/A'}
+                            </a>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="detail-party-info">
+                          <div className="detail-party-role">Tài xế</div>
+                          <div className="detail-party-empty">Chưa gán tài xế</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Fare Breakdown */}
+                  <div className="detail-fare-section">
+                    <h3 className="detail-section-title" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Chi tiết cước phí
+                    </h3>
+                    <div className="detail-fare-breakdown">
+                      <div className="detail-fare-row">
+                        <span className="detail-fare-label">Giá mở cửa</span>
+                        <span className="detail-fare-value">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentRide.base_price)}</span>
+                      </div>
+                      <div className="detail-fare-row">
+                        <span className="detail-fare-label">Cước di chuyển</span>
+                        <span className="detail-fare-value">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentRide.distance_price)}</span>
+                      </div>
+                      {currentRide.time_fare > 0 && (
+                        <div className="detail-fare-row">
+                          <span className="detail-fare-label">Cước thời gian</span>
+                          <span className="detail-fare-value">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentRide.time_fare)}</span>
+                        </div>
+                      )}
+                      {currentRide.discount_amount > 0 && (
+                        <div className="detail-fare-row discount">
+                          <span className="detail-fare-label">Khuyến mãi ({currentRide.voucher_code})</span>
+                          <span className="detail-fare-value">-{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentRide.discount_amount)}</span>
+                        </div>
+                      )}
+                      
+                      <div className="detail-fare-row total">
+                        <span className="detail-fare-label">Tổng thanh toán</span>
+                        <span className="detail-fare-value">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentRide.final_fare)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="detail-footer-actions">
+                <button className="btn btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
+                {currentRide.status === 'waiting' && (
+                  <>
+                    <button 
+                      className="btn btn-primary-outline" 
+                      onClick={() => { setShowDetailModal(false); handlePushToPool(currentRide.id); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                    >
+                      <Send size={16} /> Đẩy ra pool
+                    </button>
+                    <button 
+                      className="btn btn-primary" 
+                      onClick={() => { setShowDetailModal(false); openAssignModal(currentRide); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                    >
+                      <UserPlus size={16} /> Gán tài xế
+                    </button>
+                  </>
                 )}
               </div>
             </div>
