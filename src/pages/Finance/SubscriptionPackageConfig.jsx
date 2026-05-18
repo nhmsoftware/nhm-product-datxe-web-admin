@@ -14,13 +14,16 @@ import {
   CheckCircle2,
   AlertCircle,
   Package,
-  Info
+  Info,
+  ArrowLeft
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 
 const SubscriptionPackageConfig = () => {
+  const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,10 +141,12 @@ const SubscriptionPackageConfig = () => {
     }
   };
 
-  const filteredPackages = packages.filter(pkg => 
-    pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.package_type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPackages = packages.filter(pkg => {
+    const name = pkg.name || '';
+    const type = pkg.package_type || '';
+    return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           type.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -155,9 +160,32 @@ const SubscriptionPackageConfig = () => {
         alignItems: 'center',
         marginBottom: '2.5rem' 
       }}>
-        <div>
-          <h1 className="page-title">Cấu hình Gói thuê bao (UC-118)</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Thiết lập các gói dịch vụ trả trước để tài xế nhận 100% cước phí.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <button 
+            onClick={() => navigate('/finance/driver-summary')} 
+            className="btn-icon animate-pulse" 
+            style={{ 
+              width: '44px', 
+              height: '44px', 
+              borderRadius: '14px', 
+              border: '1.5px solid var(--border)', 
+              background: 'var(--card)', 
+              color: 'var(--text)', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              transition: 'var(--transition)',
+              boxShadow: 'var(--shadow)'
+            }}
+            title="Quay lại Quản lý Tài chính"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="page-title" style={{ margin: 0 }}>Cấu hình Gói thuê bao (UC-118)</h1>
+            <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>Thiết lập các gói dịch vụ trả trước để tài xế nhận 100% cước phí.</p>
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => handleOpenModal()}>
           <Plus size={18} />
@@ -308,7 +336,7 @@ const SubscriptionPackageConfig = () => {
 
       {/* Modal CRUD */}
       {isModalOpen && (
-        <div className="modal-overlay" style={{ 
+        <div className="modal-overlay" onClick={handleCloseModal} style={{ 
           position: 'fixed', 
           top: 0, left: 0, right: 0, bottom: 0, 
           background: 'rgba(0,0,0,0.6)', 
@@ -319,7 +347,7 @@ const SubscriptionPackageConfig = () => {
           justifyContent: 'center',
           padding: '1rem'
         }}>
-          <div className="glass animate-scale-in" style={{ 
+          <div className="glass animate-scale-in" onClick={(e) => e.stopPropagation()} style={{ 
             width: '100%', 
             maxWidth: '600px', 
             borderRadius: '32px', 
@@ -460,6 +488,36 @@ const SubscriptionPackageConfig = () => {
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        .form-label {
+          font-size: 0.8rem;
+          font-weight: 750;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 0.5rem;
+          display: block;
+        }
+        .form-control {
+          width: 100%;
+          background: var(--bg-soft);
+          border: 1.5px solid var(--border);
+          border-radius: 14px;
+          padding: 0.85rem 1.15rem;
+          font-size: 0.9rem;
+          color: var(--text);
+          font-weight: 600;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          outline: none;
+        }
+        .form-control:focus {
+          background: var(--card);
+          border-color: var(--primary);
+          box-shadow: 0 0 0 4px rgba(0, 73, 172, 0.1);
+        }
+        textarea.form-control {
+          resize: vertical;
+          min-height: 80px;
         }
       `}} />
     </div>
