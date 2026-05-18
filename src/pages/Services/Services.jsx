@@ -227,14 +227,17 @@ const Services = () => {
           <thead>
             <tr>
               <th style={{ width: '40px', textAlign: 'center' }}>
-                <input 
-                  type="checkbox" 
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedOrders(filteredOrders.map(r => r.id));
-                    else setSelectedOrders([]);
-                  }}
-                  checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
-                />
+                {filter.status === 'waiting' && (
+                  <input 
+                    type="checkbox" 
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedOrders(filteredOrders.filter(o => o.status === 'waiting').map(o => o.id));
+                      else setSelectedOrders([]);
+                    }}
+                    checked={selectedOrders.length > 0 && selectedOrders.length === filteredOrders.filter(o => o.status === 'waiting').length}
+                    style={{ cursor: 'pointer' }}
+                  />
+                )}
               </th>
               <th>Khách hàng &amp; Đơn hàng</th>
               <th>Lộ trình (Lấy &rarr; Giao)</th>
@@ -257,14 +260,28 @@ const Services = () => {
               </tr>
             ) : (
               filteredOrders.map((order) => (
-                <tr key={order.id} className="hover-row" onClick={() => toggleSelectOrder(order.id)}>
+                <tr 
+                  key={order.id} 
+                  className={`hover-row ${order.status !== 'waiting' ? 'non-selectable' : ''}`} 
+                  onClick={() => order.status === 'waiting' && toggleSelectOrder(order.id)}
+                  style={order.status !== 'waiting' ? { cursor: 'default' } : {}}
+                >
                   <td style={{ textAlign: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedOrders.includes(order.id)}
-                      onChange={() => toggleSelectOrder(order.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    {order.status === 'waiting' ? (
+                      <input 
+                        type="checkbox" 
+                        checked={selectedOrders.includes(order.id)}
+                        onChange={() => toggleSelectOrder(order.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <input 
+                        type="checkbox" 
+                        disabled
+                        style={{ opacity: 0.3, cursor: 'not-allowed' }}
+                      />
+                    )}
                   </td>
                   <td>
                     <div className="customer-info">

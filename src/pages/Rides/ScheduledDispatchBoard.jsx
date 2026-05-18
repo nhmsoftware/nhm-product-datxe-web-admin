@@ -323,15 +323,17 @@ const ScheduledDispatchBoard = () => {
           <thead>
             <tr>
               <th style={{ width: '40px', textAlign: 'center' }}>
-                <input 
-                  type="checkbox" 
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedRides(rides.map(r => r.id));
-                    else setSelectedRides([]);
-                  }}
-                  checked={selectedRides.length === rides.length && rides.length > 0}
-                  style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                />
+                {filter.status === 'waiting' && (
+                  <input 
+                    type="checkbox" 
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedRides(rides.filter(r => r.status === 'waiting').map(r => r.id));
+                      else setSelectedRides([]);
+                    }}
+                    checked={selectedRides.length > 0 && selectedRides.length === rides.filter(r => r.status === 'waiting').length}
+                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                )}
               </th>
               <th>Khách hàng & Chuyến</th>
               <th>Lịch trình</th>
@@ -358,15 +360,28 @@ const ScheduledDispatchBoard = () => {
               </tr>
             ) : (
               rides.map((ride) => (
-                <tr key={ride.id} className="hover-row" onClick={() => toggleSelectRide(ride.id)}>
+                <tr 
+                  key={ride.id} 
+                  className={`hover-row ${ride.status !== 'waiting' ? 'non-selectable' : ''}`} 
+                  onClick={() => ride.status === 'waiting' && toggleSelectRide(ride.id)}
+                  style={ride.status !== 'waiting' ? { cursor: 'default' } : {}}
+                >
                   <td style={{ textAlign: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedRides.includes(ride.id)}
-                      onChange={() => toggleSelectRide(ride.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                    />
+                    {ride.status === 'waiting' ? (
+                      <input 
+                        type="checkbox" 
+                        checked={selectedRides.includes(ride.id)}
+                        onChange={() => toggleSelectRide(ride.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <input 
+                        type="checkbox" 
+                        disabled
+                        style={{ width: '16px', height: '16px', opacity: 0.3, cursor: 'not-allowed' }}
+                      />
+                    )}
                   </td>
                   <td>
                     <div className="customer-info">
