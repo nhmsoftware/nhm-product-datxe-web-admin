@@ -151,6 +151,91 @@ const MerchantDetailModal = ({ merchantId, onClose, onRefresh }) => {
               )}
             </div>
           </div>
+
+          {/* Restaurant Menu Section */}
+          <div style={{ marginTop: '2.5rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              🍔 THỰC ĐƠN CỬA HÀNG
+            </h3>
+            
+            {(!data.menu || data.menu.length === 0) ? (
+              <div style={{ padding: '2rem', background: 'var(--bg-soft)', borderRadius: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                Cửa hàng này chưa cấu hình thực đơn.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {data.menu.map(category => (
+                  <div key={category.id} className="glass" style={{ padding: '1.5rem', borderRadius: '20px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+                      <h4 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
+                        {category.name}
+                      </h4>
+                      <span className={`badge ${category.is_active ? 'badge-success' : 'badge-error'}`}>
+                        {category.is_active ? 'Đang hoạt động' : 'Tạm ẩn'}
+                      </span>
+                    </div>
+
+                    {(!category.items || category.items.length === 0) ? (
+                      <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                        Chưa có món ăn nào trong danh mục này.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                        {category.items.map(item => (
+                          <div key={item.id} style={{ 
+                            display: 'flex', 
+                            gap: '1rem', 
+                            padding: '1rem', 
+                            background: 'var(--bg-soft)', 
+                            borderRadius: '16px',
+                            border: '1px solid var(--border)',
+                            transition: 'var(--transition)'
+                          }} className="glass-hover">
+                            <div style={{ 
+                              width: '70px', 
+                              height: '70px', 
+                              borderRadius: '12px', 
+                              background: 'var(--border)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '2rem',
+                              overflow: 'hidden',
+                              flexShrink: 0
+                            }}>
+                              {item.image_path ? (
+                                <img src={item.image_path} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                '🍲'
+                              )}
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)', lineHeight: '1.3', marginBottom: '0.25rem' }}>
+                                  {item.name}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.3', marginBottom: '0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                  {item.description || 'Không có mô tả'}
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1rem' }}>
+                                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(parseFloat(item.price))}
+                                </span>
+                                <span className={`badge ${item.is_available ? 'badge-success' : 'badge-error'}`} style={{ padding: '0.25rem 0.5rem', fontSize: '0.65rem', borderRadius: '6px' }}>
+                                  {item.is_available ? 'Còn hàng' : 'Hết hàng'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -321,7 +406,7 @@ const MerchantList = () => {
     <div className="merchants-page" style={{ padding: '2rem' }}>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
         <div>
-          <h1 className="page-title">Quản lý Merchant</h1>
+          <h1 className="page-title">Quản lý nhà hàng</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Hệ thống xét duyệt và quản lý đối tác nhà hàng, cửa hàng.</p>
         </div>
         <button className="btn btn-glass" onClick={() => fetchMerchants()}>
