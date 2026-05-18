@@ -6,12 +6,15 @@ import {
   ShieldCheck, 
   AlertCircle, 
   Info,
-  CheckCircle2
+  CheckCircle2,
+  ArrowLeft
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const CreditWalletConfig = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState({
@@ -72,12 +75,35 @@ const CreditWalletConfig = () => {
 
   return (
     <div className="finance-config-page" style={{ padding: '2rem', maxWidth: '800px' }}>
-      <header style={{ marginBottom: '2.5rem' }}>
-        <h1 className="page-title">Cấu hình Ví Tín Dụng</h1>
-        <p style={{ color: 'var(--text-muted)' }}>
-          Thiết lập các quy tắc cho tài xế đối tác (Partner/Freelance). 
-          Tài xế nội bộ (Internal Fleet) sẽ bỏ qua các quy tắc này.
-        </p>
+      <header style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <button 
+          onClick={() => navigate('/finance/driver-summary')} 
+          className="btn-icon animate-pulse" 
+          style={{ 
+            width: '44px', 
+            height: '44px', 
+            borderRadius: '14px', 
+            border: '1.5px solid var(--border)', 
+            background: 'var(--card)', 
+            color: 'var(--text)', 
+            cursor: 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            transition: 'var(--transition)',
+            boxShadow: 'var(--shadow)'
+          }}
+          title="Quay lại Quản lý Tài chính"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h1 className="page-title" style={{ margin: 0 }}>Cấu hình Ví Tín Dụng</h1>
+          <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
+            Thiết lập các quy tắc cho tài xế đối tác (Partner/Freelance). 
+            Tài xế nội bộ (Internal Fleet) sẽ bỏ qua các quy tắc này.
+          </p>
+        </div>
       </header>
 
       <div className="glass" style={{ padding: '2.5rem', borderRadius: '32px' }}>

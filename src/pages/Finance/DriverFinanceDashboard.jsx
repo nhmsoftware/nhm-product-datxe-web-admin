@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const DriverFinanceDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total_drivers: 0,
@@ -223,7 +225,7 @@ const DriverFinanceDashboard = () => {
               <button 
                 className="btn btn-premium" 
                 style={{ width: '100%', justifyContent: 'space-between' }}
-                onClick={() => window.location.href = module.path}
+                onClick={() => navigate(module.path)}
               >
                 Tiến hành cấu hình
                 <ChevronRight size={18} />

@@ -20,8 +20,10 @@ import { adminService } from '../../services/adminService';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { Users, Monitor } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ScheduledDispatchBoard = () => {
+  const navigate = useNavigate();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({
@@ -226,7 +228,7 @@ const ScheduledDispatchBoard = () => {
             </button>
           )}
           
-          <button className="btn btn-premium" onClick={() => window.location.href = '/pricing'}>
+          <button className="btn btn-premium" onClick={() => navigate('/pricing')}>
             <Banknote size={18} />
             Cấu hình giá
           </button>

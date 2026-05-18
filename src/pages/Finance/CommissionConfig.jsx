@@ -5,10 +5,12 @@ import {
   CheckCircle2, AlertCircle, Calendar, 
   MapPin, Globe, Utensils, Bike, Package,
   Filter, X, Save, Loader2, User, Store,
-  Info, TrendingUp, DollarSign, ArrowRight
+  Info, TrendingUp, DollarSign, ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 
 // Native helpers
 const formatDateForInput = (dateStr) => {
@@ -37,8 +39,8 @@ const CommissionConfig = () => {
   const [editingRule, setEditingRule] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Simulation state
   const [simAmount, setSimAmount] = useState(100000);
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: '',
@@ -177,6 +179,28 @@ const CommissionConfig = () => {
       
       <div className="page-header-container">
         <div className="header-left">
+           <button 
+             onClick={() => navigate('/finance/driver-summary')} 
+             className="btn-icon animate-pulse" 
+             style={{ 
+               width: '44px', 
+               height: '44px', 
+               borderRadius: '14px', 
+               border: '1.5px solid var(--border)', 
+               background: 'var(--card)', 
+               color: 'var(--text)', 
+               cursor: 'pointer', 
+               display: 'flex', 
+               alignItems: 'center', 
+               justifyContent: 'center',
+               transition: 'var(--transition)',
+               boxShadow: 'var(--shadow)',
+               marginRight: '0.5rem'
+             }}
+             title="Quay lại Quản lý Tài chính"
+           >
+             <ArrowLeft size={20} />
+           </button>
            <div className="header-icon-main">
               <TrendingUp size={28} />
            </div>
