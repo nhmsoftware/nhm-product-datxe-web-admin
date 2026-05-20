@@ -664,12 +664,12 @@ const MerchantMenuModal = ({ merchantId, storeName, onClose }) => {
                   </a>
 
                   <label className="btn btn-glass" style={{ cursor: 'pointer', borderRadius: '12px', fontSize: '0.875rem' }} title="Nhập thực đơn từ file Excel/CSV">
-                    <Upload size={16} /> Nhập Excel (CSV)
-                    <input 
-                      type="file" 
-                      accept=".csv"
-                      onChange={handleImport}
-                      style={{ display: 'none' }}
+                    <Upload size={16} /> Nhập Excel (là file .csv hoặc .xlsx )
+                    <input
+                        type="file"
+                        accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                        onChange={handleImport}
+                        style={{ display: 'none' }}
                     />
                   </label>
                 </div>
