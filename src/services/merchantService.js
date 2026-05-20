@@ -68,8 +68,8 @@ const merchantService = {
   },
 
   getExportTemplateUrl: () => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${baseUrl}/api/v1/admin/merchant/menu/export-template`;
+    const baseUrl = api.defaults.baseURL.replace(/\/$/, '');
+    return `${baseUrl}/v1/admin/merchant/menu/export-template`;
   }
 };
 
