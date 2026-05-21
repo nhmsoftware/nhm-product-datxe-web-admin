@@ -21,14 +21,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
-
-const mockOrders = [];
-
-const mockDrivers = [];
+import { adminService } from '../../services/adminService';
+import rideService from '../../services/rideService';
 
 const Services = () => {
-  const [orders, setOrders] = useState(mockOrders);
-  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({
     status: 'waiting',
     search: '',
@@ -39,6 +37,53 @@ const Services = () => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [dispatchMode, setDispatchMode] = useState(1); // 1: Internal Priority, 2: Open Pool
   const [togglingDispatch, setTogglingDispatch] = useState(false);
+  const [internalDrivers, setInternalDrivers] = useState([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [driverKeyword, setDriverKeyword] = useState('');
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getServiceOrders();
+      setOrders(res.data || []);
+    } catch (err) {
+      toast.error('Không thể tải danh sách đơn hàng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDrivers = async (keyword = '') => {
+    try {
+      setLoadingDrivers(true);
+      const res = await rideService.getInternalDrivers(keyword);
+      const list = Array.isArray(res)
+        ? res
+        : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
+      setInternalDrivers(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await adminService.getScheduledPricing();
+      if (res && res.data && res.data.dispatch_mode) {
+        setDispatchMode(Number(res.data.dispatch_mode));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    fetchDrivers();
+    fetchSettings();
+  }, []);
 
   const filteredOrders = orders.filter(o => {
     const matchesStatus = filter.status === 'history' ? (o.status === 'completed' || o.status === 'canceled') : o.status === filter.status;
@@ -66,12 +111,17 @@ const Services = () => {
     });
 
     if (result.isConfirmed) {
-      setTogglingDispatch(true);
-      setTimeout(() => {
+      try {
+        setTogglingDispatch(true);
+        await adminService.toggleScheduledDispatchMode(newMode);
         setDispatchMode(newMode);
-        setTogglingDispatch(false);
         toast.success(`Đã chuyển sang chế độ ${modeName}`);
-      }, 500);
+        fetchOrders();
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi chuyển chế độ');
+      } finally {
+        setTogglingDispatch(false);
+      }
     }
   };
 
@@ -87,21 +137,36 @@ const Services = () => {
     });
 
     if (result.isConfirmed) {
-      setOrders(orders.map(o => orderIds.includes(o.id) ? { ...o, status: 'waiting', auto_dispatch: true } : o));
-      setSelectedOrders([]);
-      toast.success('Đã kích hoạt tìm tài xế tự động');
+      try {
+        setLoading(true);
+        await adminService.pushServiceToPool(orderIds);
+        setSelectedOrders([]);
+        toast.success('Đã kích hoạt tìm tài xế tự động');
+        fetchOrders();
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi đẩy vào pool');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   const openAssignModal = (order) => {
     setCurrentOrder(order);
+    setDriverKeyword('');
+    fetchDrivers('');
     setShowAssignModal(true);
   };
 
-  const handleAssignDriver = (driver) => {
-    setOrders(orders.map(o => o.id === currentOrder.id ? { ...o, status: 'assigned', driver_name: driver.full_name, auto_dispatch: false } : o));
-    setShowAssignModal(false);
-    toast.success(`Đã gán đơn hàng cho ${driver.full_name}`);
+  const handleAssignDriver = async (driver) => {
+    try {
+      await adminService.assignServiceDriver(currentOrder.id, driver.id);
+      setShowAssignModal(false);
+      toast.success(`Đã gán đơn hàng cho ${driver.full_name}`);
+      fetchOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi gán tài xế');
+    }
   };
 
   const toggleSelectOrder = (id) => {
@@ -374,20 +439,77 @@ const Services = () => {
                 <div className="summary-address">{currentOrder?.pickup_address}</div>
               </div>
 
-              <div className="driver-list-container">
-                <div className="list-title">Tài xế khả dụng:</div>
-                {mockDrivers.map(driver => (
-                  <div key={driver.id} className="driver-card" onClick={() => handleAssignDriver(driver)}>
-                    <div className="driver-info">
-                      <div className="driver-avatar"><User size={20} /></div>
-                      <div>
-                        <div className="driver-name">{driver.full_name}</div>
-                        <div className="driver-phone">{driver.phone} • ⭐{driver.rating}</div>
+              <div className="driver-list-container" style={{ maxHeight: '300px', overflowY: 'auto', marginTop: '1rem' }}>
+                <div className="list-title" style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Tài xế khả dụng (Xe máy):</div>
+                
+                <div className="search-box" style={{ marginBottom: '1rem', width: '100%', position: 'relative' }}>
+                  <Search className="search-icon" size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm tài xế theo tên hoặc SĐT..." 
+                    className="search-input"
+                    value={driverKeyword}
+                    onChange={(e) => {
+                      setDriverKeyword(e.target.value);
+                      fetchDrivers(e.target.value);
+                    }}
+                    style={{ width: '100%', paddingLeft: '2.5rem', height: '40px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--card)' }}
+                  />
+                </div>
+
+                {loadingDrivers ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem', gap: '0.5rem', color: 'var(--text-muted)' }}>
+                    <Loader2 size={20} className="animate-spin" />
+                    <span>Đang tải danh sách tài xế...</span>
+                  </div>
+                ) : internalDrivers.filter(d => {
+                  const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
+                  const isBike = Number(d.vehicle_type) === 1;
+                  return hasCompleteProfile && isBike;
+                }).length === 0 ? (
+                  <p className="empty-drivers" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Không có tài xế xe máy phù hợp và khả dụng</p>
+                ) : (
+                  internalDrivers.filter(d => {
+                    const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
+                    const isBike = Number(d.vehicle_type) === 1;
+                    return hasCompleteProfile && isBike;
+                  }).map(driver => (
+                    <div 
+                      key={driver.id} 
+                      className="driver-card" 
+                      onClick={() => handleAssignDriver(driver)}
+                      style={{
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--card)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        marginBottom: '0.75rem'
+                      }}
+                    >
+                      <div className="driver-info" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <div className="driver-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <User size={20} style={{ color: 'var(--text-muted)' }} />
+                        </div>
+                        <div>
+                          <div className="driver-name" style={{ fontWeight: 600, color: 'var(--text)' }}>{driver.full_name}</div>
+                          <div className="driver-phone" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            {driver.phone} • ⭐{driver.average_rating || 5}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="driver-status" style={{ flexShrink: 0 }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '6px', backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#16a34a' }}>
+                          Sẵn sàng
+                        </span>
                       </div>
                     </div>
-                    <div className="driver-status">{driver.distance}</div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -399,5 +521,6 @@ const Services = () => {
 };
 
 export default Services;
+
 
 

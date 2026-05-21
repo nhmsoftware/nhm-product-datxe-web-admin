@@ -171,6 +171,27 @@ export const adminService = {
   deleteCommissionRule: async (id) => {
     const response = await api.delete(`/v1/admin/finance/commissions/${id}`);
     return response.data;
+  },
+
+  // Service Order Management
+  getServiceOrders: async () => {
+    const response = await api.get('/v1/admin/services/orders');
+    return response.data;
+  },
+
+  assignServiceDriver: async (orderId, driverId) => {
+    const response = await api.post('/v1/admin/services/orders/assign', {
+      order_id: orderId,
+      driver_id: driverId
+    });
+    return response.data;
+  },
+
+  pushServiceToPool: async (orderIds) => {
+    const response = await api.post('/v1/admin/services/orders/push-to-pool', {
+      order_ids: orderIds
+    });
+    return response.data;
   }
 };
 
