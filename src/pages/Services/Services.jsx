@@ -95,7 +95,7 @@ const Services = () => {
 
   const handleToggleDispatchMode = async () => {
     const newMode = dispatchMode === 1 ? 2 : 1;
-    const modeName = newMode === 2 ? 'PHÁT SÓNG TỰ ĐỘNG (Auto Dispatch)' : 'ƯU TIÊN ĐỘI XE NHÀ (Manual)';
+    const modeName = newMode === 2 ? 'PHÁT SÓNG TỰ ĐỘNG' : 'ƯU TIÊN ĐỘI XE NHÀ';
     
     const result = await Swal.fire({
       title: 'Thay đổi cơ chế phân phối?',
@@ -128,7 +128,7 @@ const Services = () => {
   const handlePushToPool = async (ids) => {
     const orderIds = Array.isArray(ids) ? ids : [ids];
     const result = await Swal.fire({
-      title: 'Kích hoạt Auto Dispatch?',
+      title: 'Kích hoạt tìm tài xế tự động?',
       text: `Đẩy ${orderIds.length} đơn hàng này vào hàng đợi tìm tài xế tự động?`,
       icon: 'question',
       showCancelButton: true,
@@ -221,7 +221,7 @@ const Services = () => {
                 {togglingDispatch && dispatchMode !== 2 ? <Loader2 size={18} className="animate-spin" /> : <Users size={18} />}
               </div>
               <div className="strategy-label">
-                <strong>Auto Dispatch</strong>
+                <strong>Phát sóng tự động</strong>
                 <span>Hệ thống tự tìm tài xế</span>
               </div>
             </button>
@@ -408,7 +408,7 @@ const Services = () => {
                           </button>
                           <button 
                             className="btn-action success-outline"
-                            title="Auto Dispatch"
+                            title="Phát sóng tự động"
                             onClick={(e) => { e.stopPropagation(); handlePushToPool(order.id); }}
                           >
                             <Send size={16} />

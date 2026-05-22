@@ -159,8 +159,8 @@ const BannerList = () => {
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
           <option value="">Tất cả trạng thái</option>
-          <option value="1">Đang hoạt động (Active)</option>
-          <option value="2">Đã tắt (Inactive)</option>
+          <option value="1">Đang hoạt động</option>
+          <option value="2">Đã tắt</option>
         </select>
       </div>
 
@@ -193,7 +193,7 @@ const BannerList = () => {
                     <td>{banner.order}</td>
                     <td>
                       <span className={`badge ${banner.status === 1 ? 'badge-success' : 'badge-error'}`}>
-                        {banner.status === 1 ? 'Active' : 'Inactive'}
+                        {banner.status === 1 ? 'Hoạt động' : 'Tạm dừng'}
                       </span>
                     </td>
                     <td>
@@ -280,7 +280,7 @@ const BannerList = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ color: '#000' }}>Đường dẫn liên kết (Link URL)</label>
+                  <label className="form-label" style={{ color: '#000' }}>Đường dẫn liên kết</label>
                   <input 
                     type="url" 
                     className="form-control" 
@@ -295,7 +295,7 @@ const BannerList = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label" style={{ color: '#000' }}>Thứ tự hiển thị (Sort Order)</label>
+                    <label className="form-label" style={{ color: '#000' }}>Thứ tự hiển thị</label>
                     <input 
                       type="number" 
                       className="form-control" 
@@ -313,8 +313,8 @@ const BannerList = () => {
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: parseInt(e.target.value)})}
                     >
-                      <option value={1}>Active</option>
-                      <option value={2}>Inactive</option>
+                      <option value={1}>Hoạt động</option>
+                      <option value={2}>Tạm dừng</option>
                     </select>
                   </div>
                 </div>

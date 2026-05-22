@@ -146,7 +146,7 @@ const NewsList = () => {
     <div className="marketing-page">
       <div className="marketing-header">
         <div>
-          <h1 className="marketing-title">Quản lý Tin tức (News)</h1>
+          <h1 className="marketing-title">Quản lý Tin tức</h1>
           <p className="marketing-subtitle">Quản lý các thông báo, bài viết dành cho người dùng / tài xế</p>
         </div>
         <div className="marketing-actions">
@@ -163,8 +163,8 @@ const NewsList = () => {
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
           <option value="">Tất cả trạng thái</option>
-          <option value="1">Đang hoạt động (Active)</option>
-          <option value="2">Đã tắt (Inactive)</option>
+          <option value="1">Đang hoạt động</option>
+          <option value="2">Đã tắt</option>
         </select>
       </div>
 
@@ -197,7 +197,7 @@ const NewsList = () => {
                     <td className="font-semibold">{item.title}</td>
                     <td>
                       <span className="badge badge-warning">
-                        {(item.tag || 'ALL').toUpperCase()}
+                        {item.tag === 'promotion' ? 'KHUYẾN MÃI' : item.tag === 'update' ? 'CẬP NHẬT' : 'TẤT CẢ'}
                       </span>
                     </td>
                     <td>{item.order}</td>
@@ -205,7 +205,7 @@ const NewsList = () => {
                       <span className={`badge ${
                         item.status === 1 ? 'badge-success' : 'badge-error'
                       }`}>
-                        {item.status === 1 ? 'ACTIVE' : 'INACTIVE'}
+                        {item.status === 1 ? 'HOẠT ĐỘNG' : 'TẠM DỪNG'}
                       </span>
                     </td>
                     <td>
@@ -310,14 +310,14 @@ const NewsList = () => {
                       value={formData.tag}
                       onChange={(e) => setFormData({...formData, tag: e.target.value})}
                     >
-                      <option value="all">Tất cả (All)</option>
-                      <option value="promotion">Khuyến mãi (Promotion)</option>
-                      <option value="update">Cập nhật (Update)</option>
+                      <option value="all">Tất cả</option>
+                      <option value="promotion">Khuyến mãi</option>
+                      <option value="update">Cập nhật</option>
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label" style={{ color: '#000' }}>Thứ tự hiển thị (Order)</label>
+                    <label className="form-label" style={{ color: '#000' }}>Thứ tự hiển thị</label>
                     <input 
                       type="number" 
                       className="form-control" 
@@ -335,8 +335,8 @@ const NewsList = () => {
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: parseInt(e.target.value)})}
                     >
-                      <option value={1}>Active</option>
-                      <option value={2}>Inactive</option>
+                      <option value={1}>Hoạt động</option>
+                      <option value={2}>Tạm dừng</option>
                     </select>
                   </div>
                 </div>

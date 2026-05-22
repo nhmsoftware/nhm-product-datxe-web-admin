@@ -413,7 +413,7 @@ const AntiFraud = () => {
               </div>
 
               <div className="detail-item">
-                <label>Bằng chứng kỹ thuật (Evidence Metadata)</label>
+                <label>Bằng chứng kỹ thuật</label>
                 <div className="metadata-box">
                   <pre>{JSON.stringify(selectedAlert.evidence_metadata, null, 2)}</pre>
                 </div>
