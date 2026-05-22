@@ -420,6 +420,7 @@ td {
 
 .modal-content {
   background: var(--bg);
+  color: var(--text);
   width: 100%;
   max-width: 800px;
   max-height: 90vh;

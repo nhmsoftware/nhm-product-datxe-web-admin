@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import marketingService from '../../services/marketingService';
+import { X, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import './Marketing.css';
 
 const NewsList = () => {
@@ -22,8 +23,9 @@ const NewsList = () => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    target_audience: 'all',
-    status: 'published',
+    tag: 'all',
+    status: 1,
+    order: 0,
     image_file: null,
   });
 
@@ -35,8 +37,8 @@ const NewsList = () => {
       
       const res = await marketingService.getNews(params);
       if (res.success) {
-        setNewsList(res.data.data);
-        setLastPage(res.data.last_page);
+        setNewsList(res.data.data || []);
+        setLastPage(res.data.meta?.last_page || res.data.last_page || 1);
       }
     } catch (error) {
       toast.error('Lỗi khi tải danh sách Tin tức');
@@ -56,8 +58,9 @@ const NewsList = () => {
       setFormData({
         title: news.title,
         content: news.content,
-        target_audience: news.target_audience,
-        status: news.status,
+        tag: news.tag || 'all',
+        status: news.status || 1,
+        order: news.order || 0,
         image_file: null,
         image_url: news.image_url
       });
@@ -67,8 +70,9 @@ const NewsList = () => {
       setFormData({
         title: '',
         content: '',
-        target_audience: 'all',
-        status: 'published',
+        tag: 'all',
+        status: 1,
+        order: 0,
         image_file: null,
       });
     }
@@ -89,8 +93,9 @@ const NewsList = () => {
       const data = new FormData();
       data.append('title', formData.title);
       data.append('content', formData.content);
-      data.append('target_audience', formData.target_audience);
+      data.append('tag', formData.tag);
       data.append('status', formData.status);
+      data.append('order', formData.order !== '' ? formData.order : 0);
       if (formData.image_file) {
         data.append('image', formData.image_file);
       }
@@ -146,7 +151,7 @@ const NewsList = () => {
         </div>
         <div className="marketing-actions">
           <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-            <i className="fa-solid fa-plus mr-2"></i> Thêm Tin tức
+            <Plus size={18} style={{ marginRight: '0.5rem' }} /> Thêm Tin tức
           </button>
         </div>
       </div>
@@ -158,13 +163,9 @@ const NewsList = () => {
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
           <option value="">Tất cả trạng thái</option>
-          <option value="draft">Bản nháp (Draft)</option>
-          <option value="published">Đã xuất bản (Published)</option>
-          <option value="archived">Lưu trữ (Archived)</option>
+          <option value="1">Đang hoạt động (Active)</option>
+          <option value="2">Đã tắt (Inactive)</option>
         </select>
-        <button className="btn btn-glass" onClick={() => fetchNews()}>
-          <i className="fa-solid fa-rotate-right"></i>
-        </button>
       </div>
 
       <div className="table-container glass">
@@ -180,7 +181,8 @@ const NewsList = () => {
                   <th>ID</th>
                   <th>Hình ảnh</th>
                   <th>Tiêu đề</th>
-                  <th>Đối tượng</th>
+                  <th>Phân loại</th>
+                  <th>Thứ tự</th>
                   <th>Trạng thái</th>
                   <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
@@ -195,24 +197,24 @@ const NewsList = () => {
                     <td className="font-semibold">{item.title}</td>
                     <td>
                       <span className="badge badge-warning">
-                        {item.target_audience.toUpperCase()}
+                        {(item.tag || 'ALL').toUpperCase()}
                       </span>
                     </td>
+                    <td>{item.order}</td>
                     <td>
                       <span className={`badge ${
-                        item.status === 'published' ? 'badge-success' : 
-                        item.status === 'draft' ? 'badge-warning' : 'badge-error'
+                        item.status === 1 ? 'badge-success' : 'badge-error'
                       }`}>
-                        {item.status.toUpperCase()}
+                        {item.status === 1 ? 'ACTIVE' : 'INACTIVE'}
                       </span>
                     </td>
                     <td>
                       <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
                         <button className="btn-action btn-action-edit" onClick={() => handleOpenModal(item)}>
-                          <i className="fa-solid fa-pen"></i>
+                          <Edit size={16} />
                         </button>
                         <button className="btn-action btn-action-danger" onClick={() => handleDelete(item.id)}>
-                          <i className="fa-solid fa-trash"></i>
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -231,14 +233,14 @@ const NewsList = () => {
                     disabled={page === 1}
                     onClick={() => setPage(page - 1)}
                   >
-                    <i className="fa-solid fa-chevron-left"></i>
+                    <ChevronLeft size={16} />
                   </button>
                   <button 
                     className="btn-page" 
                     disabled={page === lastPage}
                     onClick={() => setPage(page + 1)}
                   >
-                    <i className="fa-solid fa-chevron-right"></i>
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
@@ -249,12 +251,12 @@ const NewsList = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" style={{ color: '#000' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="text-xl font-bold">{isEditing ? 'Sửa Tin tức' : 'Thêm Tin tức Mới'}</h2>
+              <h2 className="text-xl font-bold" style={{ color: '#000' }}>{isEditing ? 'Sửa Tin tức' : 'Thêm Tin tức Mới'}</h2>
               <button className="btn-icon" onClick={handleCloseModal}>
-                <i className="fa-solid fa-xmark"></i>
+                <X size={20} />
               </button>
             </div>
             <div className="modal-body">
@@ -268,7 +270,7 @@ const NewsList = () => {
                 )}
 
                 <div className="form-group">
-                  <label className="form-label">Tiêu đề bài viết *</label>
+                  <label className="form-label" style={{ color: '#000' }}>Tiêu đề bài viết *</label>
                   <input 
                     type="text" 
                     className="form-control" 
@@ -279,7 +281,7 @@ const NewsList = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Nội dung chi tiết *</label>
+                  <label className="form-label" style={{ color: '#000' }}>Nội dung chi tiết *</label>
                   <textarea 
                     className="form-control" 
                     required 
@@ -290,7 +292,7 @@ const NewsList = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Upload Hình ảnh đại diện {isEditing ? '(Tùy chọn)' : '*'}</label>
+                  <label className="form-label" style={{ color: '#000' }}>Upload Hình ảnh đại diện {isEditing ? '(Tùy chọn)' : '*'}</label>
                   <input 
                     type="file" 
                     className="form-control" 
@@ -302,36 +304,47 @@ const NewsList = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Đối tượng hiển thị</label>
+                    <label className="form-label" style={{ color: '#000' }}>Phân loại (Tag)</label>
                     <select 
                       className="form-control"
-                      value={formData.target_audience}
-                      onChange={(e) => setFormData({...formData, target_audience: e.target.value})}
+                      value={formData.tag}
+                      onChange={(e) => setFormData({...formData, tag: e.target.value})}
                     >
                       <option value="all">Tất cả (All)</option>
-                      <option value="driver">Tài xế (Driver)</option>
-                      <option value="customer">Khách hàng (Customer)</option>
+                      <option value="promotion">Khuyến mãi (Promotion)</option>
+                      <option value="update">Cập nhật (Update)</option>
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Trạng thái</label>
+                    <label className="form-label" style={{ color: '#000' }}>Thứ tự hiển thị (Order)</label>
+                    <input 
+                      type="number" 
+                      className="form-control" 
+                      required 
+                      min="0"
+                      value={formData.order}
+                      onChange={(e) => setFormData({...formData, order: e.target.value === '' ? '' : parseInt(e.target.value)})}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ color: '#000' }}>Trạng thái</label>
                     <select 
                       className="form-control"
                       value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      onChange={(e) => setFormData({...formData, status: parseInt(e.target.value)})}
                     >
-                      <option value="draft">Bản nháp (Draft)</option>
-                      <option value="published">Đã xuất bản (Published)</option>
-                      <option value="archived">Lưu trữ (Archived)</option>
+                      <option value={1}>Active</option>
+                      <option value={2}>Inactive</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
                   <button type="button" className="btn btn-glass" onClick={handleCloseModal}>Hủy</button>
                   <button type="submit" className="btn btn-primary">
-                    <i className="fa-solid fa-floppy-disk mr-2"></i> Lưu bài viết
+                    <Save size={18} style={{ marginRight: '0.5rem' }} /> Lưu bài viết
                   </button>
                 </div>
               </form>

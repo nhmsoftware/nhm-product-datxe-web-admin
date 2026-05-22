@@ -97,7 +97,7 @@
   display: block;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: var(--text);
+  color: #000;
 }
 
 .form-control {
@@ -106,7 +106,7 @@
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg);
-  color: var(--text);
+  color: #000;
   font-size: 0.95rem;
   transition: var(--transition);
 }
