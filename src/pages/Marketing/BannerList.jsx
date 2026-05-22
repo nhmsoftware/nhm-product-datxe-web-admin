@@ -1,0 +1,336 @@
+import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
+import marketingService from '../../services/marketingService';
+import './Marketing.css';
+
+const BannerList = () => {
+  const [banners, setBanners] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Pagination & Filters
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('');
+  
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentBannerId, setCurrentBannerId] = useState(null);
+  
+  // Form Data
+  const [formData, setFormData] = useState({
+    title: '',
+    link_url: '',
+    status: 'active',
+    sort_order: 0,
+    image_file: null,
+  });
+
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+      const params = { page, per_page: 20 };
+      if (statusFilter) params.status = statusFilter;
+      
+      const res = await marketingService.getBanners(params);
+      if (res.success) {
+        setBanners(res.data.data);
+        setLastPage(res.data.last_page);
+      }
+    } catch (error) {
+      toast.error('Lỗi khi tải danh sách Banners');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBanners();
+  }, [page, statusFilter]);
+
+  const handleOpenModal = (banner = null) => {
+    if (banner) {
+      setIsEditing(true);
+      setCurrentBannerId(banner.id);
+      setFormData({
+        title: banner.title,
+        link_url: banner.link_url || '',
+        status: banner.status,
+        sort_order: banner.sort_order,
+        image_file: null, // Don't set the file, it's string URL from API
+        image_url: banner.image_url // for preview
+      });
+    } else {
+      setIsEditing(false);
+      setCurrentBannerId(null);
+      setFormData({
+        title: '',
+        link_url: '',
+        status: 'active',
+        sort_order: 0,
+        image_file: null,
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handleFileChange = (e) => {
+    setFormData({ ...formData, image_file: e.target.files[0] });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const data = new FormData();
+      data.append('title', formData.title);
+      if (formData.link_url) data.append('link_url', formData.link_url);
+      data.append('status', formData.status);
+      data.append('sort_order', formData.sort_order);
+      if (formData.image_file) {
+        data.append('image', formData.image_file);
+      }
+      
+      if (isEditing) {
+        data.append('_method', 'PUT'); // For Laravel multipart/form-data PUT
+        const res = await marketingService.updateBanner(currentBannerId, data);
+        if (res.success) toast.success('Cập nhật Banner thành công');
+      } else {
+        const res = await marketingService.createBanner(data);
+        if (res.success) toast.success('Tạo Banner thành công');
+      }
+      setShowModal(false);
+      fetchBanners();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu Banner');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: 'Xóa Banner?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Đồng ý xóa',
+      cancelButtonText: 'Hủy',
+      background: 'var(--bg)',
+      color: 'var(--text)',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const res = await marketingService.deleteBanner(id);
+        if (res.success) {
+          toast.success('Đã xóa Banner');
+          fetchBanners();
+        }
+      } catch (error) {
+        toast.error('Lỗi khi xóa Banner');
+      }
+    }
+  };
+
+  return (
+    <div className="marketing-page">
+      <div className="marketing-header">
+        <div>
+          <h1 className="marketing-title">Quản lý Banners</h1>
+          <p className="marketing-subtitle">Quản lý các banner quảng cáo trên ứng dụng di động</p>
+        </div>
+        <div className="marketing-actions">
+          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+            <i className="fa-solid fa-plus mr-2"></i> Thêm Banner
+          </button>
+        </div>
+      </div>
+
+      <div className="marketing-filters glass">
+        <select 
+          className="status-select"
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Đang hoạt động (Active)</option>
+          <option value="inactive">Đã tắt (Inactive)</option>
+        </select>
+        <button className="btn btn-glass" onClick={() => fetchBanners()}>
+          <i className="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+
+      <div className="table-container glass">
+        {loading ? (
+          <div className="p-8 text-center text-muted animate-pulse">Đang tải dữ liệu...</div>
+        ) : banners.length === 0 ? (
+          <div className="empty-state">Không tìm thấy Banner nào.</div>
+        ) : (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Hình ảnh</th>
+                  <th>Tiêu đề</th>
+                  <th>Thứ tự</th>
+                  <th>Trạng thái</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {banners.map((banner) => (
+                  <tr key={banner.id} className="glass-hover">
+                    <td><span className="text-muted text-sm">{banner.id.substring(0, 8)}...</span></td>
+                    <td>
+                      <img src={banner.image_url} alt={banner.title} className="thumbnail-preview" />
+                    </td>
+                    <td className="font-semibold">{banner.title}</td>
+                    <td>{banner.sort_order}</td>
+                    <td>
+                      <span className={`badge ${banner.status === 'active' ? 'badge-success' : 'badge-error'}`}>
+                        {banner.status === 'active' ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                        <button className="btn-action btn-action-edit" onClick={() => handleOpenModal(banner)}>
+                          <i className="fa-solid fa-pen"></i>
+                        </button>
+                        <button className="btn-action btn-action-danger" onClick={() => handleDelete(banner.id)}>
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {/* Pagination */}
+            {lastPage > 1 && (
+              <div className="pagination-wrapper">
+                <span className="text-sm text-muted">Trang {page} / {lastPage}</span>
+                <div className="pagination-actions">
+                  <button 
+                    className="btn-page" 
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    <i className="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <button 
+                    className="btn-page" 
+                    disabled={page === lastPage}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    <i className="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="text-xl font-bold">{isEditing ? 'Sửa Banner' : 'Thêm Banner Mới'}</h2>
+              <button className="btn-icon" onClick={handleCloseModal}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleSubmit}>
+                
+                {isEditing && formData.image_url && (
+                  <div className="mb-4">
+                    <label className="form-label">Hình ảnh hiện tại</label>
+                    <img src={formData.image_url} alt="Current" className="thumbnail-large" />
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">Tiêu đề *</label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    required 
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Upload Hình ảnh {isEditing ? '(Tùy chọn nếu muốn đổi)' : '*'}</label>
+                  <input 
+                    type="file" 
+                    className="form-control" 
+                    accept="image/*"
+                    required={!isEditing}
+                    onChange={handleFileChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Đường dẫn liên kết (Link URL)</label>
+                  <input 
+                    type="url" 
+                    className="form-control" 
+                    placeholder="https://"
+                    value={formData.link_url}
+                    onChange={(e) => setFormData({...formData, link_url: e.target.value})}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Thứ tự hiển thị (Sort Order)</label>
+                    <input 
+                      type="number" 
+                      className="form-control" 
+                      required 
+                      min="0"
+                      value={formData.sort_order}
+                      onChange={(e) => setFormData({...formData, sort_order: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Trạng thái</label>
+                    <select 
+                      className="form-control"
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button type="button" className="btn btn-glass" onClick={handleCloseModal}>Hủy</button>
+                  <button type="submit" className="btn btn-primary">
+                    <i className="fa-solid fa-floppy-disk mr-2"></i> Lưu Banner
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default BannerList;

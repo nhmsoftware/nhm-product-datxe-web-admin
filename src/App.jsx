@@ -24,6 +24,8 @@ import ViolationList from './pages/Operations/ViolationList';
 import DriverFinanceDashboard from './pages/Finance/DriverFinanceDashboard';
 import CreditWalletConfig from './pages/Finance/CreditWalletConfig';
 import SubscriptionPackageConfig from './pages/Finance/SubscriptionPackageConfig';
+import BannerList from './pages/Marketing/BannerList';
+import NewsList from './pages/Marketing/NewsList';
 import authService from './services/authService';
 
 
@@ -185,6 +187,18 @@ function App() {
         <Route path="/operations/violations" element={
           <ProtectedRoute>
             <ViolationList />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/marketing/banners" element={
+          <ProtectedRoute>
+            <BannerList />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/marketing/news" element={
+          <ProtectedRoute>
+            <NewsList />
           </ProtectedRoute>
         } />
 
