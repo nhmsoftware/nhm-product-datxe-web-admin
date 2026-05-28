@@ -22,6 +22,9 @@ const BannerList = () => {
   // Form Data
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
+    label: '',
+    tag: '',
     action_url: '',
     status: 1,
     order: 0,
@@ -56,6 +59,9 @@ const BannerList = () => {
       setCurrentBannerId(banner.id);
       setFormData({
         title: banner.title,
+        description: banner.description || '',
+        label: banner.label || '',
+        tag: banner.tag || '',
         action_url: banner.action_url || '',
         status: banner.status || 1,
         order: banner.order || 0,
@@ -67,6 +73,9 @@ const BannerList = () => {
       setCurrentBannerId(null);
       setFormData({
         title: '',
+        description: '',
+        label: '',
+        tag: '',
         action_url: '',
         status: 1,
         order: 0,
@@ -89,6 +98,9 @@ const BannerList = () => {
     try {
       const data = new FormData();
       data.append('title', formData.title);
+      if (formData.description) data.append('description', formData.description);
+      if (formData.label) data.append('label', formData.label);
+      if (formData.tag) data.append('tag', formData.tag);
       if (formData.action_url) data.append('action_url', formData.action_url);
       data.append('status', formData.status);
       data.append('order', formData.order !== '' ? formData.order : 0);
@@ -266,6 +278,40 @@ const BannerList = () => {
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ color: '#000' }}>Mô tả</label>
+                  <textarea 
+                    className="form-control" 
+                    rows="3"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  ></textarea>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label" style={{ color: '#000' }}>Nhãn (Label)</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="VD: Giá tốt"
+                      value={formData.label}
+                      onChange={(e) => setFormData({...formData, label: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ color: '#000' }}>Thẻ (Tag)</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="VD: update"
+                      value={formData.tag}
+                      onChange={(e) => setFormData({...formData, tag: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
