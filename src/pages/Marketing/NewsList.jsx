@@ -260,7 +260,7 @@ const NewsList = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal-overlay">
           <div className="modal-content" style={{ color: '#000' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="text-xl font-bold" style={{ color: '#000' }}>{isEditing ? 'Sửa Tin tức' : 'Thêm Tin tức Mới'}</h2>
@@ -307,7 +307,6 @@ const NewsList = () => {
                   <input 
                     type="file" 
                     className="form-control" 
-                    accept="image/*"
                     required={!isEditing}
                     onChange={handleFileChange}
                   />

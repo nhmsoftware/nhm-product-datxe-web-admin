@@ -380,7 +380,7 @@ const AntiFraud = () => {
       </div>
 
       {showDetailModal && selectedAlert && (
-        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+        <div className="modal-overlay">
           <div className="modal-container" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2><ShieldAlert size={20} style={{ color: '#ef4444' }} /> Chi tiết Cảnh báo Gian lận</h2>

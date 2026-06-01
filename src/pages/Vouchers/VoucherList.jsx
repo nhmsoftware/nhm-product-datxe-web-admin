@@ -505,7 +505,7 @@ const VoucherList = () => {
 
       {/* Form Modal (Create/Edit) */}
       {showFormModal && (
-        <div className="modal-overlay" onClick={() => setShowFormModal(false)}>
+        <div className="modal-overlay">
           <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="text-xl font-bold">{currentVoucher ? 'Chỉnh sửa Voucher' : 'Tạo Voucher Mới'}</h2>
@@ -665,7 +665,7 @@ const VoucherList = () => {
 
       {/* Assign Modal */}
       {showAssignModal && (
-        <div className="modal-overlay" onClick={() => setShowAssignModal(false)}>
+        <div className="modal-overlay">
           <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="text-xl font-bold">Gán Voucher cho Người dùng</h2>

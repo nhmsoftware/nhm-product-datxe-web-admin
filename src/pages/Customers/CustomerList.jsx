@@ -41,7 +41,7 @@ const CustomerDetailModal = ({ userId, onClose }) => {
   );
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '550px' }}>
         <div className="modal-header">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

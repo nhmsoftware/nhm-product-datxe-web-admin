@@ -219,7 +219,7 @@ const ViolationList = () => {
 
       {/* Detail Modal */}
       {showDetail && selectedItem && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowDetail(false)}>
+        <div className="modal-overlay">
           <div className="modal-content animate-slide-up" style={{ maxWidth: '900px' }}>
             <div className="modal-header">
               <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -337,7 +337,7 @@ const ViolationList = () => {
 
       {/* Regulations Modal */}
       {showRules && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowRules(false)}>
+        <div className="modal-overlay">
           <div className="modal-content animate-slide-up" style={{ maxWidth: '850px' }}>
             <div className="modal-header">
               <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

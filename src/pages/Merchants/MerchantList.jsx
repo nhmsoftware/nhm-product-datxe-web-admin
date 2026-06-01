@@ -46,7 +46,7 @@ const MerchantDetailModal = ({ merchantId, onClose, onRefresh }) => {
   const { merchant } = data;
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '900px' }}>
         <div className="modal-header">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -436,7 +436,7 @@ const MerchantMenuModal = ({ merchantId, storeName, onClose }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && !isSaving && onClose()}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '1000px', background: 'var(--bg)', borderRadius: '24px' }}>
         <div className="modal-header" style={{ borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)' }}>

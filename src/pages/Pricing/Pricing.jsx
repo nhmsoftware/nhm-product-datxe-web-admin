@@ -501,9 +501,7 @@ const Pricing = () => {
       </div>
 
       {showSurgeModal && (
-        <div className="modal-overlay" onClick={(e) => {
-          if (e.target.className === 'modal-overlay') setShowSurgeModal(false);
-        }}>
+        <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
               <h3 style={{ margin: 0 }}>{editSurgeRule.rule_id ? 'Chỉnh sửa quy tắc' : 'Thêm mới quy tắc'}</h3>

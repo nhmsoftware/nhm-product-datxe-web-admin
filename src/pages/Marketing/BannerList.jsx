@@ -260,7 +260,7 @@ const BannerList = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal-overlay">
           <div className="modal-content" style={{ color: '#000' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="text-xl font-bold" style={{ color: '#000' }}>{isEditing ? 'Sửa Banner' : 'Thêm Banner Mới'}</h2>
@@ -281,7 +281,7 @@ const BannerList = () => {
                 )}
 
                 <div className="form-group">
-                  <label className="form-label" style={{ color: '#000' }}>Tiêu đề *</label>
+                  <label className="form-label" style={{ color: '#000' }}>Loại banner *</label>
                   <input 
                     type="text" 
                     className="form-control" 
@@ -301,80 +301,19 @@ const BannerList = () => {
                   ></textarea>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label" style={{ color: '#000' }}>Nhãn (Label)</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      placeholder="VD: Giá tốt"
-                      value={formData.label}
-                      onChange={(e) => setFormData({...formData, label: e.target.value})}
-                    />
-                  </div>
 
-                  <div className="form-group">
-                    <label className="form-label" style={{ color: '#000' }}>Thẻ (Tag)</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      placeholder="VD: update"
-                      value={formData.tag}
-                      onChange={(e) => setFormData({...formData, tag: e.target.value})}
-                    />
-                  </div>
-                </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ color: '#000' }}>Upload Hình ảnh {isEditing ? '(Tùy chọn nếu muốn đổi)' : '*'}</label>
+                  <label className="form-label" style={{ color: '#000' }}>Upload Hình ảnh banner {isEditing ? '(Tùy chọn nếu muốn đổi)' : '*'}</label>
                   <input 
                     type="file" 
                     className="form-control" 
-                    accept="image/*"
                     required={!isEditing}
                     onChange={handleFileChange}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" style={{ color: '#000' }}>Đường dẫn liên kết</label>
-                  <input 
-                    type="url" 
-                    className="form-control" 
-                    placeholder="https://"
-                    value={formData.action_url}
-                    onChange={(e) => setFormData({...formData, action_url: e.target.value})}
-                  />
-                  <small style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                    * Link trang web sẽ được mở ra khi người dùng bấm vào Banner trên ứng dụng.
-                  </small>
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label" style={{ color: '#000' }}>Thứ tự hiển thị</label>
-                    <input 
-                      type="number" 
-                      className="form-control" 
-                      required 
-                      min="0"
-                      value={formData.order}
-                      onChange={(e) => setFormData({...formData, order: e.target.value === '' ? '' : parseInt(e.target.value)})}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label" style={{ color: '#000' }}>Trạng thái</label>
-                    <select 
-                      className="form-control"
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: parseInt(e.target.value)})}
-                    >
-                      <option value={1}>Hoạt động</option>
-                      <option value={2}>Tạm dừng</option>
-                    </select>
-                  </div>
-                </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
                   <button type="button" className="btn btn-glass" onClick={handleCloseModal}>Hủy</button>

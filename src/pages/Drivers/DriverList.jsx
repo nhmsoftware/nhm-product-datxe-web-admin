@@ -10,7 +10,7 @@ import { useLocation } from 'react-router-dom';
 const ImagePreviewModal = ({ url, title, onClose }) => {
   if (!url) return null;
   return (
-    <div className="modal-overlay" style={{ zIndex: 1000, background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
+    <div className="modal-overlay" style={{ zIndex: 1000, background: 'rgba(0,0,0,0.85)' }}>
       <div className="modal-content" style={{ background: 'transparent', boxShadow: 'none', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
         <div style={{ position: 'absolute', top: '-40px', right: '0', display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <span style={{ color: 'white', fontWeight: 600 }}>{title}</span>
@@ -60,7 +60,7 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
   );
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '800px' }}>
         <div className="modal-header">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

@@ -336,8 +336,7 @@ const SubscriptionPackageConfig = () => {
 
       {/* Modal CRUD */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseModal} style={{ 
-          position: 'fixed', 
+        <div className="modal-overlay" style={{ position: 'fixed', 
           top: 0, left: 0, right: 0, bottom: 0, 
           background: 'rgba(0,0,0,0.6)', 
           backdropFilter: 'blur(10px)',
@@ -346,7 +345,7 @@ const SubscriptionPackageConfig = () => {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem'
-        }}>
+         }}>
           <div className="glass animate-scale-in" onClick={(e) => e.stopPropagation()} style={{ 
             width: '100%', 
             maxWidth: '600px', 
