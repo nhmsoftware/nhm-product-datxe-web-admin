@@ -66,7 +66,8 @@ const BannerList = () => {
         status: banner.status || 1,
         order: banner.order || 0,
         image_file: null, // Don't set the file, it's string URL from API
-        image_url: banner.image_url // for preview
+        image_url: banner.image_url, // for preview
+        image_preview: null
       });
     } else {
       setIsEditing(false);
@@ -80,6 +81,7 @@ const BannerList = () => {
         status: 1,
         order: 0,
         image_file: null,
+        image_preview: null,
       });
     }
     setShowModal(true);
@@ -90,7 +92,14 @@ const BannerList = () => {
   };
 
   const handleFileChange = (e) => {
-    setFormData({ ...formData, image_file: e.target.files[0] });
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ 
+        ...formData, 
+        image_file: file,
+        image_preview: URL.createObjectURL(file)
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -262,10 +271,12 @@ const BannerList = () => {
             <div className="modal-body">
               <form onSubmit={handleSubmit}>
                 
-                {isEditing && formData.image_url && (
+                {(formData.image_preview || (isEditing && formData.image_url)) && (
                   <div className="mb-4">
-                    <label className="form-label" style={{ color: '#000' }}>Hình ảnh hiện tại</label>
-                    <img src={formData.image_url} alt="Current" className="thumbnail-large" />
+                    <label className="form-label" style={{ color: '#000' }}>
+                      {formData.image_preview ? 'Hình ảnh xem trước' : 'Hình ảnh hiện tại'}
+                    </label>
+                    <img src={formData.image_preview || formData.image_url} alt="Preview" className="thumbnail-large" />
                   </div>
                 )}
 
