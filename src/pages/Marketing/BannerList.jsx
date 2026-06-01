@@ -197,8 +197,7 @@ const BannerList = () => {
                 <tr>
                   <th>ID</th>
                   <th>Hình ảnh</th>
-                  <th>Tiêu đề</th>
-                  <th>Thứ tự</th>
+                  <th>Loại banner</th>
                   <th>Trạng thái</th>
                   <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
@@ -211,7 +210,6 @@ const BannerList = () => {
                       <img src={banner.image_url} alt={banner.title} className="thumbnail-preview" />
                     </td>
                     <td className="font-semibold">{banner.title}</td>
-                    <td>{banner.order}</td>
                     <td>
                       <span className={`badge ${banner.status === 1 ? 'badge-success' : 'badge-error'}`}>
                         {banner.status === 1 ? 'Hoạt động' : 'Tạm dừng'}
