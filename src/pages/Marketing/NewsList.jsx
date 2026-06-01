@@ -191,7 +191,6 @@ const NewsList = () => {
                   <th>Hình ảnh</th>
                   <th>Tiêu đề</th>
                   <th>Phân loại</th>
-                  <th>Thứ tự</th>
                   <th>Trạng thái</th>
                   <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
@@ -209,7 +208,6 @@ const NewsList = () => {
                         {item.tag === 'promotion' ? 'KHUYẾN MÃI' : item.tag === 'update' ? 'CẬP NHẬT' : 'TẤT CẢ'}
                       </span>
                     </td>
-                    <td>{item.order}</td>
                     <td>
                       <span className={`badge ${
                         item.status === 1 ? 'badge-success' : 'badge-error'
