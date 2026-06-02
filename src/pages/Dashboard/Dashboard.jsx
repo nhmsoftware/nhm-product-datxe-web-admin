@@ -189,12 +189,37 @@ const Dashboard = () => {
     toast.success(`Đang xuất dữ liệu ${title}...`);
     const exportData = Array.isArray(data) ? data : [data];
     const headers = Object.keys(exportData[0] || {}).join(',');
-    const rows = exportData.map(obj => Object.values(obj).join(',')).join('\n');
-    const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
+    const rows = exportData.map(obj => 
+      Object.values(obj).map(val => {
+        if (val === null || val === undefined) return '';
+        if (Array.isArray(val)) {
+          if (val.length > 0 && typeof val[0] === 'object') {
+            return '"' + val.map(item => 
+              Object.entries(item).map(([k, v]) => `${k}: ${v}`).join(' ')
+            ).join('; ').replace(/"/g, '""') + '"';
+          }
+          return '"' + val.join('; ').replace(/"/g, '""') + '"';
+        }
+        if (typeof val === 'object') {
+          return '"' + Object.entries(val).map(([k, v]) => `${k}: ${v}`).join('; ').replace(/"/g, '""') + '"';
+        }
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      }).join(',')
+    ).join('\n');
+    
+    const csvContent = headers + "\n" + rows;
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("href", url);
     link.setAttribute("download", `${title.toLowerCase().replace(/ /g, '_')}_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   const revenueChartOptions = {
