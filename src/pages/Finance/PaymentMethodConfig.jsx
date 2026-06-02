@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Plus, 
   Edit, 
@@ -16,12 +17,24 @@ import {
   AlertTriangle,
   Lock,
   Percent,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+
+// Helper to safely parse JSON field in case backend returns stringified JSON
+const parseJsonField = (field) => {
+  if (!field) return {};
+  if (typeof field === 'object') return field;
+  try {
+    return JSON.parse(field);
+  } catch (e) {
+    return {};
+  }
+};
 
 const PaymentMethodConfig = () => {
   const navigate = useNavigate();
@@ -37,10 +50,10 @@ const PaymentMethodConfig = () => {
     code: '',
     name: '',
     is_active: false,
-    min_amount: 10000,
-    max_amount: 10000000,
+    min_amount: '',
+    max_amount: '',
     icon_url: '',
-    sort_order: 0,
+    sort_order: '',
     transfer_info: {
       bank_name: '',
       account_number: '',
@@ -57,7 +70,7 @@ const PaymentMethodConfig = () => {
       api_key: '',
       secret_key: '',
       endpoint: '',
-      transaction_fee: 0,
+      transaction_fee: '',
       internal_note: '',
       require_otp: false
     }
@@ -89,10 +102,10 @@ const PaymentMethodConfig = () => {
       code: '',
       name: '',
       is_active: false,
-      min_amount: 10000,
-      max_amount: 10000000,
+      min_amount: '',
+      max_amount: '',
       icon_url: '',
-      sort_order: 0,
+      sort_order: '',
       transfer_info: {
         bank_name: '',
         account_number: '',
@@ -109,7 +122,7 @@ const PaymentMethodConfig = () => {
         api_key: '',
         secret_key: '',
         endpoint: '',
-        transaction_fee: 0,
+        transaction_fee: '',
         internal_note: '',
         require_otp: false
       }
@@ -120,35 +133,38 @@ const PaymentMethodConfig = () => {
   const handleOpenEdit = (method) => {
     setEditingMethod(method);
     
+    const transferInfo = parseJsonField(method.transfer_info);
+    const metadata = parseJsonField(method.metadata);
+
     // Merge existing values to form state safely
     setFormData({
       type: method.type || 'e_wallet',
       code: method.code || '',
       name: method.name || '',
       is_active: !!method.is_active,
-      min_amount: method.min_amount || 10000,
-      max_amount: method.max_amount || 10000000,
+      min_amount: method.min_amount !== undefined && method.min_amount !== null ? method.min_amount : '',
+      max_amount: method.max_amount !== undefined && method.max_amount !== null ? method.max_amount : '',
       icon_url: method.icon_url || '',
-      sort_order: method.sort_order || 0,
+      sort_order: method.sort_order !== undefined && method.sort_order !== null ? method.sort_order : '',
       transfer_info: {
-        bank_name: method.transfer_info?.bank_name || '',
-        account_number: method.transfer_info?.account_number || '',
-        account_name: method.transfer_info?.account_name || '',
-        bank_code: method.transfer_info?.bank_code || '',
-        branch: method.transfer_info?.branch || '',
-        qr_url: method.transfer_info?.qr_url || '',
-        default_content: method.transfer_info?.default_content || '',
-        content_syntax: method.transfer_info?.content_syntax || 'TOPUP_[DriverCode]_[TransactionCode]',
-        auto_reconciliation: !!method.transfer_info?.auto_reconciliation
+        bank_name: transferInfo.bank_name || '',
+        account_number: transferInfo.account_number || '',
+        account_name: transferInfo.account_name || '',
+        bank_code: transferInfo.bank_code || '',
+        branch: transferInfo.branch || '',
+        qr_url: transferInfo.qr_url || '',
+        default_content: transferInfo.default_content || '',
+        content_syntax: transferInfo.content_syntax || 'TOPUP_[DriverCode]_[TransactionCode]',
+        auto_reconciliation: !!transferInfo.auto_reconciliation
       },
       metadata: {
-        merchant_id: method.metadata?.merchant_id || '',
-        api_key: method.metadata?.api_key || '',
-        secret_key: method.metadata?.secret_key || '',
-        endpoint: method.metadata?.endpoint || '',
-        transaction_fee: method.metadata?.transaction_fee || 0,
-        internal_note: method.metadata?.internal_note || '',
-        require_otp: !!method.metadata?.require_otp
+        merchant_id: metadata.merchant_id || '',
+        api_key: metadata.api_key || '',
+        secret_key: metadata.secret_key || '',
+        endpoint: metadata.endpoint || '',
+        transaction_fee: metadata.transaction_fee !== undefined && metadata.transaction_fee !== null ? metadata.transaction_fee : '',
+        internal_note: metadata.internal_note || '',
+        require_otp: !!metadata.require_otp
       }
     });
     setShowModal(true);
@@ -219,18 +235,67 @@ const PaymentMethodConfig = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (parseFloat(formData.min_amount) > parseFloat(formData.max_amount)) {
+    const minVal = formData.min_amount === '' ? 0 : parseFloat(formData.min_amount);
+    const maxVal = formData.max_amount === '' ? 0 : parseFloat(formData.max_amount);
+    if (minVal > maxVal) {
       toast.error('Giới hạn số tiền nạp không hợp lệ. Số tiền tối thiểu không được lớn hơn tối đa.');
       return;
+    }
+
+    // Chuẩn hóa dữ liệu gửi API theo đúng type để tránh lỗi validation do ConvertEmptyStringsToNull của Laravel
+    const submitData = {
+      type: formData.type,
+      code: formData.code,
+      name: formData.name,
+      is_active: !!formData.is_active,
+      min_amount: minVal,
+      max_amount: maxVal,
+      sort_order: formData.sort_order === '' ? 0 : parseInt(formData.sort_order),
+      icon_url: formData.icon_url || null
+    };
+
+    if (formData.type === 'bank_transfer') {
+      submitData.transfer_info = {
+        bank_name: formData.transfer_info.bank_name || '',
+        account_number: formData.transfer_info.account_number || '',
+        account_name: formData.transfer_info.account_name || '',
+        bank_code: formData.transfer_info.bank_code || '',
+        branch: formData.transfer_info.branch || null,
+        qr_url: formData.transfer_info.qr_url || null,
+        default_content: formData.transfer_info.default_content || null,
+        content_syntax: formData.transfer_info.content_syntax || 'TOPUP_[DriverCode]_[TransactionCode]',
+        auto_reconciliation: !!formData.transfer_info.auto_reconciliation
+      };
+      
+      // Xóa các trường trống không bắt buộc
+      if (!submitData.transfer_info.branch) delete submitData.transfer_info.branch;
+      if (!submitData.transfer_info.qr_url) delete submitData.transfer_info.qr_url;
+      if (!submitData.transfer_info.default_content) delete submitData.transfer_info.default_content;
+    } else {
+      submitData.metadata = {
+        merchant_id: formData.metadata.merchant_id || '',
+        api_key: formData.metadata.api_key || null,
+        secret_key: formData.metadata.secret_key || null,
+        endpoint: formData.metadata.endpoint || null,
+        transaction_fee: (formData.metadata.transaction_fee === '' || formData.metadata.transaction_fee === undefined) ? 0 : parseFloat(formData.metadata.transaction_fee),
+        internal_note: formData.metadata.internal_note || null,
+        require_otp: !!formData.metadata.require_otp
+      };
+
+      // Xóa các trường trống không bắt buộc
+      if (!submitData.metadata.api_key) delete submitData.metadata.api_key;
+      if (!submitData.metadata.secret_key) delete submitData.metadata.secret_key;
+      if (!submitData.metadata.endpoint) delete submitData.metadata.endpoint;
+      if (!submitData.metadata.internal_note) delete submitData.metadata.internal_note;
     }
 
     setSubmitting(true);
     try {
       let response;
       if (editingMethod) {
-        response = await api.put(`/v1/admin/finance/payment-methods/${editingMethod.id}`, formData);
+        response = await api.put(`/v1/admin/finance/payment-methods/${editingMethod.id}`, submitData);
       } else {
-        response = await api.post('/v1/admin/finance/payment-methods', formData);
+        response = await api.post('/v1/admin/finance/payment-methods', submitData);
       }
 
       if (response.data.success) {
@@ -266,7 +331,7 @@ const PaymentMethodConfig = () => {
         if (confirmResult.isConfirmed) {
           try {
             const retryResponse = await api.put(`/v1/admin/finance/payment-methods/${editingMethod.id}`, {
-              ...formData,
+              ...submitData,
               confirm: true
             });
             if (retryResponse.data.success) {
@@ -378,164 +443,177 @@ const PaymentMethodConfig = () => {
           gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', 
           gap: '1.5rem' 
         }}>
-          {methods.map((method) => (
-            <div 
-              key={method.id} 
-              className="glass glass-hover" 
-              style={{ 
-                padding: '1.75rem', 
-                borderRadius: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                border: '1px solid var(--border)',
-                position: 'relative'
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                  <div style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    borderRadius: '14px', 
-                    background: 'var(--bg-soft)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {method.icon_url ? (
-                      <img src={method.icon_url} alt={method.name} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-                    ) : (
-                      getMethodIcon(method.type)
-                    )}
-                  </div>
-                  
-                  {/* Status Toggle Switch */}
-                  <div 
-                    style={{ 
-                      width: '54px', 
-                      height: '28px', 
-                      background: method.is_active ? 'var(--success)' : '#cbd5e1',
-                      borderRadius: '20px',
-                      padding: '3px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
+          {methods.map((method) => {
+            const transferInfo = parseJsonField(method.transfer_info);
+            const metadata = parseJsonField(method.metadata);
+            
+            return (
+              <div 
+                key={method.id} 
+                className="glass glass-hover" 
+                style={{ 
+                  padding: '1.75rem', 
+                  borderRadius: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  border: '1px solid var(--border)',
+                  position: 'relative'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                    <div style={{ 
+                      width: '48px', 
+                      height: '48px', 
+                      borderRadius: '14px', 
+                      background: 'var(--bg-soft)',
                       display: 'flex',
-                      justifyContent: method.is_active ? 'flex-end' : 'flex-start'
-                    }}
-                    onClick={() => handleToggle(method)}
-                    title={method.is_active ? "Click để tắt phương thức" : "Click để bật phương thức"}
-                  >
-                    <div style={{ width: '22px', height: '22px', background: 'white', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
-                  </div>
-                </div>
-
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>{method.name}</h3>
-                <span className="badge" style={{ 
-                  background: 'rgba(0, 73, 172, 0.08)', 
-                  color: 'var(--primary)',
-                  fontSize: '0.75rem',
-                  padding: '0.25rem 0.6rem',
-                  borderRadius: '8px',
-                  fontWeight: 600
-                }}>
-                  {getMethodTypeLabel(method.type)} ({method.code})
-                </span>
-
-                <div style={{ marginTop: '1.25rem', padding: '0.75rem', background: 'var(--bg-soft)', borderRadius: '14px', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Nạp tối thiểu:</span>
-                    <span style={{ fontWeight: 700 }}>{formatMoney(method.min_amount)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Nạp tối đa:</span>
-                    <span style={{ fontWeight: 700 }}>{formatMoney(method.max_amount)}</span>
-                  </div>
-                </div>
-
-                {method.type === 'bank_transfer' && method.transfer_info && (
-                  <div style={{ marginTop: '1rem', fontSize: '0.8rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-                    <p style={{ margin: '0 0 0.25rem 0', fontWeight: 600, color: 'var(--text)' }}>
-                      Tài khoản nhận: <span style={{ color: 'var(--primary)' }}>{method.transfer_info.bank_name}</span>
-                    </p>
-                    <p style={{ margin: '0 0 0.25rem 0', color: 'var(--text-muted)' }}>
-                      Số TK: <span style={{ fontWeight: 700, color: 'var(--text)' }}>{method.transfer_info.account_number}</span>
-                    </p>
-                    <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                      Chủ TK: <span style={{ fontWeight: 700, color: 'var(--text)' }}>{method.transfer_info.account_name}</span>
-                    </p>
-                  </div>
-                )}
-
-                {method.type !== 'bank_transfer' && method.metadata && (
-                  <div style={{ marginTop: '1rem', fontSize: '0.8rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', color: 'var(--text-muted)' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <Globe size={14} className="text-secondary" />
-                      <span style={{ wordBreak: 'break-all' }}>{method.metadata.endpoint || 'Chưa cấu hình Endpoint'}</span>
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {method.icon_url ? (
+                        <img src={method.icon_url} alt={method.name} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                      ) : (
+                        getMethodIcon(method.type)
+                      )}
                     </div>
-                    {method.metadata.transaction_fee > 0 && (
-                      <p style={{ margin: '0.25rem 0 0 0', fontWeight: 600 }}>
-                        Phí giao dịch: <span style={{ color: 'var(--success)' }}>{method.metadata.transaction_fee}%</span>
-                      </p>
-                    )}
+                    
+                    {/* Status Toggle Switch */}
+                    <div 
+                      style={{ 
+                        width: '54px', 
+                        height: '28px', 
+                        background: method.is_active ? 'var(--success)' : '#cbd5e1',
+                        borderRadius: '20px',
+                        padding: '3px',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        justifyContent: method.is_active ? 'flex-end' : 'flex-start'
+                      }}
+                      onClick={() => handleToggle(method)}
+                      title={method.is_active ? "Click để tắt phương thức" : "Click để bật phương thức"}
+                    >
+                      <div style={{ width: '22px', height: '22px', background: 'white', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem' }}>
-                <button 
-                  className="btn btn-glass" 
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}
-                  onClick={() => handleOpenEdit(method)}
-                >
-                  <Edit size={14} />
-                  Sửa cấu hình
-                </button>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>{method.name}</h3>
+                  <span className="badge" style={{ 
+                    background: 'rgba(0, 73, 172, 0.08)', 
+                    color: 'var(--primary)',
+                    fontSize: '0.75rem',
+                    padding: '0.25rem 0.6rem',
+                    borderRadius: '8px',
+                    fontWeight: 600
+                  }}>
+                    {getMethodTypeLabel(method.type)} ({method.code})
+                  </span>
+
+                  <div style={{ marginTop: '1.25rem', padding: '0.75rem', background: 'var(--bg-soft)', borderRadius: '14px', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Nạp tối thiểu:</span>
+                      <span style={{ fontWeight: 700 }}>{formatMoney(method.min_amount)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Nạp tối đa:</span>
+                      <span style={{ fontWeight: 700 }}>{formatMoney(method.max_amount)}</span>
+                    </div>
+                  </div>
+
+                  {method.type === 'bank_transfer' && transferInfo && (
+                    <div style={{ marginTop: '1rem', fontSize: '0.8rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontWeight: 600, color: 'var(--text)' }}>
+                        Tài khoản nhận: <span style={{ color: 'var(--primary)' }}>{transferInfo.bank_name}</span>
+                      </p>
+                      <p style={{ margin: '0 0 0.25rem 0', color: 'var(--text-muted)' }}>
+                        Số TK: <span style={{ fontWeight: 700, color: 'var(--text)' }}>{transferInfo.account_number}</span>
+                      </p>
+                      <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                        Chủ TK: <span style={{ fontWeight: 700, color: 'var(--text)' }}>{transferInfo.account_name}</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {method.type !== 'bank_transfer' && metadata && (
+                    <div style={{ marginTop: '1rem', fontSize: '0.8rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', color: 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <Globe size={14} className="text-secondary" />
+                        <span style={{ wordBreak: 'break-all' }}>{metadata.endpoint || 'Chưa cấu hình Endpoint'}</span>
+                      </div>
+                      {metadata.transaction_fee > 0 && (
+                        <p style={{ margin: '0.25rem 0 0 0', fontWeight: 600 }}>
+                          Phí giao dịch: <span style={{ color: 'var(--success)' }}>{metadata.transaction_fee}%</span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem' }}>
+                  <button 
+                    className="btn btn-glass" 
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}
+                    onClick={() => handleOpenEdit(method)}
+                  >
+                    <Edit size={14} />
+                    Sửa cấu hình
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Modal - Add/Edit payment method */}
-      {showModal && (
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          background: 'rgba(0,0,0,0.5)', 
-          backdropFilter: 'blur(8px)',
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div className="glass" style={{ 
-            width: '100%', 
-            maxWidth: '640px', 
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            borderRadius: '24px', 
-            padding: '2rem',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            animation: 'fadeInUp 0.3s ease-out'
+      {showModal && createPortal(
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-up" style={{ 
+            maxWidth: '900px', 
+            padding: '2.5rem',
+            position: 'relative' // Định vị nút X tuyệt đối
           }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem' }}>
-              {editingMethod ? `Cấu hình phương thức: ${formData.name}` : 'Thêm phương thức nạp tiền mới'}
+            {/* Nút X đóng nhanh modal */}
+            <button 
+              type="button"
+              onClick={() => setShowModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: 'rgba(0, 0, 0, 0.05)',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              title="Đóng cửa sổ"
+              className="btn-icon-hover"
+            >
+              <X size={18} />
+            </button>
+
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.75rem', paddingRight: '2rem' }}>
+              {editingMethod ? `Cấu hình: ${formData.name}` : 'Thêm phương thức nạp tiền mới'}
             </h2>
             
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 {/* Method Type */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem' }}>Loại phương thức</label>
                   <select 
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
-                    value={formData.type}
+                    value={formData.type || 'e_wallet'}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     disabled={!!editingMethod}
                   >
@@ -552,7 +630,7 @@ const PaymentMethodConfig = () => {
                     type="text" 
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
-                    value={formData.code}
+                    value={formData.code || ''}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
                     placeholder="VD: momo, zalopay, bank_transfer"
                     disabled={!!editingMethod}
@@ -561,7 +639,7 @@ const PaymentMethodConfig = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 {/* Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem' }}>Tên hiển thị</label>
@@ -569,7 +647,7 @@ const PaymentMethodConfig = () => {
                     type="text" 
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
-                    value={formData.name}
+                    value={formData.name || ''}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ví dụ: Ví MoMo, Chuyển khoản Vietcombank"
                     required
@@ -584,13 +662,14 @@ const PaymentMethodConfig = () => {
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
                     value={formData.sort_order}
-                    onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, sort_order: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                    placeholder="VD: 1, 2, 3..."
                   />
                 </div>
               </div>
 
               {/* Transaction Limits */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem' }}>Nạp tối thiểu (VND)</label>
                   <input 
@@ -598,7 +677,8 @@ const PaymentMethodConfig = () => {
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
                     value={formData.min_amount}
-                    onChange={(e) => setFormData({ ...formData, min_amount: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, min_amount: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                    placeholder="VD: 10000"
                     required
                   />
                 </div>
@@ -609,7 +689,8 @@ const PaymentMethodConfig = () => {
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
                     value={formData.max_amount}
-                    onChange={(e) => setFormData({ ...formData, max_amount: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, max_amount: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                    placeholder="VD: 10000000"
                     required
                   />
                 </div>
@@ -622,7 +703,7 @@ const PaymentMethodConfig = () => {
                   type="text" 
                   className="btn-glass"
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
-                  value={formData.icon_url}
+                  value={formData.icon_url || ''}
                   onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })}
                   placeholder="https://cdn.example.com/icon.png"
                 />
@@ -633,7 +714,7 @@ const PaymentMethodConfig = () => {
                   type="checkbox"
                   id="modal_is_active"
                   style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  checked={formData.is_active}
+                  checked={!!formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                 />
                 <label htmlFor="modal_is_active" style={{ fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -655,30 +736,30 @@ const PaymentMethodConfig = () => {
                       type="url" 
                       className="btn-glass"
                       style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                      value={formData.metadata.endpoint}
+                      value={formData.metadata?.endpoint || ''}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        metadata: { ...formData.metadata, endpoint: e.target.value } 
+                        metadata: { ...(formData.metadata || {}), endpoint: e.target.value } 
                       })}
                       placeholder="https://payment.momo.vn/v2/gateway/api"
-                      required={formData.is_active}
+                      required={!!formData.is_active}
                     />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Merchant ID</label>
                       <input 
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata.merchant_id}
+                        value={formData.metadata?.merchant_id || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          metadata: { ...formData.metadata, merchant_id: e.target.value } 
+                          metadata: { ...(formData.metadata || {}), merchant_id: e.target.value } 
                         })}
                         placeholder="MOMO_12345"
-                        required={formData.is_active}
+                        required={!!formData.is_active}
                       />
                     </div>
                     <div>
@@ -688,26 +769,27 @@ const PaymentMethodConfig = () => {
                         step="0.01"
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata.transaction_fee}
+                        value={formData.metadata?.transaction_fee !== undefined && formData.metadata?.transaction_fee !== null ? formData.metadata.transaction_fee : ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          metadata: { ...formData.metadata, transaction_fee: parseFloat(e.target.value) || 0 } 
+                          metadata: { ...(formData.metadata || {}), transaction_fee: e.target.value === '' ? '' : parseFloat(e.target.value) } 
                         })}
+                        placeholder="VD: 1.5"
                       />
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>API Key</label>
                       <input 
                         type="password" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata.api_key}
+                        value={formData.metadata?.api_key || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          metadata: { ...formData.metadata, api_key: e.target.value } 
+                          metadata: { ...(formData.metadata || {}), api_key: e.target.value } 
                         })}
                         placeholder="••••••••••••••"
                       />
@@ -718,10 +800,10 @@ const PaymentMethodConfig = () => {
                         type="password" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata.secret_key}
+                        value={formData.metadata?.secret_key || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          metadata: { ...formData.metadata, secret_key: e.target.value } 
+                          metadata: { ...(formData.metadata || {}), secret_key: e.target.value } 
                         })}
                         placeholder="••••••••••••••"
                       />
@@ -734,10 +816,10 @@ const PaymentMethodConfig = () => {
                         type="checkbox"
                         id="require_otp_checkbox"
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        checked={formData.metadata.require_otp}
+                        checked={!!formData.metadata?.require_otp}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          metadata: { ...formData.metadata, require_otp: e.target.checked } 
+                          metadata: { ...(formData.metadata || {}), require_otp: e.target.checked } 
                         })}
                       />
                       <label htmlFor="require_otp_checkbox" style={{ fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -751,10 +833,10 @@ const PaymentMethodConfig = () => {
                     <textarea 
                       className="btn-glass"
                       style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)', minHeight: '60px' }}
-                      value={formData.metadata.internal_note}
+                      value={formData.metadata?.internal_note || ''}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        metadata: { ...formData.metadata, internal_note: e.target.value } 
+                        metadata: { ...(formData.metadata || {}), internal_note: e.target.value } 
                       })}
                       placeholder="Ghi chú cấu hình..."
                     />
@@ -770,17 +852,17 @@ const PaymentMethodConfig = () => {
                     Thông tin tài khoản thụ hưởng
                   </h4>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Tên Ngân hàng thụ hưởng</label>
                       <input 
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.bank_name}
+                        value={formData.transfer_info?.bank_name || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, bank_name: e.target.value } 
+                          transfer_info: { ...(formData.transfer_info || {}), bank_name: e.target.value } 
                         })}
                         placeholder="Ví dụ: Vietcombank, Techcombank"
                         required
@@ -792,27 +874,27 @@ const PaymentMethodConfig = () => {
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.bank_code}
+                        value={formData.transfer_info?.bank_code || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, bank_code: e.target.value.toUpperCase() } 
+                          transfer_info: { ...(formData.transfer_info || {}), bank_code: e.target.value.toUpperCase() } 
                         })}
                         placeholder="VCB, TCB..."
                       />
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Số tài khoản</label>
                       <input 
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.account_number}
+                        value={formData.transfer_info?.account_number || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, account_number: e.target.value } 
+                          transfer_info: { ...(formData.transfer_info || {}), account_number: e.target.value } 
                         })}
                         placeholder="1023847293"
                         required
@@ -824,10 +906,10 @@ const PaymentMethodConfig = () => {
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.account_name}
+                        value={formData.transfer_info?.account_name || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, account_name: e.target.value.toUpperCase() } 
+                          transfer_info: { ...(formData.transfer_info || {}), account_name: e.target.value.toUpperCase() } 
                         })}
                         placeholder="NGUYEN VAN A"
                         required
@@ -835,17 +917,17 @@ const PaymentMethodConfig = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Chi nhánh (nếu có)</label>
                       <input 
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.branch}
+                        value={formData.transfer_info?.branch || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, branch: e.target.value } 
+                          transfer_info: { ...(formData.transfer_info || {}), branch: e.target.value } 
                         })}
                         placeholder="Chi nhánh Hà Nội..."
                       />
@@ -856,27 +938,27 @@ const PaymentMethodConfig = () => {
                         type="url" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.qr_url}
+                        value={formData.transfer_info?.qr_url || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, qr_url: e.target.value } 
+                          transfer_info: { ...(formData.transfer_info || {}), qr_url: e.target.value } 
                         })}
                         placeholder="https://img.vietqr.io/image/vcb..."
                       />
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Nội dung mặc định</label>
                       <input 
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.default_content}
+                        value={formData.transfer_info?.default_content || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, default_content: e.target.value } 
+                          transfer_info: { ...(formData.transfer_info || {}), default_content: e.target.value } 
                         })}
                         placeholder="NAP TIEN VI"
                       />
@@ -887,10 +969,10 @@ const PaymentMethodConfig = () => {
                         type="text" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.transfer_info.content_syntax}
+                        value={formData.transfer_info?.content_syntax || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          transfer_info: { ...formData.transfer_info, content_syntax: e.target.value } 
+                          transfer_info: { ...(formData.transfer_info || {}), content_syntax: e.target.value } 
                         })}
                         placeholder="TOPUP_[DriverCode]_[TransactionCode]"
                         required
@@ -903,10 +985,10 @@ const PaymentMethodConfig = () => {
                       type="checkbox"
                       id="auto_reconciliation_checkbox"
                       style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                      checked={formData.transfer_info.auto_reconciliation}
+                      checked={!!formData.transfer_info?.auto_reconciliation}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        transfer_info: { ...formData.transfer_info, auto_reconciliation: e.target.checked } 
+                        transfer_info: { ...(formData.transfer_info || {}), auto_reconciliation: e.target.checked } 
                       })}
                     />
                     <label htmlFor="auto_reconciliation_checkbox" style={{ fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -938,7 +1020,8 @@ const PaymentMethodConfig = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
