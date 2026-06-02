@@ -425,7 +425,7 @@ const CommissionConfig = () => {
                             <label className="premium-label" style={{ fontSize: '0.65rem' }}>Đối tượng</label>
                             <select className="premium-select" style={{ padding: '0.65rem 1rem' }} value={form.target_type} onChange={e => setForm({...form, target_type: parseInt(e.target.value)})}>
                               <option value={1}>Tài xế đối tác</option>
-                              <option value={2}>Merchant / Store</option>
+                              <option value={2}>Cửa hàng / Đối tác</option>
                             </select>
                           </div>
                           <div>
@@ -473,11 +473,11 @@ const CommissionConfig = () => {
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                             <div>
-                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Min (₫)</label>
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tối thiểu (₫)</label>
                               <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" value={form.min_commission} onChange={e => setForm({...form, min_commission: e.target.value})} placeholder="0" />
                             </div>
                             <div>
-                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Max (₫)</label>
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tối đa (₫)</label>
                               <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" value={form.max_commission} onChange={e => setForm({...form, max_commission: e.target.value})} placeholder="∞" />
                             </div>
                           </div>

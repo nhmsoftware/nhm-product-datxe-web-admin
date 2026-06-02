@@ -46,7 +46,7 @@ const Navbar = () => {
               <User size={20} color="white" />
             </div>
             <div className="user-info">
-              <div className="name">{user?.full_name || 'System Admin'}</div>
+              <div className="name">{user?.full_name || 'Quản trị hệ thống'}</div>
               <div className="role">{user?.role_name || 'Quản trị viên'}</div>
             </div>
           </div>

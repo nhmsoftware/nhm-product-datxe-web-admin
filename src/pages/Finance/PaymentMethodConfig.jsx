@@ -698,7 +698,7 @@ const PaymentMethodConfig = () => {
 
               {/* Icon URL */}
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem' }}>Logo/Icon URL</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem' }}>Đường dẫn Logo/Icon (URL)</label>
                 <input 
                   type="text" 
                   className="btn-glass"
@@ -727,7 +727,7 @@ const PaymentMethodConfig = () => {
                 <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '16px', marginBottom: '1.5rem' }}>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)' }}>
                     <ShieldCheck size={18} />
-                    Cấu hình kết nối Payment Gateway
+                    Cấu hình kết nối Cổng thanh toán (Payment Gateway)
                   </h4>
 
                   <div style={{ marginBottom: '1rem' }}>
@@ -748,7 +748,7 @@ const PaymentMethodConfig = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Merchant ID</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Mã đối tác (Merchant ID)</label>
                       <input 
                         type="text" 
                         className="btn-glass"
@@ -781,7 +781,7 @@ const PaymentMethodConfig = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>API Key</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Khóa API (API Key)</label>
                       <input 
                         type="password" 
                         className="btn-glass"
@@ -795,7 +795,7 @@ const PaymentMethodConfig = () => {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Secret Key</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Khóa bảo mật (Secret Key)</label>
                       <input 
                         type="password" 
                         className="btn-glass"

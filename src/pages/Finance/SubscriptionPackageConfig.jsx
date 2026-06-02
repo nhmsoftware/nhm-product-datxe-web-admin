@@ -251,7 +251,7 @@ const SubscriptionPackageConfig = () => {
                   fontWeight: 700,
                   boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                 }}>
-                  DISABLED
+                  NGỪNG BÁN
                 </div>
               )}
 
@@ -292,7 +292,11 @@ const SubscriptionPackageConfig = () => {
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>{pkg.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <span className={`badge ${pkg.package_type === 'monthly' ? 'badge-primary' : 'badge-success'}`}>
-                  {pkg.package_type.toUpperCase()}
+                  {{
+                    daily: 'Hàng ngày',
+                    weekly: 'Hàng tuần',
+                    monthly: 'Hàng tháng'
+                  }[pkg.package_type] || pkg.package_type.toUpperCase()}
                 </span>
                 <span className="text-muted" style={{ fontSize: '0.85rem' }}>• {pkg.duration_days} ngày hiệu lực</span>
               </div>
