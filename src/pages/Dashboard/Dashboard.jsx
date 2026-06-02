@@ -187,31 +187,174 @@ const Dashboard = () => {
 
   const exportToExcel = (title, data) => {
     toast.success(`Đang xuất dữ liệu ${title}...`);
-    const exportData = Array.isArray(data) ? data : [data];
-    const headers = Object.keys(exportData[0] || {}).join(',');
-    const rows = exportData.map(obj => 
-      Object.values(obj).map(val => {
-        if (val === null || val === undefined) return '';
-        if (Array.isArray(val)) {
-          if (val.length > 0 && typeof val[0] === 'object') {
-            return '"' + val.map(item => 
-              Object.entries(item).map(([k, v]) => `${k}: ${v}`).join(' ')
-            ).join('; ').replace(/"/g, '""') + '"';
+    
+    const keyTranslations = {
+      // General / Revenue
+      period: 'Khoảng thời gian',
+      gmv: 'Tổng giao dịch (GMV)',
+      actual_revenue: 'Doanh thu thực',
+      order_count: 'Số chuyến xe',
+      aov: 'Giá trị trung bình (AOV)',
+      
+      // Area
+      area: 'Khu vực',
+      total_rides: 'Số chuyến',
+      total_revenue: 'Doanh thu',
+      
+      // Commission
+      driver_group_type: 'Mã nhóm tài xế',
+      system_commission: 'Hoa hồng hệ thống',
+      group_label: 'Đội xe',
+      
+      // Top Drivers / Drivers
+      driver_id: 'Mã tài xế',
+      driver_name: 'Tên tài xế',
+      
+      // Operational ("Van hanh")
+      total_orders: 'Tổng số đơn',
+      completed_orders: 'Đơn hoàn thành',
+      cancelled_orders: 'Đơn bị hủy',
+      completion_rate: 'Tỷ lệ hoàn thành (%)',
+      cancellation_rate: 'Tỷ lệ hủy (%)',
+      status_distribution: 'Phân bổ trạng thái',
+      cancel_reasons: 'Chi tiết lý do hủy',
+
+      // Nested keys inside arrays/objects
+      cancel_reason: 'Lý do',
+      count: 'Số lượng'
+    };
+
+    const statusLabels = {
+      '1': 'Đang tạo',
+      '2': 'Đang chờ',
+      '3': 'Đã tiếp nhận',
+      '4': 'Đang di chuyển',
+      '5': 'Hoàn thành',
+      '6': 'Đã hủy',
+      '7': 'Đang di chuyển (Đã đón khách)',
+      '8': 'Đang chờ xác nhận hủy',
+      'draft': 'Đang tạo',
+      'pending': 'Đang chờ',
+      'accepted': 'Đã tiếp nhận',
+      'in_progress': 'Đang di chuyển',
+      'completed': 'Hoàn thành',
+      'cancelled': 'Đã hủy',
+      'picked_up': 'Đang di chuyển (Đã đón khách)',
+      'cancellation_requested': 'Đang chờ xác nhận hủy'
+    };
+
+    const formatVal = (key, val) => {
+      if (val === null || val === undefined) return '';
+      
+      // status_distribution translation
+      if (key === 'status_distribution' && typeof val === 'object' && !Array.isArray(val)) {
+        return '"' + Object.entries(val).map(([k, v]) => {
+          const translatedKey = statusLabels[k] || k;
+          return `${translatedKey}: ${v}`;
+        }).join('; ').replace(/"/g, '""') + '"';
+      }
+      
+      // cancel_reasons translation
+      if (key === 'cancel_reasons' && Array.isArray(val)) {
+        return '"' + val.map(item => {
+          if (typeof item === 'object') {
+            return Object.entries(item).map(([k, v]) => {
+              const translatedKey = keyTranslations[k] || k;
+              return `${translatedKey}: ${v}`;
+            }).join(' ');
           }
-          return '"' + val.join('; ').replace(/"/g, '""') + '"';
+          return String(item);
+        }).join('; ').replace(/"/g, '""') + '"';
+      }
+      
+      // Nested arrays
+      if (Array.isArray(val)) {
+        if (val.length > 0 && typeof val[0] === 'object') {
+          return '"' + val.map(item => 
+            Object.entries(item).map(([k, v]) => {
+              const translatedKey = keyTranslations[k] || k;
+              return `${translatedKey}: ${v}`;
+            }).join(' ')
+          ).join('; ').replace(/"/g, '""') + '"';
         }
-        if (typeof val === 'object') {
-          return '"' + Object.entries(val).map(([k, v]) => `${k}: ${v}`).join('; ').replace(/"/g, '""') + '"';
-        }
-        const str = String(val);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return '"' + str.replace(/"/g, '""') + '"';
-        }
-        return str;
+        return '"' + val.join('; ').replace(/"/g, '""') + '"';
+      }
+      
+      // Nested objects
+      if (typeof val === 'object') {
+        return '"' + Object.entries(val).map(([k, v]) => {
+          const translatedKey = keyTranslations[k] || k;
+          return `${translatedKey}: ${v}`;
+        }).join('; ').replace(/"/g, '""') + '"';
+      }
+      
+      // Strings/numbers
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    const exportData = Array.isArray(data) ? data : [data];
+    const rawKeys = Object.keys(exportData[0] || {});
+    const headers = rawKeys.map(k => keyTranslations[k] || k).join(',');
+    
+    const rows = exportData.map(obj => 
+      rawKeys.map(key => {
+        const val = obj[key];
+        return formatVal(key, val);
       }).join(',')
     ).join('\n');
     
-    const csvContent = headers + "\n" + rows;
+    // Generate explanation / tips note ("Mách nước")
+    let notes = '';
+    const cleanTitle = title.toLowerCase().trim();
+    if (cleanTitle === 'van hanh' || cleanTitle === 'vận hành') {
+      notes = '\n\n' + [
+        '"--- MÁCH NƯỚC HƯỚNG DẪN ĐỌC CHỈ SỐ VẬN HÀNH ---"',
+        '"1. Tổng số đơn: Tổng số chuyến xe được tạo trong khoảng thời gian lọc."',
+        '"2. Đơn hoàn thành: Số chuyến xe đã kết thúc hành trình và thanh toán thành công."',
+        '"3. Đơn bị hủy: Số chuyến xe bị khách hàng hoặc tài xế hủy."',
+        '"4. Tỷ lệ hoàn thành (%): Tỷ lệ chuyến xe hoàn thành trên tổng số đơn. Công thức tính: (Đơn hoàn thành / Tổng số đơn) x 100%."',
+        '"5. Tỷ lệ hủy (%): Tỷ lệ chuyến xe bị hủy trên tổng số đơn. Công thức tính: (Đơn bị hủy / Tổng số đơn) x 100%."',
+        '"6. Phân bổ trạng thái: Số lượng đơn hàng chia chi tiết theo trạng thái thực tế hệ thống (Đang chờ; Đã nhận; Hoàn thành; Đã hủy; ...)."',
+        '"7. Chi tiết lý do hủy: Bảng tổng hợp số lượng đơn bị hủy theo từng nguyên nhân cụ thể."'
+      ].join('\n');
+    } else if (cleanTitle === 'doanh thu') {
+      notes = '\n\n' + [
+        '"--- MÁCH NƯỚC HƯỚNG DẪN ĐỌC CHỈ SỐ DOANH THU ---"',
+        '"1. GMV (Gross Merchandise Value): Tổng giá trị giao dịch phát sinh (giá trị gốc của các chuyến xe trước khi trừ khuyến mãi)."',
+        '"2. Doanh thu thực: Doanh thu sau khi đã trừ đi các khoản khuyến mãi, chiết khấu và mã giảm giá."',
+        '"3. Số chuyến xe: Tổng số chuyến xe đã hoàn thành trong kỳ."',
+        '"4. AOV (Average Order Value): Giá trị trung bình của mỗi chuyến xe. Công thức tính: Tổng GMV / Số chuyến xe."'
+      ].join('\n');
+    } else if (cleanTitle === 'hoa hong' || cleanTitle === 'hoa hồng') {
+      notes = '\n\n' + [
+        '"--- MÁCH NƯỚC HƯỚNG DẪN ĐỌC CHỈ SỐ HOA HỒNG ---"',
+        '"1. Hoa hồng hệ thống: Số tiền dịch vụ (phí chiết khấu) hệ thống thu từ các chuyến đi hoàn thành."',
+        '"2. Tổng giao dịch (GMV): Tổng số tiền khách hàng trả cho tài xế trước khi trừ chiết khấu."',
+        '"3. Phân loại đội xe:"',
+        '"   - Đội xe nhà: Nhóm tài xế trực thuộc công ty quản lý."',
+        '"   - Đối tác ngoài: Nhóm tài xế tự do ký kết hợp tác."'
+      ].join('\n');
+    } else if (cleanTitle === 'top tai xe' || cleanTitle === 'top tài xế') {
+      notes = '\n\n' + [
+        '"--- MÁCH NƯỚC HƯỚNG DẪN ĐỌC CHỈ SỐ TOP TÀI XẾ ---"',
+        '"1. Số chuyến: Tổng số chuyến đi mà tài xế đã hoàn thành xuất sắc trong khoảng thời gian lọc."',
+        '"2. Doanh thu: Tổng số tiền cước khách hàng thanh toán cho các chuyến đi của tài xế này."',
+        '"3. Danh sách sắp xếp theo thứ tự giảm dần của Tổng doanh thu."'
+      ].join('\n');
+    } else if (cleanTitle === 'khu vuc' || cleanTitle === 'khu vực') {
+      notes = '\n\n' + [
+        '"--- MÁCH NƯỚC HƯỚNG DẪN ĐỌC CHỈ SỐ KHU VỰC ---"',
+        '"1. Khu vực: Địa phương/Quận huyện được nhận dạng từ địa điểm đón khách của chuyến đi."',
+        '"2. Số chuyến: Số chuyến đi bắt đầu từ khu vực này."',
+        '"3. Doanh thu: Tổng doanh thu cước phát sinh từ các chuyến đi tại khu vực tương ứng."'
+      ].join('\n');
+    }
+
+    const csvContent = headers + "\n" + rows + notes;
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -383,6 +526,16 @@ const Dashboard = () => {
                 <div style={{ textAlign: 'center' }}>
                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Tổng đơn</p>
                    <h4 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{orderSection.stats?.total_orders || 0}</h4>
+                </div>
+             </div>
+             <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)', fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'left', lineHeight: '1.4' }}>
+                <div style={{ color: 'var(--primary)', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                   <span>💡</span> MÁCH NƯỚC CÔNG THỨC:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '4px' }}>
+                   <div>• <strong>Tỷ lệ hoàn thành</strong> = (Số đơn hoàn thành / Tổng số đơn) × 100%</div>
+                   <div>• <strong>Tỷ lệ hủy chuyến</strong> = (Số đơn bị hủy / Tổng số đơn) × 100%</div>
+                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px' }}>* Lưu ý: Tổng hai tỷ lệ có thể không bằng 100% do có các đơn hàng ở trạng thái khác (đang chờ, đã nhận, đang đi, v.v.).</div>
                 </div>
              </div>
           </div>
