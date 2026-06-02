@@ -78,6 +78,13 @@ const DriverFinanceDashboard = () => {
       icon: <Percent className="text-success" size={24} />,
       path: '/finance/commissions',
       badge: 'Commission'
+    },
+    {
+      title: 'Phương thức nạp tiền',
+      description: 'Cấu hình các cổng thanh toán (MoMo, ZaloPay, ngân hàng, chuyển khoản) cho Driver nạp tiền.',
+      icon: <Landmark className="text-warning" size={24} />,
+      path: '/finance/payment-methods', // UC-132
+      badge: 'Payment Methods'
     }
   ];
 
