@@ -260,7 +260,11 @@ const DriverFinanceDashboard = () => {
         <p style={{ maxWidth: '600px', opacity: 0.9, marginBottom: '2rem' }}>
           Xem các biểu đồ phân tích sâu về dòng tiền, tỷ lệ hoa hồng thực tế và hiệu quả các gói thuê bao theo từng mốc thời gian.
         </p>
-        <button className="btn" style={{ background: 'white', color: 'var(--primary)', padding: '0.875rem 2.5rem' }}>
+        <button
+          className="btn"
+          style={{ background: 'white', color: 'var(--primary)', padding: '0.875rem 2.5rem', fontWeight: 700 }}
+          onClick={() => navigate('/finance/reports')}
+        >
           Mở Dashboard Phân tích
         </button>
       </div>
