@@ -67,8 +67,16 @@ const PaymentMethodConfig = () => {
     },
     metadata: {
       merchant_id: '',
-      api_key: '',
+      partner_code: '',
+      access_key: '',
       secret_key: '',
+      app_id: '',
+      key_1: '',
+      key_2: '',
+      client_id: '',
+      api_key: '',
+      checksum_key: '',
+      webhook_url: '',
       endpoint: '',
       transaction_fee: '',
       internal_note: '',
@@ -119,8 +127,16 @@ const PaymentMethodConfig = () => {
       },
       metadata: {
         merchant_id: '',
-        api_key: '',
+        partner_code: '',
+        access_key: '',
         secret_key: '',
+        app_id: '',
+        key_1: '',
+        key_2: '',
+        client_id: '',
+        api_key: '',
+        checksum_key: '',
+        webhook_url: '',
         endpoint: '',
         transaction_fee: '',
         internal_note: '',
@@ -159,8 +175,16 @@ const PaymentMethodConfig = () => {
       },
       metadata: {
         merchant_id: metadata.merchant_id || '',
-        api_key: metadata.api_key || '',
+        partner_code: metadata.partner_code || '',
+        access_key: metadata.access_key || '',
         secret_key: metadata.secret_key || '',
+        app_id: metadata.app_id || '',
+        key_1: metadata.key_1 || '',
+        key_2: metadata.key_2 || '',
+        client_id: metadata.client_id || '',
+        api_key: metadata.api_key || '',
+        checksum_key: metadata.checksum_key || '',
+        webhook_url: metadata.webhook_url || '',
         endpoint: metadata.endpoint || '',
         transaction_fee: metadata.transaction_fee !== undefined && metadata.transaction_fee !== null ? metadata.transaction_fee : '',
         internal_note: metadata.internal_note || '',
@@ -273,20 +297,29 @@ const PaymentMethodConfig = () => {
       if (!submitData.transfer_info.default_content) delete submitData.transfer_info.default_content;
     } else {
       submitData.metadata = {
-        merchant_id: formData.metadata.merchant_id || '',
-        api_key: formData.metadata.api_key || null,
+        merchant_id: formData.metadata.merchant_id || null,
+        partner_code: formData.metadata.partner_code || null,
+        access_key: formData.metadata.access_key || null,
         secret_key: formData.metadata.secret_key || null,
+        app_id: formData.metadata.app_id || null,
+        key_1: formData.metadata.key_1 || null,
+        key_2: formData.metadata.key_2 || null,
+        client_id: formData.metadata.client_id || null,
+        api_key: formData.metadata.api_key || null,
+        checksum_key: formData.metadata.checksum_key || null,
+        webhook_url: formData.metadata.webhook_url || null,
         endpoint: formData.metadata.endpoint || null,
         transaction_fee: (formData.metadata.transaction_fee === '' || formData.metadata.transaction_fee === undefined) ? 0 : parseFloat(formData.metadata.transaction_fee),
         internal_note: formData.metadata.internal_note || null,
         require_otp: !!formData.metadata.require_otp
       };
 
-      // Xóa các trường trống không bắt buộc
-      if (!submitData.metadata.api_key) delete submitData.metadata.api_key;
-      if (!submitData.metadata.secret_key) delete submitData.metadata.secret_key;
-      if (!submitData.metadata.endpoint) delete submitData.metadata.endpoint;
-      if (!submitData.metadata.internal_note) delete submitData.metadata.internal_note;
+      // Lọc bỏ các trường null/rỗng để tránh dư thừa data
+      Object.keys(submitData.metadata).forEach(key => {
+        if (submitData.metadata[key] === null || submitData.metadata[key] === '') {
+          delete submitData.metadata[key];
+        }
+      });
     }
 
     setSubmitting(true);
@@ -626,16 +659,21 @@ const PaymentMethodConfig = () => {
                 {/* Unique Code */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem' }}>Mã định danh (Code)</label>
-                  <input 
-                    type="text" 
+                  <select 
                     className="btn-glass"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}
                     value={formData.code || ''}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
-                    placeholder="VD: momo, zalopay, bank_transfer"
                     disabled={!!editingMethod}
                     required
-                  />
+                  >
+                    <option value="" disabled>-- Chọn mã định danh --</option>
+                    <option value="momo">Ví MoMo (momo)</option>
+                    <option value="zalopay">Ví ZaloPay (zalopay)</option>
+                    <option value="payos">Chuyển khoản 24/7 (payos)</option>
+                    <option value="bank_transfer">Chuyển khoản thủ công (bank_transfer)</option>
+                    <option value="bank_card">Thẻ ATM nội địa (bank_card)</option>
+                  </select>
                 </div>
               </div>
 
@@ -746,20 +784,121 @@ const PaymentMethodConfig = () => {
                     />
                   </div>
 
+                  {/* Dynamic Fields based on Code */}
+                  {formData.code?.toLowerCase().includes('momo') && (
+                    <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', marginBottom: '1rem' }}>
+                      <h5 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text)' }}>Cấu hình MoMo</h5>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Partner Code</label>
+                          <input type="text" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.partner_code || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, partner_code: e.target.value }})} placeholder="MOMO..." />
+                          <small style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Mã đối tác (Thường bắt đầu bằng chữ MOMO) được cấp trong trang quản trị MoMo Business.</small>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Merchant ID</label>
+                          <input type="text" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.merchant_id || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, merchant_id: e.target.value }})} placeholder="MOMO_12345" />
+                          <small style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Mã định danh doanh nghiệp (Thông thường sẽ giống hệt với Partner Code).</small>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Access Key</label>
+                          <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.access_key || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, access_key: e.target.value }})} placeholder="••••••••" />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Secret Key</label>
+                          <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.secret_key || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, secret_key: e.target.value }})} placeholder="••••••••" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.code?.toLowerCase().includes('zalopay') && (
+                    <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', marginBottom: '1rem' }}>
+                      <h5 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text)' }}>Cấu hình ZaloPay</h5>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>App ID</label>
+                          <input type="text" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.app_id || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, app_id: e.target.value }})} placeholder="2553" />
+                          <small style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>ID Ứng dụng được cấp trên ZaloPay Merchant Portal (VD: 2553).</small>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Key 1</label>
+                          <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.key_1 || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, key_1: e.target.value }})} placeholder="••••••••" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Key 2</label>
+                          <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.key_2 || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, key_2: e.target.value }})} placeholder="••••••••" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.code?.toLowerCase().includes('payos') && (
+                    <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', marginBottom: '1rem' }}>
+                      <h5 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text)' }}>Cấu hình payOS</h5>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Client ID</label>
+                          <input type="text" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.client_id || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, client_id: e.target.value }})} placeholder="Client ID" />
+                          <small style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Mã Client ID (Mã khách hàng) lấy từ Dashboard của payOS.</small>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>API Key</label>
+                          <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.api_key || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, api_key: e.target.value }})} placeholder="••••••••" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Checksum Key</label>
+                          <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border)' }}
+                            value={formData.metadata?.checksum_key || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, checksum_key: e.target.value }})} placeholder="••••••••" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Other standard gateways (if not momo, zalopay, payos) */}
+                  {!['momo', 'zalopay', 'payos'].some(code => formData.code?.toLowerCase().includes(code)) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Mã đối tác (Merchant ID)</label>
+                        <input type="text" className="btn-glass" style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
+                          value={formData.metadata?.merchant_id || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, merchant_id: e.target.value }})} placeholder="MOMO_12345" />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Khóa bảo mật (Secret Key)</label>
+                        <input type="password" className="btn-glass" style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
+                          value={formData.metadata?.secret_key || ''} onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, secret_key: e.target.value }})} placeholder="••••••••••••••" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Common fields: Webhook & Transaction Fee */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Mã đối tác (Merchant ID)</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Webhook URL (Nhận kết quả)</label>
                       <input 
-                        type="text" 
+                        type="url" 
                         className="btn-glass"
                         style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata?.merchant_id || ''}
+                        value={formData.metadata?.webhook_url || ''}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          metadata: { ...(formData.metadata || {}), merchant_id: e.target.value } 
+                          metadata: { ...(formData.metadata || {}), webhook_url: e.target.value } 
                         })}
-                        placeholder="MOMO_12345"
-                        required={!!formData.is_active}
+                        placeholder={`${import.meta.env.VITE_API_URL || 'https://api.domain.com/api'}/v1/finance/wallet/top-up/callback/${formData.code || '[gateway]'}`}
                       />
                     </div>
                     <div>
@@ -775,37 +914,6 @@ const PaymentMethodConfig = () => {
                           metadata: { ...(formData.metadata || {}), transaction_fee: e.target.value === '' ? '' : parseFloat(e.target.value) } 
                         })}
                         placeholder="VD: 1.5"
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Khóa API (API Key)</label>
-                      <input 
-                        type="password" 
-                        className="btn-glass"
-                        style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata?.api_key || ''}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          metadata: { ...(formData.metadata || {}), api_key: e.target.value } 
-                        })}
-                        placeholder="••••••••••••••"
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem' }}>Khóa bảo mật (Secret Key)</label>
-                      <input 
-                        type="password" 
-                        className="btn-glass"
-                        style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '10px', fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                        value={formData.metadata?.secret_key || ''}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          metadata: { ...(formData.metadata || {}), secret_key: e.target.value } 
-                        })}
-                        placeholder="••••••••••••••"
                       />
                     </div>
                   </div>
