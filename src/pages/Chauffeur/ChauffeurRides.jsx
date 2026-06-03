@@ -251,12 +251,12 @@ const ChauffeurRides = () => {
         </table>
 
         {/* Phân trang */}
-        {pagination.last_page > 1 && (
+        {pagination.total > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50">
             <span className="text-sm text-gray-500">
               Hiển thị {rides.length} / {pagination.total} chuyến
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <button
                 disabled={pagination.current_page === 1}
                 onClick={() => setFilters({ ...filters, page: pagination.current_page - 1 })}
@@ -264,6 +264,9 @@ const ChauffeurRides = () => {
               >
                 Trước
               </button>
+              <span className="text-sm font-medium px-2 text-gray-600">
+                Trang {pagination.current_page} / {pagination.last_page}
+              </span>
               <button
                 disabled={pagination.current_page === pagination.last_page}
                 onClick={() => setFilters({ ...filters, page: pagination.current_page + 1 })}

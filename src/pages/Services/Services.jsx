@@ -460,31 +460,36 @@ const Services = () => {
             )}
           </tbody>
         </table>
-      </div>
 
-      {meta && meta.last_page > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
-          <button 
-            className="btn" 
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card)' }}
-          >
-            Trang trước
-          </button>
-          <span style={{ display: 'flex', alignItems: 'center', padding: '0 1rem' }}>
-            Trang {page} / {meta.last_page} (Tổng: {meta.total})
-          </span>
-          <button 
-            className="btn" 
-            disabled={page === meta.last_page}
-            onClick={() => setPage(page + 1)}
-            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card)' }}
-          >
-            Trang sau
-          </button>
-        </div>
-      )}
+        {meta && meta.total > 0 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50" style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="text-sm text-gray-500" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Hiển thị {filteredOrders.length} / {meta.total} đơn
+            </span>
+            <div className="flex gap-2 items-center" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="btn"
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
+              >
+                Trước
+              </button>
+              <span className="text-sm font-medium px-2" style={{ fontSize: '0.875rem', fontWeight: 500, padding: '0 0.5rem', color: 'var(--text-muted)' }}>
+                Trang {page} / {meta.last_page}
+              </span>
+              <button
+                disabled={page === meta.last_page}
+                onClick={() => setPage(page + 1)}
+                className="btn"
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', cursor: page === meta.last_page ? 'not-allowed' : 'pointer', opacity: page === meta.last_page ? 0.5 : 1 }}
+              >
+                Tiếp
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Modal - same style as ScheduledDispatchBoard */}
       {showAssignModal && (

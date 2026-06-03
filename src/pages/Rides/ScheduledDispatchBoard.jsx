@@ -32,7 +32,14 @@ const ScheduledDispatchBoard = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({
     status: 'waiting', // waiting, assigned, completed, canceled
-    search: ''
+    search: '',
+    page: 1,
+    per_page: 15
+  });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    current_page: 1,
+    last_page: 1
   });
   const [selectedRides, setSelectedRides] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -75,7 +82,7 @@ const ScheduledDispatchBoard = () => {
   useEffect(() => {
     fetchRides();
     fetchDispatchSettings();
-  }, [filter.status]);
+  }, [filter.status, filter.page]);
 
   useEffect(() => {
     if (showAssignModal) {
@@ -131,13 +138,27 @@ const ScheduledDispatchBoard = () => {
   const fetchRides = async () => {
     try {
       setLoading(true);
-      // rideService already returns response.data (HTTP body)
-      // API shape can be: [...] | { data: [...] } | { data: { data: [...] } }
-      const res = await rideService.getScheduledRides({ status: filter.status });
+      const res = await rideService.getScheduledRides({ 
+        status: filter.status, 
+        page: filter.page, 
+        per_page: filter.per_page 
+      });
       const list = Array.isArray(res)
         ? res
         : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
       setRides(list);
+
+      const meta = res?.data?.meta || res?.meta;
+      if (meta) {
+        setPagination({
+          total: meta.total || 0,
+          current_page: meta.current_page || 1,
+          last_page: meta.last_page || 1
+        });
+      } else {
+        setPagination({ total: list.length, current_page: 1, last_page: 1 });
+      }
+
       fetchCounts();
     } catch (error) {
       toast.error('Không thể tải danh sách chuyến xe');
@@ -458,6 +479,36 @@ const ScheduledDispatchBoard = () => {
             )}
           </tbody>
         </table>
+
+        {/* Phân trang */}
+        {pagination.total > 0 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50" style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="text-sm text-gray-500" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Hiển thị {rides.length} / {pagination.total} chuyến
+            </span>
+            <div className="flex gap-2 items-center" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                disabled={pagination.current_page === 1}
+                onClick={() => setFilter({ ...filter, page: pagination.current_page - 1 })}
+                className="btn"
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', cursor: pagination.current_page === 1 ? 'not-allowed' : 'pointer', opacity: pagination.current_page === 1 ? 0.5 : 1 }}
+              >
+                Trước
+              </button>
+              <span className="text-sm font-medium px-2" style={{ fontSize: '0.875rem', fontWeight: 500, padding: '0 0.5rem', color: 'var(--text-muted)' }}>
+                Trang {pagination.current_page} / {pagination.last_page}
+              </span>
+              <button
+                disabled={pagination.current_page === pagination.last_page}
+                onClick={() => setFilter({ ...filter, page: pagination.current_page + 1 })}
+                className="btn"
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', cursor: pagination.current_page === pagination.last_page ? 'not-allowed' : 'pointer', opacity: pagination.current_page === pagination.last_page ? 0.5 : 1 }}
+              >
+                Tiếp
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Assign Driver Modal */}
