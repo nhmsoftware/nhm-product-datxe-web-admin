@@ -255,8 +255,6 @@ const Pricing = () => {
   const SURGE_CONDITIONS = [
     { id: 'peak_hour', label: 'Giờ cao điểm', icon: <Clock size={16} /> },
     { id: 'weather_rain', label: 'Thời tiết xấu', icon: <CloudRain size={16} /> },
-    { id: 'high_demand', label: 'Nhu cầu cao', icon: <TrendingUp size={16} /> },
-    { id: 'low_supply', label: 'Thiếu tài xế', icon: <Users size={16} /> },
   ];
 
   if (loading && configs.length === 0) {
