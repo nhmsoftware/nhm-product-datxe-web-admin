@@ -174,8 +174,8 @@ export const adminService = {
   },
 
   // Service Order Management
-  getServiceOrders: async () => {
-    const response = await api.get('/v1/admin/services/orders');
+  getServiceOrders: async (params = {}) => {
+    const response = await api.get('/v1/admin/services', { params });
     return response.data;
   },
 

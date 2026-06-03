@@ -32,6 +32,10 @@ const Services = () => {
     search: '',
     type: 'All'
   });
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(15);
+  const [meta, setMeta] = useState(null);
+
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
@@ -41,11 +45,33 @@ const Services = () => {
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [driverKeyword, setDriverKeyword] = useState('');
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (currentPage = page, currentFilter = filter) => {
     try {
       setLoading(true);
-      const res = await adminService.getServiceOrders();
-      setOrders(res.data || []);
+      
+      let rideType = null;
+      if (currentFilter.type === 'Food') rideType = 6;
+      else if (currentFilter.type === 'Delivery') rideType = 4;
+
+      const params = {
+        page: currentPage,
+        per_page: perPage,
+        status: currentFilter.status,
+        keyword: currentFilter.search,
+        ride_type: rideType
+      };
+
+      const res = await adminService.getServiceOrders(params);
+      
+      if (res.data && res.data.data) {
+        setOrders(res.data.data);
+        if (res.data.meta) {
+          setMeta(res.data.meta);
+        }
+      } else {
+        setOrders(res.data || []);
+        setMeta(null);
+      }
     } catch (err) {
       toast.error('Không thể tải danh sách đơn hàng');
     } finally {
@@ -80,18 +106,23 @@ const Services = () => {
   };
 
   useEffect(() => {
-    fetchOrders();
     fetchDrivers();
     fetchSettings();
   }, []);
 
-  const filteredOrders = orders.filter(o => {
-    const matchesStatus = filter.status === 'history' ? (o.status === 'completed' || o.status === 'canceled') : o.status === filter.status;
-    const matchesSearch = o.order_code.toLowerCase().includes(filter.search.toLowerCase()) || 
-                          o.customer_name.toLowerCase().includes(filter.search.toLowerCase());
-    const matchesType = filter.type === 'All' || o.type === filter.type;
-    return matchesStatus && matchesSearch && matchesType;
-  });
+  useEffect(() => {
+    fetchOrders(page, filter);
+  }, [page, filter.status, filter.type]);
+
+  // Handle Search submit
+  const handleSearch = (e) => {
+    if (e.key === 'Enter') {
+      setPage(1);
+      fetchOrders(1, filter);
+    }
+  };
+
+  const filteredOrders = orders;
 
   const handleToggleDispatchMode = async () => {
     const newMode = dispatchMode === 1 ? 2 : 1;
@@ -242,21 +273,27 @@ const Services = () => {
           <div className="tabs-container" style={{ margin: 0 }}>
             <button 
               className={`tab-item ${filter.status === 'waiting' ? 'active' : ''}`}
-              onClick={() => setFilter({...filter, status: 'waiting'})}
+              onClick={() => { setPage(1); setFilter({...filter, status: 'waiting'}); }}
             >
-              Chờ xử lý ({orders.filter(r => r.status === 'waiting').length})
+              Chờ xử lý
             </button>
             <button 
               className={`tab-item ${filter.status === 'assigned' ? 'active' : ''}`}
-              onClick={() => setFilter({...filter, status: 'assigned'})}
+              onClick={() => { setPage(1); setFilter({...filter, status: 'assigned'}); }}
             >
               Đã gán
             </button>
             <button 
-              className={`tab-item ${filter.status === 'history' ? 'active' : ''}`}
-              onClick={() => setFilter({...filter, status: 'history'})}
+              className={`tab-item ${filter.status === 'completed' ? 'active' : ''}`}
+              onClick={() => { setPage(1); setFilter({...filter, status: 'completed'}); }}
             >
-              Lịch sử
+              Hoàn thành
+            </button>
+            <button 
+              className={`tab-item ${filter.status === 'canceled' ? 'active' : ''}`}
+              onClick={() => { setPage(1); setFilter({...filter, status: 'canceled'}); }}
+            >
+              Đã hủy
             </button>
           </div>
 
@@ -272,14 +309,15 @@ const Services = () => {
                 <option value="Delivery">Giao hàng</option>
              </select>
 
-             <div className="search-box">
+              <div className="search-box">
                 <Search className="search-icon" size={20} />
                 <input 
                   type="text" 
-                  placeholder="Tìm theo mã đơn, khách hàng..." 
+                  placeholder="Tìm kiếm (Enter)..." 
                   className="search-input"
                   value={filter.search}
                   onChange={(e) => setFilter({...filter, search: e.target.value})}
+                  onKeyDown={handleSearch}
                 />
               </div>
           </div>
@@ -423,6 +461,30 @@ const Services = () => {
           </tbody>
         </table>
       </div>
+
+      {meta && meta.last_page > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
+          <button 
+            className="btn" 
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card)' }}
+          >
+            Trang trước
+          </button>
+          <span style={{ display: 'flex', alignItems: 'center', padding: '0 1rem' }}>
+            Trang {page} / {meta.last_page} (Tổng: {meta.total})
+          </span>
+          <button 
+            className="btn" 
+            disabled={page === meta.last_page}
+            onClick={() => setPage(page + 1)}
+            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card)' }}
+          >
+            Trang sau
+          </button>
+        </div>
+      )}
 
       {/* Modal - same style as ScheduledDispatchBoard */}
       {showAssignModal && (
