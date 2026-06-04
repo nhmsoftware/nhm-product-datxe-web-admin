@@ -90,6 +90,11 @@ export const adminService = {
     return response.data;
   },
 
+  toggleInternalAutoPush: async (isAutoPush) => {
+    const response = await api.post('/v1/admin/pricing/scheduled/toggle-internal-auto-push', { is_auto_push: isAutoPush });
+    return response.data;
+  },
+
   // UC-120: Cancellation Configs
   getCancellationConfigs: async () => {
     const response = await api.get('/v1/admin/risk/cancellation-configs');

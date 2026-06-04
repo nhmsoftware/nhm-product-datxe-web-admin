@@ -32,6 +32,7 @@ const ScheduledDispatchBoard = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({
     status: 'waiting', // waiting, assigned, completed, canceled
+    ride_type: 1, // 1: City, 2: Intercity, 3: Airport
     search: '',
     page: 1,
     per_page: 15
@@ -48,6 +49,8 @@ const ScheduledDispatchBoard = () => {
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [dispatchMode, setDispatchMode] = useState(1); // 1: Internal Priority, 2: Open Pool
   const [togglingDispatch, setTogglingDispatch] = useState(false);
+  const [autoPushInternal, setAutoPushInternal] = useState(false);
+  const [togglingAutoPush, setTogglingAutoPush] = useState(false);
   const [waitingCount, setWaitingCount] = useState(0);
   const [assignedCount, setAssignedCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
@@ -62,9 +65,9 @@ const ScheduledDispatchBoard = () => {
   const fetchCounts = async () => {
     try {
       const [waitingRes, assignedRes, completedRes] = await Promise.all([
-        rideService.getScheduledRides({ status: 'waiting', per_page: 1 }),
-        rideService.getScheduledRides({ status: 'assigned', per_page: 1 }),
-        rideService.getScheduledRides({ status: 'completed', per_page: 1 })
+        rideService.getScheduledRides({ status: 'waiting', ride_type: filter.ride_type, per_page: 1 }),
+        rideService.getScheduledRides({ status: 'assigned', ride_type: filter.ride_type, per_page: 1 }),
+        rideService.getScheduledRides({ status: 'completed', ride_type: filter.ride_type, per_page: 1 })
       ]);
       
       const wCount = waitingRes?.data?.meta?.total ?? (Array.isArray(waitingRes) ? waitingRes.length : (Array.isArray(waitingRes?.data) ? waitingRes.data.length : (Array.isArray(waitingRes?.data?.data) ? waitingRes.data.data.length : 0)));
@@ -82,7 +85,7 @@ const ScheduledDispatchBoard = () => {
   useEffect(() => {
     fetchRides();
     fetchDispatchSettings();
-  }, [filter.status, filter.page]);
+  }, [filter.status, filter.ride_type, filter.page]);
 
   useEffect(() => {
     if (showAssignModal) {
@@ -98,6 +101,7 @@ const ScheduledDispatchBoard = () => {
     try {
       const res = await adminService.getScheduledPricing();
       setDispatchMode(res?.data?.dispatch_mode || 1);
+      setAutoPushInternal(res?.data?.auto_push_internal || false);
     } catch (error) {
       console.error('Lỗi khi tải cấu hình phân phối:', error);
     }
@@ -135,11 +139,46 @@ const ScheduledDispatchBoard = () => {
     }
   };
 
+  const handleToggleAutoPushInternal = async () => {
+    const newAutoPush = !autoPushInternal;
+    const modeName = newAutoPush ? 'Bật Tự động Đẩy' : 'Tắt Tự động Đẩy';
+
+    const result = await Swal.fire({
+      title: 'Xác nhận thay đổi',
+      html: `Bạn có muốn <b>${modeName}</b> đơn cho đội xe nhà?<br/><br/>
+             ${newAutoPush 
+               ? "Khi bật, các chuyến xe mới sẽ tự động hiển thị cho đội xe nhà tranh nhau nhận thay vì chờ Admin gán tay." 
+               : "Khi tắt, Admin sẽ phải chủ động gán tay từng chuyến xe cho đội xe nhà."}
+             <br/><br/>
+             <small style="color: #ef4444;"><i>(Nếu muốn ${newAutoPush ? 'bật' : 'tắt'} tự động đẩy, hãy bấm nút <b>${newAutoPush ? 'Bật tính năng' : 'Tắt tính năng'}</b> bên dưới)</i></small>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: newAutoPush ? '#10b981' : '#ef4444',
+      confirmButtonText: newAutoPush ? 'Bật tính năng' : 'Tắt tính năng',
+      cancelButtonText: 'Đóng'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setTogglingAutoPush(true);
+        const res = await adminService.toggleInternalAutoPush(newAutoPush);
+        setAutoPushInternal(newAutoPush);
+        toast.success(res?.message || `Đã ${modeName} đơn nội bộ thành công`);
+        fetchRides();
+      } catch (error) {
+        toast.error('Lỗi khi cập nhật cấu hình tự động đẩy đơn');
+      } finally {
+        setTogglingAutoPush(false);
+      }
+    }
+  };
+
   const fetchRides = async () => {
     try {
       setLoading(true);
       const res = await rideService.getScheduledRides({ 
         status: filter.status, 
+        ride_type: filter.ride_type,
         page: filter.page, 
         per_page: filter.per_page 
       });
@@ -249,7 +288,7 @@ const ScheduledDispatchBoard = () => {
       <div className="dispatch-header">
         <div>
           <h1 className="page-title">Quản lý Chuyến xe</h1>
-          <p className="page-subtitle">Quản lý và điều phối các chuyến xe đi tỉnh, sân bay, giao hàng</p>
+          <p className="page-subtitle">Quản lý và điều phối các chuyến xe thường, đi tỉnh hoặc đi sân bay</p>
         </div>
         
         <div className="header-actions">
@@ -284,7 +323,28 @@ const ScheduledDispatchBoard = () => {
             </button>
           </div>
 
-          {selectedRides.length > 0 && (
+          {dispatchMode === 1 && (
+            <div className="auto-push-toggle-container">
+              <button 
+                className={`btn ${autoPushInternal ? 'btn-success' : 'btn-outline'}`}
+                onClick={handleToggleAutoPushInternal}
+                disabled={togglingAutoPush}
+                style={{ height: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 12px', textAlign: 'left' }}
+              >
+                {togglingAutoPush ? <Loader2 size={18} className="animate-spin" /> : (autoPushInternal ? <Send size={18} /> : <Monitor size={18} />)}
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span style={{ fontWeight: '500', lineHeight: 1.2 }}>{autoPushInternal ? 'Đang tự động đẩy xe nhà' : 'Bật Tự động đẩy xe nhà'}</span>
+                  {autoPushInternal && (
+                    <span style={{ fontSize: '10px', opacity: 0.85, marginTop: '2px', lineHeight: 1 }}>
+                      Bấm để tắt tự động đẩy
+                    </span>
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
+
+          {selectedRides.length > 0 && dispatchMode === 1 && (
             <button 
               className="btn btn-primary"
               onClick={() => handlePushToPool(selectedRides)}
@@ -299,6 +359,31 @@ const ScheduledDispatchBoard = () => {
             Cấu hình giá
           </button>
         </div>
+      </div>
+
+      {/* Main Tabs for Ride Types */}
+      <div className="main-tabs-container" style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem' }}>
+        <button 
+          className={`main-tab-item ${filter.ride_type === 1 ? 'active' : ''}`}
+          onClick={() => setFilter({...filter, ride_type: 1, page: 1})}
+          style={{ padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 600, color: filter.ride_type === 1 ? 'var(--primary)' : 'var(--text-muted)', borderBottom: filter.ride_type === 1 ? '2px solid var(--primary)' : 'transparent', marginBottom: '-10px', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', transition: 'all 0.2s ease' }}
+        >
+          Chuyến xe thường
+        </button>
+        <button 
+          className={`main-tab-item ${filter.ride_type === 2 ? 'active' : ''}`}
+          onClick={() => setFilter({...filter, ride_type: 2, page: 1})}
+          style={{ padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 600, color: filter.ride_type === 2 ? 'var(--primary)' : 'var(--text-muted)', borderBottom: filter.ride_type === 2 ? '2px solid var(--primary)' : 'transparent', marginBottom: '-10px', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', transition: 'all 0.2s ease' }}
+        >
+          Quản lý xe đi tỉnh
+        </button>
+        <button 
+          className={`main-tab-item ${filter.ride_type === 3 ? 'active' : ''}`}
+          onClick={() => setFilter({...filter, ride_type: 3, page: 1})}
+          style={{ padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 600, color: filter.ride_type === 3 ? 'var(--primary)' : 'var(--text-muted)', borderBottom: filter.ride_type === 3 ? '2px solid var(--primary)' : 'transparent', marginBottom: '-10px', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', transition: 'all 0.2s ease' }}
+        >
+          Quản lý xe đi sân bay
+        </button>
       </div>
 
       {/* Filters Board */}
@@ -344,7 +429,7 @@ const ScheduledDispatchBoard = () => {
           <thead>
             <tr>
               <th style={{ width: '40px', textAlign: 'center' }}>
-                {filter.status === 'waiting' && (
+                {filter.status === 'waiting' && dispatchMode === 1 && (
                   <input 
                     type="checkbox" 
                     onChange={(e) => {
@@ -388,7 +473,7 @@ const ScheduledDispatchBoard = () => {
                   style={ride.status !== 'waiting' ? { cursor: 'default' } : {}}
                 >
                   <td style={{ textAlign: 'center' }}>
-                    {ride.status === 'waiting' ? (
+                    {ride.status === 'waiting' && dispatchMode === 1 ? (
                       <input 
                         type="checkbox" 
                         checked={selectedRides.includes(ride.id)}
@@ -396,13 +481,13 @@ const ScheduledDispatchBoard = () => {
                         onClick={(e) => e.stopPropagation()}
                         style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
                       />
-                    ) : (
+                    ) : (dispatchMode === 1 && (
                       <input 
                         type="checkbox" 
                         disabled
                         style={{ width: '16px', height: '16px', opacity: 0.3, cursor: 'not-allowed' }}
                       />
-                    )}
+                    ))}
                   </td>
                   <td>
                     <div className="customer-info">
@@ -463,13 +548,15 @@ const ScheduledDispatchBoard = () => {
                             <UserPlus size={16} />
                             <span style={{ fontSize: '0.8rem', marginLeft: '4px', fontWeight: 'bold' }}>Gán</span>
                           </button>
-                          <button 
-                            className="btn-action success-outline"
-                            title="Đẩy ra pool"
-                            onClick={(e) => { e.stopPropagation(); handlePushToPool(ride.id); }}
-                          >
-                            <Send size={16} />
-                          </button>
+                          {dispatchMode === 1 && (
+                            <button 
+                              className="btn-action success-outline"
+                              title="Đẩy ra pool"
+                              onClick={(e) => { e.stopPropagation(); handlePushToPool(ride.id); }}
+                            >
+                              <Send size={16} />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
@@ -782,13 +869,15 @@ const ScheduledDispatchBoard = () => {
                 <button className="btn btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
                 {currentRide.status === 'waiting' && (
                   <>
-                    <button 
-                      className="btn btn-primary-outline" 
-                      onClick={() => { setShowDetailModal(false); handlePushToPool(currentRide.id); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                    >
-                      <Send size={16} /> Đẩy ra pool
-                    </button>
+                    {dispatchMode === 1 && (
+                      <button 
+                        className="btn btn-primary-outline" 
+                        onClick={() => { setShowDetailModal(false); handlePushToPool(currentRide.id); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                      >
+                        <Send size={16} /> Đẩy ra pool
+                      </button>
+                    )}
                     <button 
                       className="btn btn-primary" 
                       onClick={() => { setShowDetailModal(false); openAssignModal(currentRide); }}
