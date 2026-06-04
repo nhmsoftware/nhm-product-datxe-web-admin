@@ -4,7 +4,7 @@ import {
   Car, Save, Edit2, X, Plus, Trash2, Clock, 
   CloudRain, TrendingUp, Users, Monitor, RefreshCw,
   Bike, Bus, CarFront, Loader2, ClipboardCheck,
-  MapPin, Plane, Package, Banknote, User
+  MapPin, Plane, Package, Banknote, User, ChevronDown, ChevronUp
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -15,24 +15,21 @@ const Pricing = () => {
   const [surgeRules, setSurgeRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scheduledConfig, setScheduledConfig] = useState({
-    base_price: 0,
-    scheduled_surcharge: 0,
-    intercity_base_price: 0,
-    intercity_distance_rate: 0,
-    intercity_time_rate: 0,
-    intercity_min_fare: 0,
-    airport_base_price: 0,
-    airport_distance_rate: 0,
-    airport_time_rate: 0,
-    airport_min_fare: 0,
-    delivery_base_price: 0,
-    delivery_distance_rate: 0,
-    delivery_time_rate: 0,
-    delivery_min_fare: 0,
-    dispatch_mode: 1
+    surcharges: {
+      pre_book_surcharge: 0,
+      night_surcharge: 0,
+      holiday_surcharge: 0,
+      waiting_surcharge: 0,
+      toll_surcharge: 0,
+    },
+    dispatch_mode: 1,
+    rules: []
   });
   const [savingScheduled, setSavingScheduled] = useState(false);
-  const [isEditingScheduled, setIsEditingScheduled] = useState(false);
+  
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [editRuleIndex, setEditRuleIndex] = useState(null);
+  const [editRuleForm, setEditRuleForm] = useState(null);
   
   // State cho việc sửa giá cố định
   const [editingConfigId, setEditingConfigId] = useState(null);
@@ -80,20 +77,14 @@ const Pricing = () => {
       // Backend: { data: { pricing: {...}, dispatch_mode: ... } }
       const sData = scheduledRes?.data ?? {};
       setScheduledConfig({
-        base_price: sData?.pricing?.base_price || 0,
-        scheduled_surcharge: sData?.pricing?.scheduled_surcharge || 0,
-        intercity_base_price: sData?.pricing?.intercity_base_price || 0,
-        intercity_distance_rate: sData?.pricing?.intercity_distance_rate || 0,
-        intercity_time_rate: sData?.pricing?.intercity_time_rate || 0,
-        intercity_min_fare: sData?.pricing?.intercity_min_fare || 0,
-        airport_base_price: sData?.pricing?.airport_base_price || 0,
-        airport_distance_rate: sData?.pricing?.airport_distance_rate || 0,
-        airport_time_rate: sData?.pricing?.airport_time_rate || 0,
-        airport_min_fare: sData?.pricing?.airport_min_fare || 0,
-        delivery_base_price: sData?.pricing?.delivery_base_price || 0,
-        delivery_distance_rate: sData?.pricing?.delivery_distance_rate || 0,
-        delivery_time_rate: sData?.pricing?.delivery_time_rate || 0,
-        delivery_min_fare: sData?.pricing?.delivery_min_fare || 0,
+        surcharges: sData?.pricing?.surcharges || {
+          pre_book_surcharge: 0,
+          night_surcharge: 0,
+          holiday_surcharge: 0,
+          waiting_surcharge: 0,
+          toll_surcharge: 0,
+        },
+        rules: sData?.pricing?.rules || [],
         dispatch_mode: sData?.dispatch_mode || 1
       });
     } catch (error) {
@@ -208,31 +199,38 @@ const Pricing = () => {
     }
   };
   
-  const handleUpdateScheduledConfig = async () => {
+  const handleUpdateScheduledConfig = async (overrideRules = null) => {
     try {
       setSavingScheduled(true);
+      const rulesToUse = overrideRules || scheduledConfig.rules;
       const payload = {
-        base_price: Number(scheduledConfig.base_price),
-        scheduled_surcharge: Number(scheduledConfig.scheduled_surcharge),
-        intercity_base_price: Number(scheduledConfig.intercity_base_price),
-        intercity_distance_rate: Number(scheduledConfig.intercity_distance_rate),
-        intercity_time_rate: Number(scheduledConfig.intercity_time_rate),
-        intercity_min_fare: Number(scheduledConfig.intercity_min_fare),
-        airport_base_price: Number(scheduledConfig.airport_base_price),
-        airport_distance_rate: Number(scheduledConfig.airport_distance_rate),
-        airport_time_rate: Number(scheduledConfig.airport_time_rate),
-        airport_min_fare: Number(scheduledConfig.airport_min_fare),
-        delivery_base_price: Number(scheduledConfig.delivery_base_price),
-        delivery_distance_rate: Number(scheduledConfig.delivery_distance_rate),
-        delivery_time_rate: Number(scheduledConfig.delivery_time_rate),
-        delivery_min_fare: Number(scheduledConfig.delivery_min_fare),
-        dispatch_mode: scheduledConfig.dispatch_mode === 2 ? 2 : 1
+        pre_book_surcharge: Number(scheduledConfig.surcharges?.pre_book_surcharge || 0),
+        night_surcharge: Number(scheduledConfig.surcharges?.night_surcharge || 0),
+        holiday_surcharge: Number(scheduledConfig.surcharges?.holiday_surcharge || 0),
+        waiting_surcharge: Number(scheduledConfig.surcharges?.waiting_surcharge || 0),
+        toll_surcharge: Number(scheduledConfig.surcharges?.toll_surcharge || 0),
+        dispatch_mode: scheduledConfig.dispatch_mode === 2 ? 2 : 1,
+        rules: rulesToUse.map(rule => ({
+          service_type: Number(rule.service_type),
+          ride_mode: rule.ride_mode,
+          vehicle_type: Number(rule.vehicle_type),
+          airport_id: rule.airport_id || null,
+          ranges: rule.ranges.map(range => ({
+            start_km: Number(range.start_km),
+            end_km: Number(range.end_km),
+            price: Number(range.price),
+            unit: range.unit || 'per_trip'
+          }))
+        }))
       };
 
       await adminService.updateScheduledPricing(payload);
       toast.success('Đã cập nhật cấu hình đặt trước!');
-      setIsEditingScheduled(false);
-      fetchData();
+      if (overrideRules) {
+        setScheduledConfig({...scheduledConfig, rules: overrideRules});
+      } else {
+        fetchData();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Lỗi khi cập nhật cấu hình');
     } finally {
@@ -240,8 +238,33 @@ const Pricing = () => {
     }
   };
 
-  const toggleScheduledEdit = () => {
-    setIsEditingScheduled(true);
+  const handleSaveRuleModal = async (e) => {
+    e.preventDefault();
+    const newRules = [...scheduledConfig.rules];
+    if (editRuleIndex !== null) {
+      newRules[editRuleIndex] = editRuleForm;
+    } else {
+      newRules.push(editRuleForm);
+    }
+    await handleUpdateScheduledConfig(newRules);
+    setShowRuleModal(false);
+  };
+
+  const handleDeleteRule = async (rIndex) => {
+    const delRes = await Swal.fire({
+        title: 'Xác nhận xóa?',
+        text: "Bạn có chắc chắn muốn xóa bảng giá này?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Xóa ngay',
+        cancelButtonText: 'Hủy'
+    });
+    if(delRes.isConfirmed) { 
+        const newRules = [...scheduledConfig.rules];
+        newRules.splice(rIndex, 1);
+        await handleUpdateScheduledConfig(newRules);
+    } 
   };
 
   const VEHICLE_INFO = {
@@ -428,75 +451,215 @@ const Pricing = () => {
 
       {/* UC-118: Scheduled Ride & Service Type Pricing */}
       <div className="section-divider">
-        <h2 className="section-title">Quản lý Chuyến xe & Dịch vụ</h2>
-        <div className="section-actions">
-          {isEditingScheduled ? (
-            <>
-              <button onClick={handleUpdateScheduledConfig} disabled={savingScheduled} className="btn-premium btn-success">
-                {savingScheduled ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Lưu cấu hình
+        <h2 className="section-title">Quản lý Chuyến xe Đặt trước</h2>
+      </div>
+
+      <div className="service-pricing-grid" style={{ gridTemplateColumns: '1fr' }}>
+        {/* Surcharges Panel */}
+        <div className="price-card glass service-card" style={{ borderTopColor: 'var(--primary)' }}>
+          <div className="card-top">
+            <div className="icon-badge intercity-icon"><Banknote size={24} /></div>
+            <div className="title-box">
+              <h3>Phụ phí đặt trước</h3>
+              <p>Cấu hình các loại phụ phí áp dụng chung</p>
+            </div>
+            <div className="card-actions" style={{ marginLeft: 'auto' }}>
+              <button onClick={() => handleUpdateScheduledConfig()} disabled={savingScheduled} className="btn-premium btn-success">
+                {savingScheduled ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Lưu phụ phí
               </button>
-              <button onClick={() => setIsEditingScheduled(false)} className="btn glass text-error">Hủy</button>
-            </>
-          ) : (
-            <button onClick={toggleScheduledEdit} className="btn-premium">
-              <Edit2 size={18} /> Chỉnh sửa cấu hình
+            </div>
+          </div>
+          <div className="card-body">
+            <PriceBox label="Phụ phí đặt trước" value={scheduledConfig.surcharges?.pre_book_surcharge} editing={true} editValue={scheduledConfig.surcharges?.pre_book_surcharge} onChange={val => setScheduledConfig({...scheduledConfig, surcharges: {...scheduledConfig.surcharges, pre_book_surcharge: val}})} unit="đ" />
+            <PriceBox label="Phụ phí ban đêm" value={scheduledConfig.surcharges?.night_surcharge} editing={true} editValue={scheduledConfig.surcharges?.night_surcharge} onChange={val => setScheduledConfig({...scheduledConfig, surcharges: {...scheduledConfig.surcharges, night_surcharge: val}})} unit="đ" />
+            <PriceBox label="Phụ phí Lễ/Tết" value={scheduledConfig.surcharges?.holiday_surcharge} editing={true} editValue={scheduledConfig.surcharges?.holiday_surcharge} onChange={val => setScheduledConfig({...scheduledConfig, surcharges: {...scheduledConfig.surcharges, holiday_surcharge: val}})} unit="đ" />
+            <PriceBox label="Phụ phí chờ" value={scheduledConfig.surcharges?.waiting_surcharge} editing={true} editValue={scheduledConfig.surcharges?.waiting_surcharge} onChange={val => setScheduledConfig({...scheduledConfig, surcharges: {...scheduledConfig.surcharges, waiting_surcharge: val}})} unit="đ" />
+            <PriceBox label="Phụ phí cầu đường" value={scheduledConfig.surcharges?.toll_surcharge} editing={true} editValue={scheduledConfig.surcharges?.toll_surcharge} onChange={val => setScheduledConfig({...scheduledConfig, surcharges: {...scheduledConfig.surcharges, toll_surcharge: val}})} unit="đ" />
+          </div>
+        </div>
+
+        {/* Rules Panel */}
+        <div className="surge-section glass" style={{ padding: '0', background: 'transparent' }}>
+          <div className="section-header" style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+            <h3>Danh sách bảng giá (Rules)</h3>
+            <button className="btn-premium" onClick={() => {
+              setEditRuleIndex(null);
+              setEditRuleForm({
+                service_type: 6,
+                ride_mode: 'shared',
+                vehicle_type: 2,
+                airport_id: '',
+                ranges: []
+              });
+              setShowRuleModal(true);
+            }}>
+              <Plus size={18} /> Thêm bảng giá
             </button>
-          )}
+          </div>
+
+          <div className="table-container glass">
+            <table>
+              <thead>
+                <tr>
+                  <th>Loại dịch vụ</th>
+                  <th>Hình thức đi</th>
+                  <th>Loại xe</th>
+                  <th>Sân bay</th>
+                  <th>Chi tiết giá (VNĐ)</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scheduledConfig.rules.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                      <p style={{ color: 'var(--text-muted)' }}>Chưa có cấu hình giá nào được thiết lập. Vui lòng thêm mới.</p>
+                    </td>
+                  </tr>
+                )}
+                {scheduledConfig.rules.map((rule, rIndex) => (
+                  <tr key={rIndex}>
+                    <td style={{ fontWeight: 600 }}>{String(rule.service_type) === '6' ? 'Đi Tỉnh' : 'Sân bay'}</td>
+                    <td>{rule.ride_mode === 'shared' ? 'Ghép (Shared)' : 'Bao xe (Private)'}</td>
+                    <td>{VEHICLE_INFO[rule.vehicle_type]?.name}</td>
+                    <td>
+                      {String(rule.service_type) === '6' ? (
+                        <span style={{ color: 'var(--text-muted)' }}>- Không áp dụng -</span>
+                      ) : (
+                        rule.airport_id ? <span className="badge badge-primary">{rule.airport_id}</span> : <span style={{ color: 'var(--text-muted)' }}>Tất cả sân bay</span>
+                      )}
+                    </td>
+                    <td>
+                      {rule.ranges.length === 0 ? (
+                        <span style={{ color: 'var(--error)' }}>Chưa cấu hình giá</span>
+                      ) : rule.ranges.length === 1 && Number(rule.ranges[0].start_km) === 0 && Number(rule.ranges[0].end_km) === 0 ? (
+                        <strong>Giá cố định: <span style={{ color: 'var(--success)' }}>{Number(rule.ranges[0].price).toLocaleString()}đ</span> /{rule.ranges[0].unit === 'per_trip' ? 'Chuyến' : 'Khách'}</strong>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
+                          {rule.ranges.map((range, idx) => (
+                            <div key={idx} style={{ background: 'var(--bg-tertiary)', padding: '2px 8px', borderRadius: '4px', display: 'inline-block' }}>
+                              Từ <strong>{range.start_km}</strong> đến <strong>{Number(range.end_km) === 0 ? '∞' : range.end_km}</strong> km: 
+                              <span style={{ color: 'var(--success)', fontWeight: 600, marginLeft: '4px' }}>{Number(range.price).toLocaleString()}đ</span> /{range.unit === 'per_trip' ? 'Chuyến' : 'Khách'}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                        <button className="btn-action btn-action-edit" onClick={() => {
+                          setEditRuleIndex(rIndex);
+                          setEditRuleForm(JSON.parse(JSON.stringify(rule)));
+                          setShowRuleModal(true);
+                        }}>
+                          <Edit2 size={16} /> Sửa
+                        </button>
+                        <button className="btn-action btn-action-danger" onClick={() => handleDeleteRule(rIndex)}>
+                          <Trash2 size={16} /> Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <div className="service-pricing-grid">
-        {/* Đi tỉnh */}
-        <div className="price-card glass service-card">
-          <div className="card-top">
-            <div className="icon-badge intercity-icon"><MapPin size={24} /></div>
-            <div className="title-box">
-              <h3>Dịch vụ Đi tỉnh</h3>
-              <p>Cấu hình chuyến đi liên tỉnh</p>
+      {showRuleModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>{editRuleIndex !== null ? 'Chỉnh sửa bảng giá' : 'Thêm mới bảng giá'}</h3>
+              <button className="btn-icon" onClick={() => setShowRuleModal(false)}><X size={20} /></button>
             </div>
-          </div>
-          <div className="card-body">
-            <PriceBox label="Giá mở cửa" value={scheduledConfig.intercity_base_price} editing={isEditingScheduled} editValue={scheduledConfig.intercity_base_price} onChange={val => setScheduledConfig({...scheduledConfig, intercity_base_price: val})} unit="đ" />
-            <PriceBox label="Giá tối thiểu" value={scheduledConfig.intercity_min_fare} editing={isEditingScheduled} editValue={scheduledConfig.intercity_min_fare} onChange={val => setScheduledConfig({...scheduledConfig, intercity_min_fare: val})} unit="đ" />
-            <PriceBox label="Giá / km" value={scheduledConfig.intercity_distance_rate} editing={isEditingScheduled} editValue={scheduledConfig.intercity_distance_rate} onChange={val => setScheduledConfig({...scheduledConfig, intercity_distance_rate: val})} unit="đ" />
-            <PriceBox label="Giá / phút" value={scheduledConfig.intercity_time_rate} editing={isEditingScheduled} editValue={scheduledConfig.intercity_time_rate} onChange={val => setScheduledConfig({...scheduledConfig, intercity_time_rate: val})} unit="đ" />
-          </div>
-        </div>
+            <div className="modal-body">
+              <form onSubmit={handleSaveRuleModal}>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div className="form-group">
+                    <label>Loại Dịch vụ</label>
+                    <select className="form-select" value={editRuleForm.service_type} onChange={e => setEditRuleForm({...editRuleForm, service_type: e.target.value})}>
+                      <option value={6}>Đi Tỉnh (6)</option>
+                      <option value={7}>Sân bay (7)</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Hình thức đi</label>
+                    <select className="form-select" value={editRuleForm.ride_mode} onChange={e => setEditRuleForm({...editRuleForm, ride_mode: e.target.value})}>
+                      <option value="shared">Ghép (Shared)</option>
+                      <option value="private">Bao xe (Private)</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Loại xe</label>
+                    <select className="form-select" value={editRuleForm.vehicle_type} onChange={e => setEditRuleForm({...editRuleForm, vehicle_type: e.target.value})}>
+                      {Object.entries(VEHICLE_INFO).map(([id, info]) => <option key={id} value={id}>{info.name}</option>)}
+                    </select>
+                  </div>
+                  {String(editRuleForm.service_type) === '7' && (
+                  <div className="form-group">
+                    <label>Mã Sân bay</label>
+                    <input type="text" className="form-input" placeholder="VD: SGN" value={editRuleForm.airport_id || ''} onChange={e => setEditRuleForm({...editRuleForm, airport_id: e.target.value})} />
+                  </div>
+                  )}
+                </div>
 
-        {/* Sân bay */}
-        <div className="price-card glass service-card">
-          <div className="card-top">
-            <div className="icon-badge airport-icon"><Plane size={24} /></div>
-            <div className="title-box">
-              <h3>Dịch vụ Sân bay</h3>
-              <p>Cấu hình đón/tiễn sân bay</p>
+                <div className="form-group">
+                  <label>Khoảng KM và Giá cước</label>
+                  <table style={{ minWidth: '100%', borderCollapse: 'collapse', marginTop: '0.5rem' }}>
+                    <thead>
+                      <tr>
+                        <th>Start KM</th>
+                        <th>End KM</th>
+                        <th>Giá (VNĐ)</th>
+                        <th>Đơn vị tính</th>
+                        <th style={{ textAlign: 'right' }}>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editRuleForm.ranges.length === 0 && (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: 'center', padding: '1rem' }}>Chưa có cấu hình giá</td>
+                        </tr>
+                      )}
+                      {editRuleForm.ranges.map((range, rangeIdx) => (
+                        <tr key={rangeIdx}>
+                          <td><input type="number" step="0.1" className="form-input" value={range.start_km} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].start_km = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
+                          <td><input type="number" step="0.1" className="form-input" value={range.end_km} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].end_km = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
+                          <td><input type="number" className="form-input" value={range.price} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].price = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
+                          <td>
+                            <select className="form-select" value={range.unit} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].unit = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }}>
+                              <option value="per_passenger">Hành khách</option>
+                              <option value="per_trip">Chuyến</option>
+                            </select>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button type="button" className="btn-icon" onClick={() => { const newRanges = [...editRuleForm.ranges]; newRanges.splice(rangeIdx, 1); setEditRuleForm({...editRuleForm, ranges: newRanges}); }}><X size={16} color="var(--error)" /></button>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', paddingTop: '1rem' }}>
+                          <button type="button" className="btn glass" onClick={() => {
+                            setEditRuleForm({...editRuleForm, ranges: [...editRuleForm.ranges, {start_km: 0, end_km: 0, price: 0, unit: 'per_trip'}]});
+                          }}><Plus size={16} /> Thêm khoảng KM</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-actions" style={{ marginTop: '2rem' }}>
+                  <button type="button" className="btn glass" onClick={() => setShowRuleModal(false)}>Hủy</button>
+                  <button type="submit" disabled={savingScheduled} className="btn-premium btn-success">
+                    {savingScheduled ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Xác nhận
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-          <div className="card-body">
-            <PriceBox label="Giá mở cửa" value={scheduledConfig.airport_base_price} editing={isEditingScheduled} editValue={scheduledConfig.airport_base_price} onChange={val => setScheduledConfig({...scheduledConfig, airport_base_price: val})} unit="đ" />
-            <PriceBox label="Giá tối thiểu" value={scheduledConfig.airport_min_fare} editing={isEditingScheduled} editValue={scheduledConfig.airport_min_fare} onChange={val => setScheduledConfig({...scheduledConfig, airport_min_fare: val})} unit="đ" />
-            <PriceBox label="Giá / km" value={scheduledConfig.airport_distance_rate} editing={isEditingScheduled} editValue={scheduledConfig.airport_distance_rate} onChange={val => setScheduledConfig({...scheduledConfig, airport_distance_rate: val})} unit="đ" />
-            <PriceBox label="Giá / phút" value={scheduledConfig.airport_time_rate} editing={isEditingScheduled} editValue={scheduledConfig.airport_time_rate} onChange={val => setScheduledConfig({...scheduledConfig, airport_time_rate: val})} unit="đ" />
-          </div>
         </div>
-
-        {/* Giao hàng */}
-        <div className="price-card glass service-card">
-          <div className="card-top">
-            <div className="icon-badge delivery-icon"><Package size={24} /></div>
-            <div className="title-box">
-              <h3>Dịch vụ Giao hàng</h3>
-              <p>Cấu hình vận chuyển hàng hóa</p>
-            </div>
-          </div>
-          <div className="card-body">
-            <PriceBox label="Giá mở cửa" value={scheduledConfig.delivery_base_price} editing={isEditingScheduled} editValue={scheduledConfig.delivery_base_price} onChange={val => setScheduledConfig({...scheduledConfig, delivery_base_price: val})} unit="đ" />
-            <PriceBox label="Giá tối thiểu" value={scheduledConfig.delivery_min_fare} editing={isEditingScheduled} editValue={scheduledConfig.delivery_min_fare} onChange={val => setScheduledConfig({...scheduledConfig, delivery_min_fare: val})} unit="đ" />
-            <PriceBox label="Giá / km" value={scheduledConfig.delivery_distance_rate} editing={isEditingScheduled} editValue={scheduledConfig.delivery_distance_rate} onChange={val => setScheduledConfig({...scheduledConfig, delivery_distance_rate: val})} unit="đ" />
-            <PriceBox label="Giá / phút" value={scheduledConfig.delivery_time_rate} editing={isEditingScheduled} editValue={scheduledConfig.delivery_time_rate} onChange={val => setScheduledConfig({...scheduledConfig, delivery_time_rate: val})} unit="đ" />
-          </div>
-        </div>
-      </div>
+      )}
 
       {showSurgeModal && (
         <div className="modal-overlay">
@@ -645,6 +808,19 @@ const Pricing = () => {
         .btn-success { background: var(--success) !important; color: white !important; }
         .text-error { color: var(--error) !important; }
         .mt-8 { margin-top: 2rem; }
+
+        .form-input, .form-select {
+          padding: 0.5rem;
+          border-radius: 8px;
+          border: 1px solid var(--border);
+          background: var(--bg);
+          color: var(--text);
+          font-size: 0.9rem;
+          outline: none;
+        }
+        .form-input:focus, .form-select:focus {
+          border-color: var(--primary);
+        }
       `}} />
 
     </div>
