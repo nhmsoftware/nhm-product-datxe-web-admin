@@ -30,6 +30,11 @@ const formatDisplayDate = (dateStr) => {
   });
 };
 
+const VIETNAM_PROVINCES = [
+  "Hà Nội", "Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ", 
+  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+].sort();
+
 const CommissionConfig = () => {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -153,6 +158,15 @@ const CommissionConfig = () => {
   const TARGET_TYPES = {
     1: { label: 'Tài xế', icon: <User size={14} />, color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
     2: { label: 'Cửa hàng / Đối tác', icon: <Store size={14} />, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }
+  };
+
+  const COMMISSION_MODEL_LABELS = {
+    '1_1': { label: 'Hoa hồng Tài xế Đặt xe', icon: <Bike size={16} />, color: 'var(--primary)', bg: 'rgba(0, 73, 172, 0.1)' },
+    '2_2': { label: 'Hoa hồng Quán ăn', icon: <Store size={16} />, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' },
+    '1_2': { label: 'Hoa hồng Tài xế Giao đồ ăn', icon: <Utensils size={16} />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+    '1_3': { label: 'Hoa hồng Giao hàng', icon: <Package size={16} />, color: '#00906a', bg: 'rgba(0, 144, 106, 0.1)' },
+    '1_6': { label: 'Hoa hồng Đặt xe Đi tỉnh', icon: <Globe size={16} />, color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
+    '1_7': { label: 'Hoa hồng Đặt xe Sân bay', icon: <MapPin size={16} />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
   };
 
   const filteredRules = rules.filter(r => {
@@ -279,9 +293,8 @@ const CommissionConfig = () => {
         <table className="animate-fade-in">
           <thead>
             <tr>
-               <th className="whitespace-nowrap">Cấu hình & ID</th>
-               <th className="whitespace-nowrap">Đối tượng</th>
-               <th className="whitespace-nowrap">Dịch vụ</th>
+               <th className="whitespace-nowrap">ID Cấu hình</th>
+               <th className="whitespace-nowrap">Loại mô hình</th>
                <th className="whitespace-nowrap">Phạm vi</th>
                <th className="whitespace-nowrap">Hoa hồng (%)</th>
                <th className="whitespace-nowrap">Giới hạn (Min/Max)</th>
@@ -313,20 +326,19 @@ const CommissionConfig = () => {
             ) : filteredRules.map(rule => (
               <tr key={rule.id} className="hover-row">
                 <td>
-                  <div className="font-bold text-sm">{rule.name || 'Cấu hình mặc định'}</div>
                   <div className="text-xs text-muted font-mono">{rule.id.substring(0, 8)}...</div>
                 </td>
                 <td>
-                  <span className="badge" style={{ background: TARGET_TYPES[rule.target_type]?.bg, color: TARGET_TYPES[rule.target_type]?.color }}>
-                    {TARGET_TYPES[rule.target_type]?.icon}
-                    {TARGET_TYPES[rule.target_type]?.label}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap">
-                  <span className="badge" style={{ background: SERVICE_TYPES[rule.service_type]?.bg, color: SERVICE_TYPES[rule.service_type]?.color, whiteSpace: 'nowrap' }}>
-                    {SERVICE_TYPES[rule.service_type]?.icon}
-                    {SERVICE_TYPES[rule.service_type]?.label}
-                  </span>
+                  {(() => {
+                    const modelKey = `${rule.target_type}_${rule.service_type}`;
+                    const model = COMMISSION_MODEL_LABELS[modelKey] || { label: rule.name || 'Khác', icon: <Info size={16} />, color: '#64748b', bg: '#f1f5f9' };
+                    return (
+                      <span className="badge" style={{ background: model.bg, color: model.color }}>
+                        {model.icon}
+                        {model.label}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td>
                   {rule.scope === 1 ? (
@@ -418,22 +430,22 @@ const CommissionConfig = () => {
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                           <div>
-                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tên cấu hình</label>
-                            <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Tên quy tắc..." required />
-                          </div>
-                          <div>
-                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Đối tượng</label>
-                            <select className="premium-select" style={{ padding: '0.65rem 1rem' }} value={form.target_type} onChange={e => setForm({...form, target_type: parseInt(e.target.value)})}>
-                              <option value={1}>Tài xế đối tác</option>
-                              <option value={2}>Cửa hàng / Đối tác</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Dịch vụ</label>
-                            <select className="premium-select" style={{ padding: '0.65rem 1rem' }} value={form.service_type} onChange={e => setForm({...form, service_type: parseInt(e.target.value)})}>
-                              <option value={1}>Chuyến xe (Ride)</option>
-                              <option value={2}>Ăn uống (Food)</option>
-                              <option value={3}>Giao hàng (Ship)</option>
+                            <label className="premium-label" style={{ fontSize: '0.65rem' }}>Loại mô hình hoa hồng</label>
+                            <select 
+                              className="premium-select" 
+                              style={{ padding: '0.65rem 1rem' }} 
+                              value={`${form.target_type}_${form.service_type}`} 
+                              onChange={e => {
+                                const [target, service] = e.target.value.split('_').map(Number);
+                                setForm({...form, target_type: target, service_type: service, name: ''});
+                              }}
+                            >
+                              <option value="1_1">Hoa hồng Tài xế Đặt xe</option>
+                              <option value="2_2">Hoa hồng Quán ăn (Merchant)</option>
+                              <option value="1_2">Hoa hồng Tài xế Giao đồ ăn</option>
+                              <option value="1_3">Hoa hồng Giao hàng</option>
+                              <option value="1_6">Hoa hồng Đặt xe Đi tỉnh</option>
+                              <option value="1_7">Hoa hồng Đặt xe Sân bay</option>
                             </select>
                           </div>
                         </div>
@@ -458,15 +470,26 @@ const CommissionConfig = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Mã vùng</label>
-                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} disabled={form.scope === 1} type="text" value={form.area_id} onChange={e => setForm({...form, area_id: e.target.value})} placeholder="Mã vùng..." />
+                              <label className="premium-label" style={{ fontSize: '0.65rem' }}>Khu vực (Tỉnh/Huyện)</label>
+                              <select 
+                                className="premium-select" 
+                                style={{ padding: '0.65rem 1rem' }} 
+                                disabled={form.scope === 1} 
+                                value={form.area_id} 
+                                onChange={e => setForm({...form, area_id: e.target.value})}
+                              >
+                                <option value="">-- Chọn khu vực --</option>
+                                {VIETNAM_PROVINCES.map(province => (
+                                  <option key={province} value={province}>{province}</option>
+                                ))}
+                              </select>
                             </div>
                           </div>
                           
                           <div>
                             <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tỷ lệ hoa hồng (%)</label>
                             <div className="relative">
-                              <input className="premium-input" style={{ padding: '0.65rem 1rem', fontWeight: 800, color: 'var(--primary)' }} type="number" step="0.1" value={form.commission_rate} onChange={e => setForm({...form, commission_rate: parseFloat(e.target.value)})} required />
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem', fontWeight: 800, color: 'var(--primary)' }} type="number" step="0.1" min="0" onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} value={form.commission_rate} onChange={e => setForm({...form, commission_rate: Math.max(0, parseFloat(e.target.value) || 0)})} required />
                               <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: 'var(--primary)', fontSize: '0.8rem' }}>%</span>
                             </div>
                           </div>
@@ -474,11 +497,11 @@ const CommissionConfig = () => {
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                             <div>
                               <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tối thiểu (₫)</label>
-                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" value={form.min_commission} onChange={e => setForm({...form, min_commission: e.target.value})} placeholder="0" />
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" min="0" onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} value={form.min_commission} onChange={e => setForm({...form, min_commission: e.target.value ? Math.max(0, parseInt(e.target.value)) : ''})} placeholder="0" />
                             </div>
                             <div>
                               <label className="premium-label" style={{ fontSize: '0.65rem' }}>Tối đa (₫)</label>
-                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" value={form.max_commission} onChange={e => setForm({...form, max_commission: e.target.value})} placeholder="∞" />
+                              <input className="premium-input" style={{ padding: '0.65rem 1rem' }} type="number" min="0" onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} value={form.max_commission} onChange={e => setForm({...form, max_commission: e.target.value ? Math.max(0, parseInt(e.target.value)) : ''})} placeholder="∞" />
                             </div>
                           </div>
                         </div>

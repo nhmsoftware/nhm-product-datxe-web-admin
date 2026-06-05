@@ -9,6 +9,11 @@ import {
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
+const VIETNAM_PROVINCES = [
+  "Hà Nội", "Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ", 
+  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+].sort();
+
 const Pricing = () => {
   const [configs, setConfigs] = useState([]);
   const [isFreeMode, setIsFreeMode] = useState(false);
@@ -121,7 +126,7 @@ const Pricing = () => {
       fetchData();
       toast.success('Đã lưu cấu hình giá mới!');
     } catch (error) {
-      toast.error('Lỗi khi lưu cấu hình');
+      toast.error(error.response?.data?.message || 'Lỗi khi lưu cấu hình');
     }
   };
 
@@ -185,7 +190,7 @@ const Pricing = () => {
         start_time: editSurgeRule.start_time ? editSurgeRule.start_time.substring(0, 5) : null,
         end_time: editSurgeRule.end_time ? editSurgeRule.end_time.substring(0, 5) : null,
         rule_id: editSurgeRule.rule_id || null,
-        area_id: editSurgeRule.area_id || null
+        area_id: (editSurgeRule.province ? (editSurgeRule.commune ? editSurgeRule.commune + ', ' + editSurgeRule.province : editSurgeRule.province) : null)
       };
 
       await adminService.saveSurgeRule(payload);
@@ -369,7 +374,7 @@ const Pricing = () => {
         <div className="section-header">
           <h3>Quy tắc tăng giá cao điểm (Surge)</h3>
           <button className="btn-premium" onClick={() => {
-              setEditSurgeRule({ vehicle_type: 1, conditions: [], multiplier: 1.5, start_time: '07:00', end_time: '09:00', is_active: true });
+              setEditSurgeRule({ vehicle_type: 1, conditions: [], multiplier: 1.5, start_time: '07:00', end_time: '09:00', is_active: true, province: '', commune: '' });
               setShowSurgeModal(true);
           }}>
             <Plus size={18} /> Thêm quy tắc
@@ -413,7 +418,21 @@ const Pricing = () => {
                     <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
                       <button 
                         className="btn-action btn-action-edit" 
-                        onClick={() => { setEditSurgeRule({...rule, rule_id: rule.id, conditions: Array.isArray(rule.conditions) ? rule.conditions : []}); setShowSurgeModal(true); }}
+                        onClick={() => { 
+                          let prov = '';
+                          let com = '';
+                          if (rule.area_id) {
+                            const parts = rule.area_id.split(', ');
+                            if (parts.length > 1) {
+                              com = parts[0];
+                              prov = parts[1];
+                            } else {
+                              prov = rule.area_id;
+                            }
+                          }
+                          setEditSurgeRule({...rule, rule_id: rule.id, province: prov, commune: com, conditions: Array.isArray(rule.conditions) ? rule.conditions : []}); 
+                          setShowSurgeModal(true); 
+                        }}
                       >
                         <Edit2 size={16} /> Sửa
                       </button>
@@ -625,9 +644,9 @@ const Pricing = () => {
                       )}
                       {editRuleForm.ranges.map((range, rangeIdx) => (
                         <tr key={rangeIdx}>
-                          <td><input type="number" step="0.1" className="form-input" value={range.start_km} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].start_km = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
-                          <td><input type="number" step="0.1" className="form-input" value={range.end_km} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].end_km = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
-                          <td><input type="number" className="form-input" value={range.price} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].price = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
+                          <td><input type="number" step="0.1" min="0" className="form-input" value={range.start_km} onChange={e => { if (e.target.value < 0) { toast.error("Giá trị không hợp lệ! Không thể nhập số âm."); return; } const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].start_km = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
+                          <td><input type="number" step="0.1" min="0" className="form-input" value={range.end_km} onChange={e => { if (e.target.value < 0) { toast.error("Giá trị không hợp lệ! Không thể nhập số âm."); return; } const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].end_km = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
+                          <td><input type="number" min="0" className="form-input" value={range.price} onChange={e => { if (e.target.value < 0) { toast.error("Giá trị không hợp lệ! Không thể nhập số âm."); return; } const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].price = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }} /></td>
                           <td>
                             <select className="form-select" value={range.unit} onChange={e => { const newRanges = [...editRuleForm.ranges]; newRanges[rangeIdx].unit = e.target.value; setEditRuleForm({...editRuleForm, ranges: newRanges}); }}>
                               <option value="per_passenger">Hành khách</option>
@@ -709,9 +728,23 @@ const Pricing = () => {
                   </div>
                 </div>
 
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                      <label>Tỉnh/Thành phố (Khu vực)</label>
+                      <select value={editSurgeRule.province || ''} onChange={e => setEditSurgeRule({...editSurgeRule, province: e.target.value})}>
+                         <option value="">-- Tất cả Tỉnh/Thành phố --</option>
+                         {VIETNAM_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                  </div>
+                  <div className="form-group">
+                      <label>Quận/Huyện/Xã</label>
+                      <input type="text" placeholder="Nhập tên Phường/Xã (Tùy chọn)" value={editSurgeRule.commune || ''} onChange={e => setEditSurgeRule({...editSurgeRule, commune: e.target.value})} />
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label>Hệ số tăng giá (multiplier)</label>
-                  <input type="number" step="0.1" value={editSurgeRule.multiplier} onChange={e => setEditSurgeRule({...editSurgeRule, multiplier: e.target.value})} />
+                  <input type="number" step="0.1" min="0" value={editSurgeRule.multiplier} onChange={e => { if (e.target.value < 0) { toast.error("Hệ số tăng giá không hợp lệ!"); return; } setEditSurgeRule({...editSurgeRule, multiplier: e.target.value})}} />
                 </div>
 
                 <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
@@ -833,10 +866,16 @@ const PriceBox = ({ label, value = 0, editing, editValue, onChange, unit, step =
     <div style={{ display: 'flex', alignItems: 'center' }}>
       {editing ? (
         <input 
-          type="number" step={step} autoFocus
+          type="number" step={step} min="0" autoFocus
           style={{ background: 'transparent', border: 'none', color: 'inherit', fontSize: '1.1rem', fontWeight: 700, width: '100%', outline: 'none' }}
           value={editValue} 
-          onChange={e => onChange(e.target.value)} 
+          onChange={e => {
+             if (e.target.value < 0) {
+                 toast.error("Giá trị không hợp lệ! Không thể nhập số âm.");
+                 return;
+             }
+             onChange(e.target.value);
+          }} 
         />
       ) : (
         <span className="val">{step === "1" ? (Number(value) || 0).toLocaleString() : value}</span>

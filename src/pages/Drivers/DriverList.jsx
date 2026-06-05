@@ -143,6 +143,20 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                     <div style={{ fontWeight: 600 }}>{driver?.email || 'N/A'}</div>
                   </div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <User size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Giới tính</div>
+                    <div style={{ fontWeight: 600 }}>{driver?.gender_label || 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <MapPin size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Địa chỉ</div>
+                    <div style={{ fontWeight: 600 }}>{driver?.address || 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -368,7 +382,8 @@ const DriverList = () => {
             <textarea id="lock-reason" class="swal2-textarea" style="margin: 0; width: 100%;" placeholder="Nhập lý do khóa..."></textarea>
             
             <label style="display: block; margin-top: 1.5rem; margin-bottom: 8px; font-weight: 600;">Số ngày khóa (Mặc định 2 ngày)</label>
-            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="1" value="2">
+            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="2" value="2">
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">* Tài khoản phải bị khóa tối thiểu 2 ngày. Nhập từ 2 trở lên.</div>
           </div>
         `,
         focusConfirm: false,
@@ -385,14 +400,17 @@ const DriverList = () => {
             return false;
           }
           
-          if (days && (parseInt(days) <= 0 || isNaN(parseInt(days)))) {
-            Swal.showValidationMessage('Số ngày khóa không hợp lệ.');
-            return false;
+          if (days) {
+            const parsedDays = parseInt(days, 10);
+            if (isNaN(parsedDays) || parsedDays < 2) {
+              Swal.showValidationMessage('Số ngày khóa không hợp lệ.');
+              return false;
+            }
           }
           
           return {
             lock_reason: reason,
-            locked_days: days ? parseInt(days) : 2
+            locked_days: days ? parseInt(days, 10) : 2
           };
         }
       });
@@ -440,6 +458,11 @@ const DriverList = () => {
   };
 
   const handleAssignGroup = async (userId, groupType) => {
+    const driver = drivers.find(d => d.id === userId);
+    if (driver && driver.driver_group_type === groupType) {
+       toast.error(groupType === 1 ? 'Tài xế này đã thuộc Đội xe nhà' : 'Tài xế này đã là Đối tác');
+       return;
+    }
     const label = groupType === 1 ? 'Đội xe nhà' : 'Tài xế đối tác';
     const result = await Swal.fire({
       title: `Gán vào ${label}?`,
@@ -467,10 +490,21 @@ const DriverList = () => {
        toast.error('Chưa có tài xế nào được tích');
        return;
     }
+
+    const validDriversToAssign = selectedDrivers.filter(id => {
+       const driver = drivers.find(d => d.id === id);
+       return driver && driver.driver_group_type !== groupType;
+    });
+
+    if (validDriversToAssign.length === 0) {
+       toast.error(groupType === 1 ? 'Tất cả tài xế đã chọn đều đang thuộc Đội xe nhà' : 'Tất cả tài xế đã chọn đều đang là Đối tác');
+       return;
+    }
+
     const label = groupType === 1 ? 'Đội xe nhà' : 'Tài xế đối tác';
     const result = await Swal.fire({
-      title: `Gán ${selectedDrivers.length} tài xế vào ${label}?`,
-      text: `Bạn có chắc muốn gán những tài xế đã chọn vào ${label}?`,
+      title: `Gán ${validDriversToAssign.length} tài xế vào ${label}?`,
+      text: `Bạn có chắc muốn gán những tài xế hợp lệ đã chọn vào ${label}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Đồng ý',
@@ -481,11 +515,11 @@ const DriverList = () => {
     if (result.isConfirmed) {
       try {
         const loadingToast = toast.loading('Đang xử lý...');
-        for(let id of selectedDrivers) {
+        for(let id of validDriversToAssign) {
             await adminService.assignDriverGroup(id, groupType);
         }
         toast.dismiss(loadingToast);
-        toast.success(`Đã gán thành công ${selectedDrivers.length} tài xế`);
+        toast.success(`Đã gán thành công ${validDriversToAssign.length} tài xế`);
         setSelectedDrivers([]);
         fetchDrivers();
       } catch (error) {
@@ -557,9 +591,7 @@ const DriverList = () => {
           <button className="btn btn-primary" onClick={() => handleBulkAssignGroup(1)}>
             <Car size={18} /> {selectedDrivers.length > 0 ? `Gán ${selectedDrivers.length} tài xế vào Xe nhà` : 'Gán vào Xe nhà'}
           </button>
-          <button className="btn btn-glass" onClick={() => fetchDrivers()}>
-            <Filter size={18} /> Làm mới
-          </button>
+
           <button className="btn btn-success" onClick={handleExport}>
             <Package size={18} /> Xuất Excel
           </button>

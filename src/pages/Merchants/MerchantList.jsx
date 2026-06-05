@@ -954,7 +954,8 @@ const MerchantList = () => {
             <textarea id="lock-reason" class="swal2-textarea" style="margin: 0; width: 100%;" placeholder="Nhập lý do khóa..."></textarea>
             
             <label style="display: block; margin-top: 1.5rem; margin-bottom: 8px; font-weight: 600;">Số ngày khóa (Mặc định 2 ngày)</label>
-            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="1" value="2">
+            <input id="lock-days" type="number" class="swal2-input" style="margin: 0; width: 100%;" placeholder="Ví dụ: 7" min="2" value="2">
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">* Tài khoản phải bị khóa tối thiểu 2 ngày. Nhập từ 2 trở lên.</div>
           </div>
         `,
         focusConfirm: false,
@@ -970,10 +971,18 @@ const MerchantList = () => {
             Swal.showValidationMessage('Vui lòng nhập lý do khóa tài khoản.');
             return false;
           }
+
+          if (days) {
+            const parsedDays = parseInt(days, 10);
+            if (isNaN(parsedDays) || parsedDays < 2) {
+              Swal.showValidationMessage('Số ngày khóa không hợp lệ.');
+              return false;
+            }
+          }
           
           return {
             reason: reason,
-            locked_days: days ? parseInt(days) : 2
+            locked_days: days ? parseInt(days, 10) : 2
           };
         }
       });
