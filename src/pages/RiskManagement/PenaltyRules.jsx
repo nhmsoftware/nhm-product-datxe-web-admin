@@ -119,6 +119,16 @@ const PenaltyRules = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Frontend Validation
+    if (!formData.name || !formData.violation_type || !formData.applicable_role || !formData.penalty_type) {
+      return toast.error('Vui lòng nhập đầy đủ thông tin quy tắc.');
+    }
+    
+    if (Number(formData.violation_threshold) < 1) {
+      return toast.error('Số lần vi phạm không hợp lệ.');
+    }
+
     try {
       if (currentRule) {
         await riskService.updatePenaltyRule(currentRule.id, formData);
@@ -130,7 +140,13 @@ const PenaltyRules = () => {
       setShowModal(false);
       fetchRules();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      const errorData = error.response?.data;
+      if (errorData?.errors) {
+        const firstError = Object.values(errorData.errors)[0][0];
+        toast.error(firstError);
+      } else {
+        toast.error(errorData?.message || 'Có lỗi xảy ra');
+      }
     }
   };
 

@@ -41,5 +41,11 @@ export const riskService = {
   togglePenaltyRuleStatus: async (id, isActive) => {
     const response = await api.patch(`/v1/admin/risk/penalty-rules/${id}/toggle-status`, { is_active: isActive });
     return response.data;
+  },
+
+  // UC-110: Violation Logs
+  listViolations: async (params) => {
+    const response = await api.get('/v1/admin/risk/violations', { params });
+    return response.data;
   }
 };

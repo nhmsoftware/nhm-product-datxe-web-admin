@@ -1,41 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, Eye, CheckCircle, XCircle, AlertCircle, 
   Clock, MoreVertical, ShieldAlert, User, Car, Calendar,
   ArrowRight, ShieldCheck, Download, ChevronRight, ChevronLeft, ExternalLink, X,
   Gavel, AlertTriangle, ShieldOff, AlertOctagon, History
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { riskService } from '../../services/riskService';
+import Swal from 'sweetalert2';
 
 const ViolationList = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [violations] = useState([
-    {
-      id: 'VL-701',
-      subject: 'Lê Văn T',
-      role: 'Driver',
-      type: 'Thái độ không phù hợp',
-      reason: 'Quát mắng khách hàng khi đang di chuyển và yêu cầu tip thêm tiền mặt trái quy định.',
-      count: 2,
-      created_at: '2026-05-12 11:10',
-      status: 'WARNED',
-      ride_id: 'RIDE-8892',
-      phone: '0988123456'
-    },
-    {
-      id: 'VL-702',
-      subject: 'Trần Minh K',
-      role: 'Customer',
-      type: 'Spam đặt chuyến',
-      reason: 'Đặt 5 chuyến liên tiếp rồi hủy không lý do trong vòng 15 phút, gây ảnh hưởng vận hành.',
-      count: 3,
-      created_at: '2026-05-12 09:40',
-      status: 'SUSPENDED',
-      ride_id: 'N/A',
-      phone: '0977445566'
-    }
-  ]);
+  const [violations, setViolations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  const ViolationTypeLabels = {
+    'ATTITUDE': 'Thái độ không phù hợp',
+    'CANCELLATION': 'Hủy chuyến sai quy định',
+    'INCOMPLETE_TRIP': 'Không hoàn thành chuyến đi',
+    'LATE_DELIVERY': 'Giao hàng trễ',
+    'FRAUD': 'Gian lận',
+    'SPAM_BOOKING': 'Spam đặt chuyến',
+    'VOUCHER_ABUSE': 'Lạm dụng khuyến mãi',
+    'HARASSMENT': 'Quấy rối',
+    'OTHER': 'Khác'
+  };
+
+  const getViolationTypeLabel = (type) => {
+    return ViolationTypeLabels[type] || type;
+  };
 
   const regulations = [
     {
@@ -60,9 +60,72 @@ const ViolationList = () => {
     }
   ];
 
+  const fetchViolations = async (page = 1) => {
+    try {
+      setLoading(true);
+      const res = await riskService.listViolations({ page, per_page: 20 });
+      const payload = res.data || {};
+      
+      setViolations(payload.data || []);
+      
+      if (payload.meta) {
+        setCurrentPage(payload.meta.current_page || 1);
+        setTotalPages(payload.meta.last_page || 1);
+        setTotalRecords(payload.meta.total || 0);
+      }
+    } catch (error) {
+      toast.error('Không thể tải danh sách vi phạm');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchViolations();
+  }, []);
+
   const openDetail = (item) => {
     setSelectedItem(item);
     setShowDetail(true);
+  };
+
+  const handleSuspend = async (item) => {
+    const result = await Swal.fire({
+      title: 'Khóa tài khoản?',
+      html: `Thực hiện khóa tài khoản của <strong>${item.subject}</strong>. Hành động này có thể được hoàn tác.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Khóa ngay',
+      cancelButtonText: 'Hủy',
+    });
+    if (result.isConfirmed) {
+      toast.success(`Đã gửi lệnh khóa tài khoản: ${item.subject}`);
+      setShowDetail(false);
+      fetchViolations(currentPage);
+    }
+  };
+
+  const handleDismiss = async (item) => {
+    toast.success(`Đã bỏ qua và lưu vết vi phạm ID: ${item.id}`);
+    setShowDetail(false);
+  };
+
+  const handleExportReport = () => {
+    const headers = ['Mã VP', 'Đối tượng', 'Vai trò', 'Loại vi phạm', 'Số lần VP', 'Trạng thái', 'Ngày tạo'];
+    const rows = violations.map(v => [
+      v.id, v.subject, v.role, getViolationTypeLabel(v.type), v.count, v.status, v.created_at
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `violation-report-${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Xuất báo cáo thành công!');
   };
 
   const getStatusBadge = (status) => {
@@ -134,7 +197,7 @@ const ViolationList = () => {
         <button className="btn btn-glass" style={{ borderRadius: '14px' }}>
           <Filter size={18} /> Lọc
         </button>
-        <button className="btn btn-primary" style={{ borderRadius: '14px' }}>
+        <button className="btn btn-primary" style={{ borderRadius: '14px' }} onClick={handleExportReport}>
           <Download size={18} /> Xuất Báo cáo
         </button>
       </div>
@@ -174,7 +237,7 @@ const ViolationList = () => {
                   </td>
                   <td style={{ padding: '1.25rem 1.5rem' }}>
                     <span style={{ padding: '0.25rem 0.75rem', background: 'rgba(239, 68, 68, 0.05)', color: 'var(--error)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600 }}>
-                      {item.type}
+                      {getViolationTypeLabel(item.type)}
                     </span>
                   </td>
                   <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
@@ -194,7 +257,7 @@ const ViolationList = () => {
                       <button onClick={() => openDetail(item)} className="btn-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }} title="Xem chi tiết">
                         <Eye size={18} />
                       </button>
-                      <button className="btn-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)' }} title="Khóa">
+                      <button className="btn-icon" onClick={() => handleSuspend(item)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)' }} title="Khóa tài khoản">
                         <ShieldOff size={18} />
                       </button>
                     </div>
@@ -207,12 +270,12 @@ const ViolationList = () => {
 
         <div className="pagination-wrapper" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Hiển thị <b>1 - {violations.length}</b> trên tổng số <b>{violations.length}</b> bản ghi
+            Hiển thị <b>{violations.length > 0 ? (currentPage - 1) * 20 + 1 : 0} - {Math.min(currentPage * 20, totalRecords)}</b> trên tổng số <b>{totalRecords}</b> bản ghi
           </div>
           <div className="pagination-actions" style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn-page" disabled style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent' }}><ChevronLeft size={16} /></button>
-            <button className="btn-page active" style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--primary)', background: 'var(--primary)', color: 'white' }}>1</button>
-            <button className="btn-page" disabled style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent' }}><ChevronRight size={16} /></button>
+            <button className="btn-page" disabled={currentPage === 1} onClick={() => fetchViolations(currentPage - 1)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent' }}><ChevronLeft size={16} /></button>
+            <button className="btn-page active" style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--primary)', background: 'var(--primary)', color: 'white' }}>{currentPage}</button>
+            <button className="btn-page" disabled={currentPage >= totalPages} onClick={() => fetchViolations(currentPage + 1)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent' }}><ChevronRight size={16} /></button>
           </div>
         </div>
       </div>
@@ -301,7 +364,7 @@ const ViolationList = () => {
                       </div>
                       <div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Loại vi phạm</div>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--error)' }}>{selectedItem.type}</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--error)' }}>{getViolationTypeLabel(selectedItem.type)}</div>
                       </div>
                     </div>
                   </div>
@@ -323,11 +386,19 @@ const ViolationList = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                <button className="btn btn-primary" style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', fontSize: '0.9rem', background: 'var(--error)', borderColor: 'var(--error)' }}>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', fontSize: '0.9rem', background: 'var(--error)', borderColor: 'var(--error)' }}
+                  onClick={() => handleSuspend(selectedItem)}
+                >
                   <ShieldOff size={18} /> Khóa tài khoản
                 </button>
-                <button className="btn btn-glass" style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', fontSize: '0.9rem' }}>
-                  <CheckCircle size={18} /> Bỏ qua & Lưu vết
+                <button
+                  className="btn btn-glass"
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', fontSize: '0.9rem' }}
+                  onClick={() => handleDismiss(selectedItem)}
+                >
+                  <CheckCircle size={18} /> Bỏ qua &amp; Lưu vết
                 </button>
               </div>
             </div>

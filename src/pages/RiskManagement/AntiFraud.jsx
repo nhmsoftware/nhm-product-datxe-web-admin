@@ -14,7 +14,9 @@ import {
   ChevronRight,
   ChevronLeft,
   ShieldCheck,
-  X
+  X,
+  FileText,
+  SlidersHorizontal
 } from 'lucide-react';
 import { riskService } from '../../services/riskService';
 import { toast } from 'react-hot-toast';
@@ -148,6 +150,14 @@ const AntiFraud = () => {
             <h1>Hệ thống Chống Gian lận</h1>
             <p>Giám sát, phát hiện và xử lý các hành vi bất thường trong thời gian thực</p>
           </div>
+        </div>
+        <div className="header-actions">
+          <button className="btn-action-premium secondary" onClick={() => toast.success('Đang mở bộ lọc nâng cao...')}>
+            <SlidersHorizontal size={18} /> Lọc dữ liệu
+          </button>
+          <button className="btn-action-premium primary" onClick={() => toast.success('Đang xuất báo cáo định dạng PDF...')}>
+            <FileText size={18} /> Xuất báo cáo
+          </button>
         </div>
       </div>
 
@@ -439,7 +449,51 @@ const AntiFraud = () => {
         }
 
         .anti-fraud-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 2.5rem;
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .btn-action-premium {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.25rem;
+          border-radius: 14px;
+          font-weight: 700;
+          font-size: 0.95rem;
+          cursor: pointer;
+          transition: all 0.3s;
+          border: none;
+        }
+
+        .btn-action-premium.secondary {
+          background: var(--card);
+          color: var(--text);
+          border: 1px solid var(--border);
+        }
+
+        .btn-action-premium.secondary:hover {
+          border-color: var(--primary);
+          color: var(--primary);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .btn-action-premium.primary {
+          background: var(--primary);
+          color: white;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-action-premium.primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
         }
 
         .header-info {
