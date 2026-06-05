@@ -24,7 +24,8 @@ import {
   BarChart2,
   Calendar,
   Search,
-  X
+  X,
+  Store
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { toast } from 'react-hot-toast';
@@ -98,6 +99,10 @@ const RangeFilter = ({ start, end, onApply }) => {
               className="btn btn-primary btn-sm" 
               style={{ width: '100%', marginTop: '4px', height: '36px' }}
               onClick={() => { 
+                if (new Date(tempStart) > new Date(tempEnd)) {
+                  toast.error('Từ ngày không được lớn hơn Đến ngày');
+                  return;
+                }
                 onApply(tempStart, tempEnd); 
                 setIsOpen(false); 
               }}
@@ -428,6 +433,7 @@ const Dashboard = () => {
         <StatTile icon={<Users />} label="Người dùng" value={stats?.total_users || 0} trend="+12%" color="#4361ee" loading={loading} />
         <StatTile icon={<ShoppingBag />} label="Chuyến đi" value={stats?.total_orders || 0} trend="+8.5%" color="#f72585" loading={loading} />
         <StatTile icon={<Car />} label="Tài xế đang trực tuyến" value={stats?.active_drivers || 0} trend="+3.2%" color="#06d6a0" loading={loading} />
+        <StatTile icon={<Store />} label="Cửa hàng hoạt động" value={stats?.active_merchants || 0} trend="+5.0%" color="#9c27b0" loading={loading} />
         <StatTile icon={<DollarSign />} label="Doanh thu" value={stats?.total_revenue || '0đ'} trend="+15.4%" color="#ffb703" loading={loading} isCurrency />
       </div>
 

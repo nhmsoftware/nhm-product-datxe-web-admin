@@ -24,10 +24,7 @@ const Navbar = () => {
 
   return (
     <header className="navbar-glass">
-      <div className="search-bar">
-        <Search size={18} className="search-icon" />
-        <input type="text" placeholder="Tìm kiếm nhanh..." />
-      </div>
+      {/* Search bar removed per request */}
 
       <div className="user-actions">
         {/* Nút chuyển đổi Theme */}
@@ -63,7 +60,7 @@ const Navbar = () => {
           padding: 0.75rem 2rem;
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: flex-end;
           margin-bottom: 2rem;
           background: var(--glass);
           backdrop-filter: blur(12px);
