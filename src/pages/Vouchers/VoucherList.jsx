@@ -139,6 +139,9 @@ const VoucherList = () => {
     if (!formData.code) return toast.error('Vui lòng nhập mã voucher');
     if (!formData.name) return toast.error('Vui lòng nhập tên voucher');
     if (!formData.discount_value) return toast.error('Vui lòng nhập giá trị giảm');
+    if (Number(formData.discount_value) < 0) return toast.error('Giá trị giảm không được là số âm');
+    if (Number(formData.min_order_amount) < 0) return toast.error('Đơn tối thiểu không được là số âm');
+    if (formData.total_usage_limit && Number(formData.total_usage_limit) < 0) return toast.error('Giới hạn sử dụng không được là số âm');
     if (!formData.valid_from) return toast.error('Vui lòng chọn ngày bắt đầu');
     if (!formData.valid_until) return toast.error('Vui lòng chọn ngày kết thúc');
     
@@ -162,7 +165,13 @@ const VoucherList = () => {
       setShowFormModal(false);
       fetchVouchers();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      const errorData = error.response?.data;
+      if (errorData?.errors) {
+        const firstError = Object.values(errorData.errors)[0][0];
+        toast.error(firstError);
+      } else {
+        toast.error(errorData?.message || 'Có lỗi xảy ra');
+      }
     }
   };
 
@@ -573,6 +582,7 @@ const VoucherList = () => {
                     className="input" 
                     value={formData.discount_value}
                     onChange={(e) => setFormData({...formData, discount_value: e.target.value})}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                     style={{ paddingLeft: '1rem' }}
                     disabled={currentVoucher && currentVoucher.used_count > 0}
                     max={formData.discount_type === 2 ? 100 : undefined}
@@ -587,7 +597,9 @@ const VoucherList = () => {
                     className="input" 
                     value={formData.min_order_amount}
                     onChange={(e) => setFormData({...formData, min_order_amount: e.target.value})}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                     style={{ paddingLeft: '1rem' }}
+                    min="0"
                   />
                   <p className="helper-text">Đơn hàng tối thiểu để được áp dụng.</p>
                 </div>
@@ -620,7 +632,9 @@ const VoucherList = () => {
                     className="input" 
                     value={formData.total_usage_limit}
                     onChange={(e) => setFormData({...formData, total_usage_limit: e.target.value})}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                     style={{ paddingLeft: '1rem' }}
+                    min="0"
                   />
                   <p className="helper-text">Để trống nếu không giới hạn.</p>
                 </div>
