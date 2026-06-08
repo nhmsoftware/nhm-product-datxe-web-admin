@@ -7,6 +7,425 @@ import Swal from 'sweetalert2';
 
 import { useLocation } from 'react-router-dom';
 
+const formatDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
+
+const DriverFormModal = ({ open, mode, driver, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    full_name: '',
+    phone: '',
+    email: '',
+    gender: '',
+    birthday: '',
+    address: '',
+    password: '',
+    is_active: true,
+    lock_reason: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      full_name: driver?.full_name || '',
+      phone: driver?.phone || '',
+      email: driver?.email || '',
+      gender: driver?.gender ? String(driver.gender) : '',
+      birthday: formatDateInputValue(driver?.birthday),
+      address: driver?.address || '',
+      password: '',
+      is_active: driver?.is_active ?? true,
+      lock_reason: '',
+    });
+  }, [open, driver, mode]);
+
+  if (!open) return null;
+
+  const title = mode === 'create' ? 'Tạo tài xế mới' : 'Chỉnh sửa tài xế';
+  const subtitle = mode === 'create'
+    ? 'Tạo tài khoản tài xế trước, hồ sơ vận hành/KYC có thể bổ sung sau.'
+    : 'Cập nhật hồ sơ tài xế, thông tin xe và trạng thái xét duyệt.';
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!form.full_name.trim()) return toast.error('Vui lòng nhập họ và tên.');
+    if (!form.phone.trim()) return toast.error('Vui lòng nhập số điện thoại.');
+    if (!/^0[3-9]\d{8}$/.test(form.phone.trim())) return toast.error('Số điện thoại không hợp lệ.');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Email không đúng định dạng.');
+    if (form.birthday) {
+      const birthday = new Date(form.birthday);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (birthday >= today) return toast.error('Ngày sinh phải trước ngày hôm nay.');
+    }
+    if (mode === 'create' && form.password && form.password.length < 8) return toast.error('Mật khẩu tạm thời phải có ít nhất 8 ký tự.');
+    if (mode === 'edit' && !form.is_active && !form.lock_reason.trim()) return toast.error('Vui lòng nhập lý do khóa tài khoản.');
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim() || null,
+        gender: form.gender ? Number(form.gender) : null,
+        birthday: form.birthday || null,
+        address: form.address.trim() || null,
+        is_active: !!form.is_active,
+        lock_reason: form.lock_reason.trim() || null,
+        ...(mode === 'create' ? { password: form.password || null } : {}),
+      });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '920px', width: '94vw' }}>
+        <div className="modal-header">
+          <div>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), rgba(0, 144, 106, 0.75))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 10px 20px rgba(0, 73, 172, 0.2)' }}>
+                <Car size={22} />
+              </div>
+              {title}
+            </h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{subtitle}</p>
+          </div>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '76vh', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1rem' }}>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Thông tin cơ bản</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Họ và tên <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input className="input-focus" value={form.full_name} onChange={(e) => handleChange('full_name', e.target.value)} placeholder="Nguyễn Văn Tài" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Số điện thoại <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input className="input-focus" value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="0900000012" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email</label>
+                    <input className="input-focus" value={form.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="driver@example.com" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Giới tính</label>
+                    <select value={form.gender} onChange={(e) => handleChange('gender', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                      <option value="">Chưa cập nhật</option>
+                      <option value="1">Nam</option>
+                      <option value="2">Nữ</option>
+                      <option value="3">Khác</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Ngày sinh</label>
+                    <input type="date" value={form.birthday} onChange={(e) => handleChange('birthday', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Địa chỉ</label>
+                    <textarea value={form.address} onChange={(e) => handleChange('address', e.target.value)} rows={3} placeholder="12 Cách Mạng Tháng 8, Q3, TP.HCM" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', resize: 'vertical' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Tài khoản & xét duyệt</div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Trạng thái tài khoản</label>
+                    <select value={form.is_active ? '1' : '0'} onChange={(e) => handleChange('is_active', e.target.value === '1')} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                      <option value="1">Đang hoạt động</option>
+                      <option value="0">Khóa tài khoản</option>
+                    </select>
+                  </div>
+                  {!form.is_active && (
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Lý do khóa</label>
+                      <textarea value={form.lock_reason} onChange={(e) => handleChange('lock_reason', e.target.value)} rows={3} placeholder="Nhập lý do khóa tài khoản..." style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', resize: 'vertical' }} />
+                    </div>
+                  )}
+                  {mode === 'create' && (
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Mật khẩu tạm thời</label>
+                      <input type="password" value={form.password} onChange={(e) => handleChange('password', e.target.value)} placeholder="Bỏ trống để hệ thống tự sinh" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                      <div style={{ marginTop: '0.55rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                        Sau khi tạo xong, bạn có thể dùng action Upload KYC để bổ sung hồ sơ vận hành và giấy tờ.
+                      </div>
+                    </div>
+                  )}
+                  {mode === 'edit' && (
+                    <div style={{ padding: '1rem', borderRadius: '16px', background: 'linear-gradient(180deg, rgba(0, 73, 172, 0.08), rgba(0, 73, 172, 0.02))', border: '1px solid rgba(0, 73, 172, 0.15)' }}>
+                      <div style={{ fontWeight: 800, marginBottom: '0.35rem' }}>KYC và thông tin xe</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                        Hồ sơ KYC, dịch vụ đăng ký và giấy tờ xe được quản lý riêng bằng action <b>Upload KYC</b> để tránh trùng dữ liệu với form tạo tài xế.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-glass" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting} style={{ minWidth: 180 }}>
+              {submitting ? 'Đang lưu...' : (mode === 'create' ? 'Tạo tài xế' : 'Lưu thay đổi')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    full_name: '',
+    phone: '',
+    citizen_id: '',
+    vehicle_type: '',
+    vehicle_name: '',
+    vehicle_color: '',
+    vehicle_number: '',
+    vehicle_year: new Date().getFullYear(),
+    services: [],
+    files: {},
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      full_name: driver?.full_name || '',
+      phone: driver?.phone || '',
+      citizen_id: '',
+      vehicle_type: driver?.vehicle_info?.vehicle_type ? String(driver.vehicle_info.vehicle_type) : '',
+      vehicle_name: driver?.vehicle_info?.vehicle_name || '',
+      vehicle_color: '',
+      vehicle_number: driver?.vehicle_info?.vehicle_number || '',
+      vehicle_year: new Date().getFullYear(),
+      services: [],
+      files: {},
+    });
+  }, [open, driver]);
+
+  if (!open || !driver) return null;
+
+  const serviceOptions = [
+    { id: 1, label: 'Xe ôm' },
+    { id: 2, label: 'Taxi 4 chỗ' },
+    { id: 3, label: 'Taxi 7 chỗ' },
+    { id: 4, label: 'Giao đồ ăn' },
+    { id: 5, label: 'Giao hàng' },
+    { id: 6, label: 'Xe đi tỉnh' },
+    { id: 7, label: 'Xe sân bay' },
+    { id: 8, label: 'Lái hộ' },
+  ];
+
+  const fileFields = [
+    ['cccd_front', 'CCCD mặt trước'],
+    ['cccd_back', 'CCCD mặt sau'],
+    ['driver_license', 'Bằng lái xe'],
+    ['vehicle_reg', 'Giấy đăng ký xe'],
+    ['criminal_record', 'Lý lịch tư pháp'],
+    ['health_cert', 'Giấy khám sức khỏe'],
+    ['portrait', 'Ảnh chân dung'],
+    ['insurance', 'Bảo hiểm xe'],
+  ];
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleService = (serviceId) => {
+    setForm(prev => ({
+      ...prev,
+      services: prev.services.includes(serviceId)
+        ? prev.services.filter(id => id !== serviceId)
+        : [...prev.services, serviceId],
+    }));
+  };
+
+  const handleFileChange = (key, file) => {
+    setForm(prev => ({
+      ...prev,
+      files: { ...prev.files, [key]: file || null },
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!form.full_name.trim()) return toast.error('Vui lòng nhập họ và tên.');
+    if (!form.phone.trim()) return toast.error('Vui lòng nhập số điện thoại.');
+    if (!form.citizen_id.trim() || !/^[0-9]{12}$/.test(form.citizen_id.trim())) return toast.error('CCCD phải gồm đúng 12 chữ số.');
+    if (!form.vehicle_type) return toast.error('Vui lòng chọn loại xe.');
+    if (!form.vehicle_name.trim()) return toast.error('Vui lòng nhập tên xe.');
+    if (!form.vehicle_color) return toast.error('Vui lòng chọn màu xe.');
+    if (!form.vehicle_number.trim()) return toast.error('Vui lòng nhập biển số xe.');
+    if (!form.services.length) return toast.error('Vui lòng chọn ít nhất một dịch vụ đăng ký.');
+
+    for (const [key, label] of fileFields) {
+      if (!form.files[key]) {
+        return toast.error(`Vui lòng tải lên ${label}.`);
+      }
+    }
+
+    const data = new FormData();
+    data.append('full_name', form.full_name.trim());
+    data.append('phone', form.phone.trim());
+    data.append('citizen_id', form.citizen_id.trim());
+    data.append('vehicle_type', form.vehicle_type);
+    data.append('vehicle_name', form.vehicle_name.trim());
+    data.append('vehicle_color', form.vehicle_color);
+    data.append('vehicle_number', form.vehicle_number.trim());
+    data.append('vehicle_year', String(form.vehicle_year));
+    form.services.forEach((serviceId) => data.append('services[]', String(serviceId)));
+    fileFields.forEach(([key]) => {
+      data.append(key, form.files[key]);
+    });
+
+    setSubmitting(true);
+    try {
+      await onSubmit(data);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '980px', width: '95vw' }}>
+        <div className="modal-header">
+          <div>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, var(--secondary), rgba(247, 37, 133, 0.75))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <Package size={22} />
+              </div>
+              Upload hồ sơ KYC cho tài xế
+            </h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Hoàn thiện hồ sơ vận hành cho {driver.full_name} để gửi xét duyệt KYC.
+            </p>
+          </div>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '76vh', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Thông tin hồ sơ</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Họ và tên</label>
+                    <input value={form.full_name} onChange={(e) => handleChange('full_name', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Số điện thoại</label>
+                    <input value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>CCCD</label>
+                    <input value={form.citizen_id} onChange={(e) => handleChange('citizen_id', e.target.value)} placeholder="001234567890" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Loại xe</label>
+                    <select value={form.vehicle_type} onChange={(e) => handleChange('vehicle_type', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                      <option value="">Chọn loại xe</option>
+                      <option value="1">Xe máy</option>
+                      <option value="2">Ô tô 4 chỗ</option>
+                      <option value="3">Ô tô 7 chỗ</option>
+                      <option value="4">Ô tô 9 chỗ</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Tên xe</label>
+                    <input value={form.vehicle_name} onChange={(e) => handleChange('vehicle_name', e.target.value)} placeholder="Honda Vision" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Màu xe</label>
+                    <select value={form.vehicle_color} onChange={(e) => handleChange('vehicle_color', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                      <option value="">Chọn màu xe</option>
+                      <option value="1">Trắng</option>
+                      <option value="2">Đen</option>
+                      <option value="3">Bạc</option>
+                      <option value="4">Đỏ</option>
+                      <option value="5">Xanh</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Biển số xe</label>
+                    <input value={form.vehicle_number} onChange={(e) => handleChange('vehicle_number', e.target.value)} placeholder="59A1-12345" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Năm sản xuất</label>
+                    <input type="number" value={form.vehicle_year} onChange={(e) => handleChange('vehicle_year', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Dịch vụ đăng ký</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {serviceOptions.map((service) => (
+                    <label key={service.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.75rem 0.9rem', borderRadius: '12px', background: form.services.includes(service.id) ? 'rgba(0, 73, 172, 0.08)' : 'var(--bg-soft)', border: `1px solid ${form.services.includes(service.id) ? 'rgba(0, 73, 172, 0.25)' : 'var(--border)'}`, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={form.services.includes(service.id)} onChange={() => handleToggleService(service.id)} />
+                      <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{service.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', marginTop: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Tài liệu bắt buộc</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                {fileFields.map(([key, label]) => (
+                  <div key={key}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>{label}</label>
+                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => handleFileChange(key, e.target.files?.[0])} style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-soft)', border: '1px dashed var(--border)', borderRadius: '14px', color: 'var(--text)' }} />
+                    <div style={{ marginTop: '0.45rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      {form.files[key]?.name || 'Chưa chọn tệp'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-glass" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting} style={{ minWidth: 180 }}>
+              {submitting ? 'Đang tải lên...' : 'Gửi hồ sơ KYC'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ImagePreviewModal = ({ url, title, onClose }) => {
   if (!url) return null;
   return (
@@ -22,7 +441,7 @@ const ImagePreviewModal = ({ url, title, onClose }) => {
   );
 };
 
-const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
+const DriverDetailModal = ({ userId, onClose, onRefresh, onEdit, onDelete, onUploadKyc }) => {
 
   const [driver, setDriver] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +485,37 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Info size={24} className="text-primary" /> Chi tiết hồ sơ tài xế
           </h2>
-          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {driver && (
+              <>
+                <button
+                  className="btn-icon"
+                  onClick={() => onEdit(driver)}
+                  title="Chỉnh sửa tài xế"
+                  style={{ background: 'rgba(0, 73, 172, 0.1)', color: 'var(--primary)' }}
+                >
+                  <CheckCircle size={18} />
+                </button>
+                <button
+                  className="btn-icon"
+                  onClick={() => onDelete(driver)}
+                  title="Xóa tài xế"
+                  style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)' }}
+                >
+                  <XCircle size={18} />
+                </button>
+                <button
+                  className="btn-icon"
+                  onClick={() => onUploadKyc(driver)}
+                  title="Upload hồ sơ KYC"
+                  style={{ background: 'rgba(247, 37, 133, 0.1)', color: 'var(--secondary)' }}
+                >
+                  <Package size={18} />
+                </button>
+              </>
+            )}
+            <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          </div>
         </div>
         <div className="modal-body" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
           <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
@@ -186,6 +635,13 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                     </div>
                   </div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Calendar size={18} className="text-primary" />
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ngày sinh</div>
+                    <div style={{ fontWeight: 600 }}>{driver?.birthday ? new Date(driver.birthday).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -200,8 +656,46 @@ const DriverDetailModal = ({ userId, onClose, onRefresh }) => {
                     <div style={{ fontWeight: 600 }}>{driver.kyc_status_label}</div>
                   </div>
                   <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>CCCD</div>
+                    <div style={{ fontWeight: 600 }}>{driver.citizen_id || 'Chưa cập nhật'}</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '1rem', border: '1px dashed var(--border)', borderRadius: '12px' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Ghi chú</div>
                     <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{driver.kyc_cancel_reason || 'Không'}</div>
+                  </div>
+                </div>
+
+                <div className="glass" style={{ padding: '1rem', borderRadius: '14px', background: 'var(--bg-soft)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.85rem', fontWeight: 700, textTransform: 'uppercase' }}>Thông tin hồ sơ đã nộp</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Loại xe</div>
+                      <div style={{ fontWeight: 600 }}>{driver?.vehicle_info?.vehicle_type_label || 'Chưa cập nhật'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Tên xe</div>
+                      <div style={{ fontWeight: 600 }}>{driver?.vehicle_info?.vehicle_name || 'Chưa cập nhật'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Biển số xe</div>
+                      <div style={{ fontWeight: 600 }}>{driver?.vehicle_info?.vehicle_number || 'Chưa cập nhật'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Màu xe</div>
+                      <div style={{ fontWeight: 600 }}>{driver?.vehicle_info?.vehicle_color || 'Chưa cập nhật'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Năm sản xuất</div>
+                      <div style={{ fontWeight: 600 }}>{driver?.vehicle_info?.vehicle_year || 'Chưa cập nhật'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Dịch vụ đăng ký</div>
+                      <div style={{ fontWeight: 600 }}>
+                        {driver?.registered_services?.length
+                          ? driver.registered_services.map((item) => item.label).join(', ')
+                          : 'Chưa cập nhật'}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -294,6 +788,11 @@ const DriverList = () => {
 
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedDrivers, setSelectedDrivers] = useState([]);
+  const [showDriverForm, setShowDriverForm] = useState(false);
+  const [driverFormMode, setDriverFormMode] = useState('create');
+  const [driverFormTarget, setDriverFormTarget] = useState(null);
+  const [showKycUploadModal, setShowKycUploadModal] = useState(false);
+  const [kycUploadTarget, setKycUploadTarget] = useState(null);
 
   useEffect(() => {
     fetchDrivers();
@@ -319,6 +818,53 @@ const DriverList = () => {
 
   const handlePageChange = (newPage) => {
     setParams(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleOpenCreateDriver = () => {
+    setDriverFormMode('create');
+    setDriverFormTarget(null);
+    setShowDriverForm(true);
+  };
+
+  const handleEditDriver = (driver) => {
+    setDriverFormMode('edit');
+    setDriverFormTarget(driver);
+    setShowDriverForm(true);
+  };
+
+  const handleDeleteDriver = async (driver) => {
+    const result = await Swal.fire({
+      title: 'Xóa tài xế?',
+      html: `
+        <div style="text-align:left;">
+          <div>Bạn có chắc muốn xóa tài xế <b>${driver.full_name}</b> không?</div>
+          <div style="margin-top:0.75rem; color:var(--text-muted); font-size:0.9rem;">Thao tác này sẽ xóa mềm tài khoản tài xế nếu họ không có chuyến hoặc đơn đang xử lý.</div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận xóa',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: 'var(--error)',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const loadingToast = toast.loading('Đang xóa tài xế...');
+      await adminService.deleteDriver(driver.id);
+      toast.dismiss(loadingToast);
+      toast.success('Xóa tài xế thành công');
+      setSelectedUserId(null);
+      await fetchDrivers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể xóa tài xế');
+    }
+  };
+
+  const handleOpenKycUpload = (driver) => {
+    setKycUploadTarget(driver);
+    setShowKycUploadModal(true);
   };
 
   const handleApprove = async (driver) => {
@@ -588,6 +1134,9 @@ const DriverList = () => {
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Hệ thống quản lý thông tin và xét duyệt hồ sơ tài xế.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn btn-primary" onClick={handleOpenCreateDriver}>
+            <Car size={18} /> Tạo tài xế
+          </button>
           <button className="btn btn-primary" onClick={() => handleBulkAssignGroup(1)}>
             <Car size={18} /> {selectedDrivers.length > 0 ? `Gán ${selectedDrivers.length} tài xế vào Xe nhà` : 'Gán vào Xe nhà'}
           </button>
@@ -810,6 +1359,14 @@ const DriverList = () => {
                           >
                             <Eye size={16} /> Hồ sơ
                           </button>
+
+                          <button
+                            onClick={() => handleEditDriver(driver)}
+                            className="btn-action"
+                            style={{ background: 'rgba(0, 73, 172, 0.08)', color: 'var(--primary)', borderColor: 'rgba(0, 73, 172, 0.2)' }}
+                          >
+                            <Info size={16} /> Sửa
+                          </button>
                           
                           {driver.kyc_status === 1 && (
                             <>
@@ -829,6 +1386,22 @@ const DriverList = () => {
                             title={driver.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                           >
                             {driver.is_active ? <Ban size={18} color="#ef4444" /> : <Unlock size={18} color="#00906a" />}
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteDriver(driver)}
+                            className="btn-icon"
+                            style={{ background: 'transparent', border: '1px solid var(--border)' }}
+                            title="Xóa tài xế"
+                          >
+                            <X size={18} color="#ef4444" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenKycUpload(driver)}
+                            className="btn-action"
+                            style={{ background: 'rgba(247, 37, 133, 0.08)', color: 'var(--secondary)', borderColor: 'rgba(247, 37, 133, 0.2)' }}
+                          >
+                            <Package size={16} /> Upload KYC
                           </button>
                         </div>
                       </td>
@@ -882,11 +1455,77 @@ const DriverList = () => {
         )}
       </div>
 
+      <DriverFormModal
+        open={showDriverForm}
+        mode={driverFormMode}
+        driver={driverFormTarget}
+        onClose={() => setShowDriverForm(false)}
+        onSubmit={async (payload) => {
+          const loadingToast = toast.loading(driverFormMode === 'create' ? 'Đang tạo tài xế...' : 'Đang cập nhật tài xế...');
+          try {
+            if (driverFormMode === 'create') {
+              const response = await adminService.createDriver(payload);
+              if (response?.data?.temporary_password) {
+                await Swal.fire({
+                  title: 'Tạo tài xế thành công',
+                  html: `
+                    <div style="text-align:left;">
+                      <div style="margin-bottom:0.75rem;">Tài xế đã được tạo thành công.</div>
+                      <div style="padding:0.85rem 1rem; border-radius:12px; background:var(--bg-soft); border:1px solid var(--border);">
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.35rem;">Mật khẩu tạm thời</div>
+                        <div style="font-size:1.05rem; font-weight:800; letter-spacing:0.04em;">${response.data.temporary_password}</div>
+                      </div>
+                    </div>
+                  `,
+                  confirmButtonText: 'Đã hiểu',
+                  confirmButtonColor: 'var(--primary)',
+                });
+              } else {
+                toast.success('Tạo tài xế thành công');
+              }
+            } else if (driverFormTarget) {
+              await adminService.updateDriver(driverFormTarget.id, payload);
+              toast.success('Cập nhật tài xế thành công');
+              setSelectedUserId(driverFormTarget.id);
+            }
+            await fetchDrivers();
+          } catch (error) {
+            toast.error(error.response?.data?.message || (driverFormMode === 'create' ? 'Không thể tạo tài xế' : 'Không thể cập nhật tài xế'));
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
+
+      <DriverKycUploadModal
+        open={showKycUploadModal}
+        driver={kycUploadTarget}
+        onClose={() => setShowKycUploadModal(false)}
+        onSubmit={async (formData) => {
+          if (!kycUploadTarget) return;
+
+          const loadingToast = toast.loading('Đang tải hồ sơ KYC...');
+          try {
+            await adminService.uploadDriverKyc(kycUploadTarget.id, formData);
+            toast.success('Upload hồ sơ KYC thành công');
+            await fetchDrivers();
+            setSelectedUserId(kycUploadTarget.id);
+          } catch (error) {
+            toast.error(error.response?.data?.message || 'Không thể upload hồ sơ KYC');
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
+
       {selectedUserId && (
         <DriverDetailModal 
           userId={selectedUserId} 
           onClose={() => setSelectedUserId(null)} 
           onRefresh={fetchDrivers}
+          onEdit={handleEditDriver}
+          onDelete={handleDeleteDriver}
+          onUploadKyc={handleOpenKycUpload}
         />
       )}
     </div>
@@ -894,4 +1533,3 @@ const DriverList = () => {
 };
 
 export default DriverList;
-

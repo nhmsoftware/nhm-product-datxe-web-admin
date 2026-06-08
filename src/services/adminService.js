@@ -143,8 +143,30 @@ export const adminService = {
     return response.data;
   },
 
+  createDriver: async (data) => {
+    const response = await api.post('/v1/admin/drivers', data);
+    return response.data;
+  },
+
   getDriverDetail: async (userId) => {
     const response = await api.get(`/v1/admin/drivers/${userId}`);
+    return response.data;
+  },
+
+  updateDriver: async (userId, data) => {
+    const response = await api.put(`/v1/admin/drivers/${userId}`, data);
+    return response.data;
+  },
+
+  deleteDriver: async (userId) => {
+    const response = await api.delete(`/v1/admin/drivers/${userId}`);
+    return response.data;
+  },
+
+  uploadDriverKyc: async (userId, formData) => {
+    const response = await api.post(`/v1/admin/driver/users/${userId}/register-submit`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   },
 
@@ -214,4 +236,3 @@ export const adminService = {
     return response.data;
   }
 };
-
