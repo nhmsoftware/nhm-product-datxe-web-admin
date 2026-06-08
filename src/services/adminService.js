@@ -112,6 +112,21 @@ export const adminService = {
     return response.data;
   },
 
+  createCustomer: async (data) => {
+    const response = await api.post('/v1/admin/users/customers', data);
+    return response.data;
+  },
+
+  updateCustomer: async (userId, data) => {
+    const response = await api.put(`/v1/admin/users/${userId}`, data);
+    return response.data;
+  },
+
+  deleteCustomer: async (userId) => {
+    const response = await api.delete(`/v1/admin/users/${userId}`);
+    return response.data;
+  },
+
   updateCustomerStatus: async (userId, data) => {
     const response = await api.put(`/v1/admin/users/${userId}/status`, data);
     return response.data;
@@ -199,5 +214,4 @@ export const adminService = {
     return response.data;
   }
 };
-
 

@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smartphone, MapPin, Calendar, Info, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ShieldCheck, ShieldAlert, Ban, Unlock, User, Smartphone, MapPin, Calendar, Info, Mail, ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { X } from 'lucide-react';
 
-// Removed LockCustomerModal to use standardized Swal.fire form logic.
+const formatDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
 
-const CustomerDetailModal = ({ userId, onClose }) => {
+const CustomerDetailModal = ({ userId, onClose, onEdit, onDelete }) => {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +52,29 @@ const CustomerDetailModal = ({ userId, onClose }) => {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <User size={24} className="text-primary" /> Hồ sơ khách hàng
           </h2>
-          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {customer && (
+              <>
+                <button
+                  className="btn-icon"
+                  onClick={() => onEdit(customer)}
+                  title="Chỉnh sửa khách hàng"
+                  style={{ background: 'rgba(0, 77, 160, 0.1)', color: 'var(--primary)' }}
+                >
+                  <Pencil size={18} />
+                </button>
+                <button
+                  className="btn-icon"
+                  onClick={() => onDelete(customer)}
+                  title="Xóa khách hàng"
+                  style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)' }}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </>
+            )}
+            <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          </div>
         </div>
         <div className="modal-body">
           <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center' }}>
@@ -124,6 +151,15 @@ const CustomerDetailModal = ({ userId, onClose }) => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Calendar size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ngày sinh</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{customer?.birthday ? new Date(customer.birthday).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <MapPin size={16} className="text-primary" />
                   </div>
                   <div>
@@ -157,6 +193,201 @@ const CustomerDetailModal = ({ userId, onClose }) => {
   );
 };
 
+const CustomerFormModal = ({ open, mode, customer, onClose, onSubmit, loading }) => {
+  const [form, setForm] = useState({
+    full_name: '',
+    phone: '',
+    email: '',
+    gender: '',
+    birthday: '',
+    address: '',
+    password: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      full_name: customer?.full_name || '',
+      phone: customer?.phone || '',
+      email: customer?.email || '',
+      gender: customer?.gender ? String(customer.gender) : '',
+      birthday: formatDateInputValue(customer?.birthday),
+      address: customer?.address || '',
+      password: '',
+    });
+  }, [open, customer, mode]);
+
+  if (!open) return null;
+
+  const title = mode === 'create' ? 'Tạo khách hàng mới' : 'Chỉnh sửa khách hàng';
+  const subtitle = mode === 'create'
+    ? 'Nhập thông tin để tạo tài khoản khách hàng mới.'
+    : 'Cập nhật lại thông tin hồ sơ khách hàng.';
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting || loading) return;
+
+    if (!form.full_name.trim()) return toast.error('Vui lòng nhập họ và tên.');
+    if (!form.phone.trim()) return toast.error('Vui lòng nhập số điện thoại.');
+    if (!/^0[3-9]\d{8}$/.test(form.phone.trim())) return toast.error('Số điện thoại không hợp lệ.');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Email không đúng định dạng.');
+    if (mode === 'create' && form.password && form.password.length < 8) return toast.error('Mật khẩu tạm thời phải có ít nhất 8 ký tự.');
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim() || null,
+        gender: form.gender ? Number(form.gender) : null,
+        birthday: form.birthday || null,
+        address: form.address.trim() || null,
+        ...(mode === 'create' ? { password: form.password || null } : {}),
+      });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '760px', width: '92vw' }}>
+        <div className="modal-header" style={{ paddingBottom: '1rem' }}>
+          <div>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), rgba(99, 102, 241, 0.75))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 10px 20px rgba(0, 77, 160, 0.2)' }}>
+                {mode === 'create' ? <Plus size={20} /> : <Pencil size={20} />}
+              </div>
+              {title}
+            </h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{subtitle}</p>
+          </div>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', gap: '1rem' }}>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Thông tin cơ bản</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Họ và tên <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input
+                      className="input-focus"
+                      value={form.full_name}
+                      onChange={(e) => handleChange('full_name', e.target.value)}
+                      placeholder="Nguyễn Văn A"
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Số điện thoại <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input
+                      className="input-focus"
+                      value={form.phone}
+                      onChange={(e) => handleChange('phone', e.target.value)}
+                      placeholder="0900000001"
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email</label>
+                    <input
+                      className="input-focus"
+                      value={form.email}
+                      onChange={(e) => handleChange('email', e.target.value)}
+                      placeholder="customer@example.com"
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Giới tính</label>
+                    <select
+                      value={form.gender}
+                      onChange={(e) => handleChange('gender', e.target.value)}
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}
+                    >
+                      <option value="">Chưa cập nhật</option>
+                      <option value="1">Nam</option>
+                      <option value="2">Nữ</option>
+                      <option value="3">Khác</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Ngày sinh</label>
+                    <input
+                      type="date"
+                      value={form.birthday}
+                      onChange={(e) => handleChange('birthday', e.target.value)}
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Địa chỉ</label>
+                    <textarea
+                      value={form.address}
+                      onChange={(e) => handleChange('address', e.target.value)}
+                      placeholder="123 Nguyễn Trãi, Quận 1, TP.HCM"
+                      rows={4}
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', resize: 'vertical' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Tài khoản</div>
+                <div style={{ padding: '1rem', borderRadius: '16px', background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.02))', border: '1px solid rgba(99, 102, 241, 0.15)', marginBottom: '1rem' }}>
+                  <div style={{ fontWeight: 800, marginBottom: '0.35rem' }}>Khách hàng</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Vai trò mặc định là khách hàng, trạng thái mặc định sẽ là đang hoạt động.
+                  </div>
+                </div>
+
+                {mode === 'create' ? (
+                  <>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Mật khẩu tạm thời</label>
+                    <input
+                      type="password"
+                      value={form.password}
+                      onChange={(e) => handleChange('password', e.target.value)}
+                      placeholder="Bỏ trống để hệ thống tự sinh"
+                      style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', marginBottom: '0.75rem' }}
+                    />
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                      Nếu không nhập, hệ thống sẽ tự sinh mật khẩu tạm thời và trả lại sau khi tạo thành công.
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                    Bạn có thể cập nhật thông tin hồ sơ, bao gồm cả trạng thái tài khoản nếu cần.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-glass" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting} style={{ minWidth: 160 }}>
+              {submitting ? 'Đang lưu...' : (mode === 'create' ? 'Tạo khách hàng' : 'Lưu thay đổi')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,8 +403,10 @@ const CustomerList = () => {
     per_page: 20
   });
 
-  const [lockTarget, setLockTarget] = useState(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [customerFormMode, setCustomerFormMode] = useState('create');
+  const [customerFormTarget, setCustomerFormTarget] = useState(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -199,6 +432,48 @@ const CustomerList = () => {
 
   const handlePageChange = (newPage) => {
     setParams(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleOpenCreateCustomer = () => {
+    setCustomerFormMode('create');
+    setCustomerFormTarget(null);
+    setShowCustomerForm(true);
+  };
+
+  const handleEditCustomer = async (customer) => {
+    setCustomerFormMode('edit');
+    setCustomerFormTarget(customer);
+    setShowCustomerForm(true);
+  };
+
+  const handleDeleteCustomer = async (customer) => {
+    const result = await Swal.fire({
+      title: 'Xóa khách hàng?',
+      html: `
+        <div style="text-align:left;">
+          <div>Bạn có chắc muốn xóa khách hàng <b>${customer.full_name}</b> không?</div>
+          <div style="margin-top:0.75rem; color:var(--text-muted); font-size:0.9rem;">Thao tác này sẽ xóa mềm tài khoản và không thể dùng được nếu chưa khôi phục từ hệ thống.</div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận xóa',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: 'var(--error)',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const loadingToast = toast.loading('Đang xóa khách hàng...');
+      await adminService.deleteCustomer(customer.id);
+      toast.dismiss(loadingToast);
+      toast.success('Xóa khách hàng thành công');
+      setSelectedCustomerId(null);
+      await fetchCustomers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể xóa khách hàng');
+    }
   };
 
   const handleToggleStatus = async (customer) => {
@@ -255,7 +530,7 @@ const CustomerList = () => {
           });
           toast.dismiss(loadingToast);
           toast.success('Đã khóa khách hàng');
-          fetchCustomers();
+          await fetchCustomers();
         } catch (error) {
           toast.error(error.response?.data?.message || 'Không thể khóa khách hàng');
         }
@@ -277,7 +552,7 @@ const CustomerList = () => {
           await adminService.updateCustomerStatus(customer.id, { is_active: true });
           toast.dismiss(loadingToast);
           toast.success('Đã mở khóa khách hàng');
-          fetchCustomers();
+          await fetchCustomers();
         } catch (error) {
           toast.error('Cập nhật trạng thái thất bại');
         }
@@ -305,6 +580,10 @@ const CustomerList = () => {
             onChange={(e) => setParams({ ...params, keyword: e.target.value, page: 1 })}
           />
         </div>
+        <button className="btn btn-primary" onClick={handleOpenCreateCustomer} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Plus size={18} />
+          Tạo khách hàng
+        </button>
         <button className="btn btn-glass" onClick={fetchCustomers}>
            Tìm kiếm
         </button>
@@ -388,6 +667,14 @@ const CustomerList = () => {
                           >
                             <Info size={18} />
                           </button>
+                          <button
+                            onClick={() => handleEditCustomer(customer)}
+                            className="btn-icon"
+                            title="Chỉnh sửa khách hàng"
+                            style={{ background: 'rgba(0, 77, 160, 0.1)', color: 'var(--primary)' }}
+                          >
+                            <Pencil size={18} />
+                          </button>
                           <button 
                             onClick={() => handleToggleStatus(customer)}
                             className={`btn-icon ${customer.is_active ? 'btn-action-reject' : 'btn-action-approve'}`}
@@ -398,6 +685,14 @@ const CustomerList = () => {
                             }}
                           >
                             {customer.is_active ? <Ban size={18} /> : <Unlock size={18} />}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomer(customer)}
+                            className="btn-icon"
+                            title="Xóa khách hàng"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)' }}
+                          >
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </td>
@@ -462,10 +757,54 @@ const CustomerList = () => {
 
       {/* lockTarget modal removed as it's replaced by Swal.fire form */}
 
+      <CustomerFormModal
+        open={showCustomerForm}
+        mode={customerFormMode}
+        customer={customerFormTarget}
+        loading={false}
+        onClose={() => setShowCustomerForm(false)}
+        onSubmit={async (payload) => {
+          const loadingToast = toast.loading(customerFormMode === 'create' ? 'Đang tạo khách hàng...' : 'Đang cập nhật khách hàng...');
+          try {
+            if (customerFormMode === 'create') {
+              const response = await adminService.createCustomer(payload);
+              if (response?.data?.temporary_password) {
+                await Swal.fire({
+                  title: 'Tạo khách hàng thành công',
+                  html: `
+                    <div style="text-align:left;">
+                      <div style="margin-bottom:0.75rem;">Khách hàng đã được tạo thành công.</div>
+                      <div style="padding:0.85rem 1rem; border-radius:12px; background:var(--bg-soft); border:1px solid var(--border);">
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.35rem;">Mật khẩu tạm thời</div>
+                        <div style="font-size:1.05rem; font-weight:800; letter-spacing:0.04em;">${response.data.temporary_password}</div>
+                      </div>
+                    </div>
+                  `,
+                  confirmButtonText: 'Đã hiểu',
+                  confirmButtonColor: 'var(--primary)',
+                });
+              } else {
+                toast.success('Tạo khách hàng thành công');
+              }
+            } else if (customerFormTarget) {
+              await adminService.updateCustomer(customerFormTarget.id, payload);
+              toast.success('Cập nhật khách hàng thành công');
+            }
+            await fetchCustomers();
+          } catch (error) {
+            toast.error(error.response?.data?.message || (customerFormMode === 'create' ? 'Không thể tạo khách hàng' : 'Không thể cập nhật khách hàng'));
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
+
       {selectedCustomerId && (
         <CustomerDetailModal 
           userId={selectedCustomerId} 
-          onClose={() => setSelectedCustomerId(null)} 
+          onClose={() => setSelectedCustomerId(null)}
+          onEdit={handleEditCustomer}
+          onDelete={handleDeleteCustomer}
         />
       )}
     </div>
@@ -473,4 +812,3 @@ const CustomerList = () => {
 };
 
 export default CustomerList;
-
