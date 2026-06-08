@@ -1,12 +1,28 @@
 import api from './api';
 
 const merchantService = {
+  createMerchant: (formData) => {
+    return api.post('/v1/admin/merchant', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
   getMerchants: (params) => {
     return api.get('/v1/admin/merchant', { params });
   },
 
   getMerchantDetail: (id) => {
     return api.get(`/v1/admin/merchant/${id}`);
+  },
+
+  updateMerchant: (id, formData) => {
+    return api.post(`/v1/admin/merchant/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  deleteMerchant: (id) => {
+    return api.delete(`/v1/admin/merchant/${id}`);
   },
 
   approveMerchant: (id) => {

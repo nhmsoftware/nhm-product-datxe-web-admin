@@ -10,7 +10,259 @@ import merchantService from '../../services/merchantService';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-const MerchantDetailModal = ({ merchantId, onClose, onRefresh }) => {
+const formatDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
+
+const MerchantFormModal = ({ open, mode, merchant, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    owner_name: '',
+    phone: '',
+    email: '',
+    store_name: '',
+    store_address: '',
+    latitude: '',
+    longitude: '',
+    business_type: '',
+    business_license: '',
+    opening_time: '',
+    closing_time: '',
+    registered_at: '',
+    status: '1',
+    is_active: true,
+    password: '',
+    lock_reason: '',
+    business_license_image: null,
+    store_image: null,
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      owner_name: merchant?.user?.customer_profile?.full_name || '',
+      phone: merchant?.user?.phone || '',
+      email: merchant?.user?.email || '',
+      store_name: merchant?.store_name || '',
+      store_address: merchant?.store_address || '',
+      latitude: merchant?.latitude || '',
+      longitude: merchant?.longitude || '',
+      business_type: merchant?.business_type ? String(merchant.business_type) : '',
+      business_license: merchant?.business_license || '',
+      opening_time: merchant?.opening_time || '',
+      closing_time: merchant?.closing_time || '',
+      registered_at: formatDateInputValue(merchant?.user?.created_at),
+      status: merchant?.status ? String(merchant.status) : '1',
+      is_active: merchant?.user?.is_active ?? true,
+      password: '',
+      lock_reason: '',
+      business_license_image: null,
+      store_image: null,
+    });
+  }, [open, merchant, mode]);
+
+  if (!open) return null;
+
+  const title = mode === 'create' ? 'Tạo Merchant mới' : 'Chỉnh sửa Merchant';
+  const subtitle = mode === 'create'
+    ? 'Tạo tài khoản Merchant và thông tin cửa hàng từ Admin Portal.'
+    : 'Cập nhật thông tin chủ sở hữu, cửa hàng và trạng thái Merchant.';
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!form.owner_name.trim()) return toast.error('Vui lòng nhập họ tên chủ sở hữu.');
+    if (!form.phone.trim()) return toast.error('Vui lòng nhập số điện thoại chủ sở hữu.');
+    if (!/^0[3-9]\d{8}$/.test(form.phone.trim())) return toast.error('Số điện thoại không hợp lệ.');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Email không đúng định dạng.');
+    if (!form.store_name.trim()) return toast.error('Vui lòng nhập tên cửa hàng.');
+    if (!form.store_address.trim()) return toast.error('Vui lòng nhập địa chỉ cửa hàng.');
+    if (form.closing_time && form.opening_time && form.closing_time <= form.opening_time) return toast.error('Giờ đóng cửa phải sau giờ mở cửa.');
+    if (mode === 'create' && form.password && form.password.length < 8) return toast.error('Mật khẩu tạm thời phải có ít nhất 8 ký tự.');
+    if (!form.is_active && !form.lock_reason.trim()) return toast.error('Vui lòng nhập lý do khóa/ngừng hoạt động.');
+
+    const fd = new FormData();
+    fd.append('owner_name', form.owner_name.trim());
+    fd.append('phone', form.phone.trim());
+    fd.append('email', form.email.trim() || '');
+    fd.append('store_name', form.store_name.trim());
+    fd.append('store_address', form.store_address.trim());
+    if (form.latitude !== '') fd.append('latitude', String(form.latitude));
+    if (form.longitude !== '') fd.append('longitude', String(form.longitude));
+    if (form.business_type) fd.append('business_type', form.business_type);
+    if (form.business_license) fd.append('business_license', form.business_license.trim());
+    if (form.opening_time) fd.append('opening_time', form.opening_time);
+    if (form.closing_time) fd.append('closing_time', form.closing_time);
+    if (form.registered_at) fd.append('registered_at', form.registered_at);
+    if (form.status) fd.append('status', form.status);
+    fd.append('is_active', form.is_active ? '1' : '0');
+    if (form.lock_reason) fd.append('lock_reason', form.lock_reason.trim());
+    if (mode === 'create' && form.password) fd.append('password', form.password);
+    if (form.business_license_image) fd.append('business_license_image', form.business_license_image);
+    if (form.store_image) fd.append('store_image', form.store_image);
+
+    setSubmitting(true);
+    try {
+      await onSubmit(fd);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '980px', width: '95vw' }}>
+        <div className="modal-header">
+          <div>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), rgba(0, 144, 106, 0.75))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <Store size={22} />
+              </div>
+              {title}
+            </h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{subtitle}</p>
+          </div>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '76vh', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Chủ sở hữu</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Họ và tên <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input value={form.owner_name} onChange={(e) => handleChange('owner_name', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Số điện thoại <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email</label>
+                    <input value={form.email} onChange={(e) => handleChange('email', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Ngày đăng ký</label>
+                    <input type="date" value={form.registered_at} onChange={(e) => handleChange('registered_at', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  {mode === 'create' && (
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Mật khẩu tạm thời</label>
+                      <input type="password" value={form.password} onChange={(e) => handleChange('password', e.target.value)} placeholder="Bỏ trống để hệ thống tự sinh" style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Cửa hàng</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Tên cửa hàng <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <input value={form.store_name} onChange={(e) => handleChange('store_name', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Địa chỉ <span style={{ color: 'var(--error)' }}>*</span></label>
+                    <textarea value={form.store_address} onChange={(e) => handleChange('store_address', e.target.value)} rows={3} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', resize: 'vertical' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Vĩ độ</label>
+                    <input type="number" value={form.latitude} onChange={(e) => handleChange('latitude', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Kinh độ</label>
+                    <input type="number" value={form.longitude} onChange={(e) => handleChange('longitude', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Loại hình</label>
+                    <select value={form.business_type} onChange={(e) => handleChange('business_type', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                      <option value="">Chưa chọn</option>
+                      <option value="1">Nhà hàng</option>
+                      <option value="2">Cà phê</option>
+                      <option value="3">Trà sữa</option>
+                      <option value="4">Đồ ăn nhanh</option>
+                      <option value="5">Đồ ăn đường phố</option>
+                      <option value="6">Tiệm bánh</option>
+                      <option value="7">Tạp hóa</option>
+                      <option value="8">Khác</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Mã số thuế / GPKD</label>
+                    <input value={form.business_license} onChange={(e) => handleChange('business_license', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', marginTop: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Trạng thái & tài liệu</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Trạng thái phê duyệt</label>
+                  <select value={form.status} onChange={(e) => handleChange('status', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                    <option value="1">Chờ duyệt</option>
+                    <option value="2">Đã duyệt</option>
+                    <option value="3">Từ chối</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Trạng thái hoạt động</label>
+                  <select value={form.is_active ? '1' : '0'} onChange={(e) => handleChange('is_active', e.target.value === '1')} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                    <option value="1">Hoạt động</option>
+                    <option value="0">Tạm ngưng / Khóa</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Giờ hoạt động</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input type="time" value={form.opening_time} onChange={(e) => handleChange('opening_time', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                    <input type="time" value={form.closing_time} onChange={(e) => handleChange('closing_time', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                </div>
+                {!form.is_active && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Lý do khóa / ngừng hoạt động</label>
+                    <textarea value={form.lock_reason} onChange={(e) => handleChange('lock_reason', e.target.value)} rows={3} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none', resize: 'vertical' }} />
+                  </div>
+                )}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Ảnh GPKD</label>
+                  <input type="file" accept="image/*" onChange={(e) => handleChange('business_license_image', e.target.files?.[0] || null)} style={{ width: '100%' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Ảnh cửa hàng</label>
+                  <input type="file" accept="image/*" onChange={(e) => handleChange('store_image', e.target.files?.[0] || null)} style={{ width: '100%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-glass" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting} style={{ minWidth: 180 }}>
+              {submitting ? 'Đang lưu...' : (mode === 'create' ? 'Tạo Merchant' : 'Lưu thay đổi')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const MerchantDetailModal = ({ merchantId, onClose, onRefresh, onEdit, onDelete }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,7 +304,19 @@ const MerchantDetailModal = ({ merchantId, onClose, onRefresh }) => {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Store size={24} className="text-primary" /> Chi tiết Merchant
           </h2>
-          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {data?.merchant && (
+              <>
+                <button className="btn-icon" onClick={() => onEdit(data.merchant)} title="Chỉnh sửa Merchant">
+                  <Edit size={18} />
+                </button>
+                <button className="btn-icon" onClick={() => onDelete(data.merchant)} title="Xóa Merchant">
+                  <Trash2 size={18} className="text-error" />
+                </button>
+              </>
+            )}
+            <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          </div>
         </div>
         <div className="modal-body">
           <div style={{ display: 'flex', gap: '2rem', marginBottom: '2.5rem' }}>
@@ -875,6 +1139,9 @@ const MerchantList = () => {
   });
   const [selectedMerchantId, setSelectedMerchantId] = useState(null);
   const [selectedMenuMerchant, setSelectedMenuMerchant] = useState(null); // { id, name }
+  const [showMerchantForm, setShowMerchantForm] = useState(false);
+  const [merchantFormMode, setMerchantFormMode] = useState('create');
+  const [merchantFormTarget, setMerchantFormTarget] = useState(null);
 
   useEffect(() => {
     fetchMerchants();
@@ -1023,6 +1290,48 @@ const MerchantList = () => {
     }
   };
 
+  const handleOpenCreateMerchant = () => {
+    setMerchantFormMode('create');
+    setMerchantFormTarget(null);
+    setShowMerchantForm(true);
+  };
+
+  const handleEditMerchant = (merchant) => {
+    setMerchantFormMode('edit');
+    setMerchantFormTarget(merchant);
+    setShowMerchantForm(true);
+  };
+
+  const handleDeleteMerchant = async (merchant) => {
+    const result = await Swal.fire({
+      title: 'Xóa Merchant?',
+      html: `
+        <div style="text-align:left;">
+          <div>Bạn có chắc muốn xóa Merchant <b>${merchant.store_name}</b> không?</div>
+          <div style="margin-top:0.75rem; color:var(--text-muted); font-size:0.9rem;">Thao tác này sẽ xóa mềm Merchant nếu không có đơn hàng đang xử lý.</div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận xóa',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: 'var(--error)',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const loadingToast = toast.loading('Đang xóa Merchant...');
+      await merchantService.deleteMerchant(merchant.id);
+      toast.dismiss(loadingToast);
+      toast.success('Xóa Merchant thành công');
+      setSelectedMerchantId(null);
+      fetchMerchants();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể xóa Merchant');
+    }
+  };
+
   return (
     <div className="merchants-page" style={{ padding: '2rem' }}>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
@@ -1030,9 +1339,14 @@ const MerchantList = () => {
           <h1 className="page-title">Quản lý nhà hàng</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Hệ thống xét duyệt và quản lý đối tác nhà hàng, cửa hàng.</p>
         </div>
-        <button className="btn btn-glass" onClick={() => fetchMerchants()}>
-          <RefreshCcw size={18} /> Làm mới
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn btn-primary" onClick={handleOpenCreateMerchant}>
+            <Plus size={18} /> Tạo Merchant
+          </button>
+          <button className="btn btn-glass" onClick={() => fetchMerchants()}>
+            <RefreshCcw size={18} /> Làm mới
+          </button>
+        </div>
       </div>
 
       <div className="tabs-container">
@@ -1135,6 +1449,10 @@ const MerchantList = () => {
                         <button onClick={() => setSelectedMerchantId(m.id)} className="btn-action btn-action-view">
                           <Eye size={16} /> Chi tiết
                         </button>
+
+                        <button onClick={() => handleEditMerchant(m)} className="btn-action" style={{ background: 'rgba(0, 73, 172, 0.08)', color: 'var(--primary)', borderColor: 'rgba(0, 73, 172, 0.2)' }}>
+                          <Edit size={16} /> Sửa
+                        </button>
                         
                         <button 
                           onClick={() => setSelectedMenuMerchant({ id: m.id, name: m.store_name })} 
@@ -1154,6 +1472,10 @@ const MerchantList = () => {
                         <button onClick={() => handleToggleLock(m)} className="btn-icon" title={m.user?.is_active ? 'Khóa' : 'Mở khóa'}>
                           {m.user?.is_active ? <Ban size={18} className="text-error" /> : <Unlock size={18} className="text-success" />}
                         </button>
+
+                        <button onClick={() => handleDeleteMerchant(m)} className="btn-icon" title="Xóa Merchant">
+                          <Trash2 size={18} className="text-error" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1164,11 +1486,55 @@ const MerchantList = () => {
         )}
       </div>
 
+      <MerchantFormModal
+        open={showMerchantForm}
+        mode={merchantFormMode}
+        merchant={merchantFormTarget}
+        onClose={() => setShowMerchantForm(false)}
+        onSubmit={async (formData) => {
+          const loadingToast = toast.loading(merchantFormMode === 'create' ? 'Đang tạo Merchant...' : 'Đang cập nhật Merchant...');
+          try {
+            if (merchantFormMode === 'create') {
+              const response = await merchantService.createMerchant(formData);
+              if (response?.data?.temporary_password) {
+                await Swal.fire({
+                  title: 'Tạo Merchant thành công',
+                  html: `
+                    <div style="text-align:left;">
+                      <div style="margin-bottom:0.75rem;">Merchant đã được tạo thành công.</div>
+                      <div style="padding:0.85rem 1rem; border-radius:12px; background:var(--bg-soft); border:1px solid var(--border);">
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.35rem;">Mật khẩu tạm thời</div>
+                        <div style="font-size:1.05rem; font-weight:800; letter-spacing:0.04em;">${response.data.temporary_password}</div>
+                      </div>
+                    </div>
+                  `,
+                  confirmButtonText: 'Đã hiểu',
+                  confirmButtonColor: 'var(--primary)',
+                });
+              } else {
+                toast.success('Tạo Merchant thành công');
+              }
+            } else if (merchantFormTarget) {
+              await merchantService.updateMerchant(merchantFormTarget.id, formData);
+              toast.success('Cập nhật Merchant thành công');
+              setSelectedMerchantId(merchantFormTarget.id);
+            }
+            fetchMerchants();
+          } catch (error) {
+            toast.error(error.response?.data?.message || (merchantFormMode === 'create' ? 'Không thể tạo Merchant' : 'Không thể cập nhật Merchant'));
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
+
       {selectedMerchantId && (
         <MerchantDetailModal 
           merchantId={selectedMerchantId} 
           onClose={() => setSelectedMerchantId(null)} 
           onRefresh={fetchMerchants}
+          onEdit={handleEditMerchant}
+          onDelete={handleDeleteMerchant}
         />
       )}
 
