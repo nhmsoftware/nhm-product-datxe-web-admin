@@ -24,6 +24,12 @@ import Swal from 'sweetalert2';
 import { adminService } from '../../services/adminService';
 import rideService from '../../services/rideService';
 
+const getOrderAmount = (order) => {
+  const value = order?.total_amount ?? order?.final_fare ?? order?.total_price ?? 0;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
 const Services = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -492,7 +498,7 @@ const Services = () => {
                       <div className="vehicle-type">
                         {order.type === 'Food' ? 'Đồ ăn' : 'Giao hàng'}
                       </div>
-                      <div className="fare-amount">{order.total_amount.toLocaleString()}đ</div>
+                      <div className="fare-amount">{getOrderAmount(order).toLocaleString('vi-VN')}đ</div>
                     </div>
                   </td>
                   <td>
@@ -662,6 +668,5 @@ const Services = () => {
 };
 
 export default Services;
-
 
 
