@@ -17,7 +17,10 @@ import {
   Eye,
   Info,
   Map,
-  Phone
+  Phone,
+  Plus,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import rideService from '../../services/rideService';
 import { adminService } from '../../services/adminService';
@@ -25,6 +28,312 @@ import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { Users, Monitor } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const RideFormModal = ({ open, mode, ride, defaultRideType, internalDrivers, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    ride_type: defaultRideType || 1,
+    customer_mode: 'existing',
+    customer_id: '',
+    customer_name: '',
+    customer_phone: '',
+    customer_email: '',
+    pickup_address: '',
+    pickup_lat: '',
+    pickup_lng: '',
+    destination_address: '',
+    destination_lat: '',
+    destination_lng: '',
+    vehicle_type: '1',
+    total_price: '',
+    distance_km: '',
+    duration_minutes: '',
+    driver_id: '',
+    travel_date: '',
+    travel_time: '',
+  });
+  const [customers, setCustomers] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      ride_type: ride?.ride_type || defaultRideType || 1,
+      customer_mode: mode === 'create' ? 'existing' : 'existing',
+      customer_id: ride?.customer_id || '',
+      customer_name: ride?.customer_name || '',
+      customer_phone: ride?.customer_phone || '',
+      customer_email: ride?.customer_email || '',
+      pickup_address: ride?.pickup_address || '',
+      pickup_lat: ride?.pickup_lat ?? '',
+      pickup_lng: ride?.pickup_lng ?? '',
+      destination_address: ride?.destination_address || '',
+      destination_lat: ride?.destination_lat ?? '',
+      destination_lng: ride?.destination_lng ?? '',
+      vehicle_type: String(ride?.vehicle_type || 1),
+      total_price: ride?.final_fare ?? '',
+      distance_km: ride?.distance_km ?? '',
+      duration_minutes: ride?.duration_minutes ?? '',
+      driver_id: ride?.driver_id || '',
+      travel_date: ride?.travel_date || '',
+      travel_time: ride?.travel_time || '',
+    });
+    setCustomerSearch('');
+  }, [open, ride, defaultRideType, mode]);
+
+  useEffect(() => {
+    if (!open || mode !== 'create') return;
+
+    const timer = setTimeout(() => {
+      const loadCustomers = async () => {
+        try {
+          setLoadingCustomers(true);
+          const res = await adminService.getCustomers({ keyword: customerSearch, per_page: 20, page: 1 });
+          const list = Array.isArray(res?.data?.data)
+            ? res.data.data
+            : (Array.isArray(res?.data) ? res.data : []);
+          setCustomers(list);
+        } catch (error) {
+          toast.error('Không thể tải danh sách khách hàng');
+        } finally {
+          setLoadingCustomers(false);
+        }
+      };
+
+      loadCustomers();
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [open, mode, customerSearch]);
+
+  if (!open) return null;
+
+  const title = mode === 'create' ? 'Tạo chuyến xe mới' : 'Chỉnh sửa chuyến xe';
+  const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (mode === 'create') {
+      if (!form.customer_mode) return toast.error('Vui lòng chọn loại khách hàng.');
+      if (form.customer_mode === 'existing' && !form.customer_id) return toast.error('Vui lòng chọn khách hàng hiện có.');
+      if (form.customer_mode === 'new') {
+        if (!form.customer_name.trim()) return toast.error('Vui lòng nhập tên khách hàng.');
+        if (!form.customer_phone.trim()) return toast.error('Vui lòng nhập số điện thoại khách hàng.');
+        if (!/^0[3-9]\d{8}$/.test(form.customer_phone.trim())) return toast.error('Số điện thoại khách hàng không hợp lệ.');
+      }
+    }
+    if (!form.pickup_address.trim()) return toast.error('Vui lòng nhập điểm đón.');
+    if (!form.destination_address.trim()) return toast.error('Vui lòng nhập điểm đến.');
+    if (!form.total_price || Number(form.total_price) < 0) return toast.error('Tổng thanh toán không hợp lệ.');
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        ride_type: Number(form.ride_type),
+        pickup_address: form.pickup_address.trim(),
+        pickup_lat: form.pickup_lat === '' ? null : Number(form.pickup_lat),
+        pickup_lng: form.pickup_lng === '' ? null : Number(form.pickup_lng),
+        destination_address: form.destination_address.trim(),
+        destination_lat: form.destination_lat === '' ? null : Number(form.destination_lat),
+        destination_lng: form.destination_lng === '' ? null : Number(form.destination_lng),
+        vehicle_type: Number(form.vehicle_type),
+        total_price: Number(form.total_price),
+        distance_km: form.distance_km === '' ? null : Number(form.distance_km),
+        duration_minutes: form.duration_minutes === '' ? null : Number(form.duration_minutes),
+        travel_date: form.travel_date || null,
+        travel_time: form.travel_time || null,
+      };
+
+      if (mode === 'create') {
+        payload.customer_mode = form.customer_mode;
+        if (form.customer_mode === 'existing') {
+          payload.customer_id = form.customer_id;
+        } else {
+          payload.customer_name = form.customer_name.trim();
+          payload.customer_phone = form.customer_phone.trim();
+          payload.customer_email = form.customer_email.trim() || null;
+        }
+      } else {
+        payload.driver_id = form.driver_id || null;
+      }
+
+      await onSubmit(payload);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target.className === 'modal-backdrop' && onClose()}>
+      <div className="modal-container" style={{ maxWidth: '980px', width: '95vw' }}>
+        <div className="modal-header">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Car size={22} /> {title}
+          </h2>
+          <button className="close-btn" onClick={onClose}><XCircle size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '76vh', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Khách hàng</div>
+                {mode === 'create' ? (
+                  <>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <button type="button" className={`btn ${form.customer_mode === 'existing' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleChange('customer_mode', 'existing')}>Khách hàng hiện có</button>
+                      <button type="button" className={`btn ${form.customer_mode === 'new' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleChange('customer_mode', 'new')}>Nhập khách hàng mới</button>
+                    </div>
+
+                    {form.customer_mode === 'existing' ? (
+                      <div style={{ display: 'grid', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Tìm khách hàng</label>
+                          <input value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} placeholder="Nhập tên hoặc số điện thoại..." style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Chọn khách hàng</label>
+                          <select value={form.customer_id} onChange={(e) => handleChange('customer_id', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+                            <option value="">{loadingCustomers ? 'Đang tải...' : 'Chọn khách hàng hiện có'}</option>
+                            {customers.map((customer) => (
+                              <option key={customer.id} value={customer.id}>
+                                {customer.full_name} - {customer.phone}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Tên khách hàng</label>
+                          <input value={form.customer_name} onChange={(e) => handleChange('customer_name', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Số điện thoại</label>
+                          <input value={form.customer_phone} onChange={(e) => handleChange('customer_phone', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email</label>
+                          <input value={form.customer_email} onChange={(e) => handleChange('customer_email', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ display: 'grid', gap: '0.75rem' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text)' }}>{form.customer_name || ride?.customer_name || 'Khách hàng'}</div>
+                    <div style={{ color: 'var(--text-muted)' }}>{form.customer_phone || ride?.customer_phone || 'Chưa cập nhật'}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Khách hàng được cố định theo chuyến xe.</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Dịch vụ & cước</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Loại dịch vụ</label>
+                    <select value={form.ride_type} onChange={(e) => handleChange('ride_type', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+                      <option value="1">Chuyến xe thường</option>
+                      <option value="2">Xe đi tỉnh</option>
+                      <option value="3">Xe sân bay</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Loại xe</label>
+                    <select value={form.vehicle_type} onChange={(e) => handleChange('vehicle_type', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+                      <option value="1">Xe máy</option>
+                      <option value="2">Ô tô 4 chỗ</option>
+                      <option value="3">Ô tô 7 chỗ</option>
+                      <option value="4">Ô tô 9 chỗ</option>
+                      <option value="5">Xe ghép</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Tổng thanh toán</label>
+                    <input type="number" value={form.total_price} onChange={(e) => handleChange('total_price', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  </div>
+                  {mode === 'edit' && (
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Tài xế</label>
+                      <select value={form.driver_id} onChange={(e) => handleChange('driver_id', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+                        <option value="">Chưa gán tài xế</option>
+                        {internalDrivers.map((driver) => (
+                          <option key={driver.id} value={driver.id}>
+                            {driver.full_name} - {driver.phone}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Khoảng cách (km)</label>
+                    <input type="number" value={form.distance_km} onChange={(e) => handleChange('distance_km', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Thời gian (phút)</label>
+                    <input type="number" value={form.duration_minutes} onChange={(e) => handleChange('duration_minutes', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', marginTop: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Lộ trình</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Điểm đón</label>
+                  <input value={form.pickup_address} onChange={(e) => handleChange('pickup_address', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Pickup lat</label>
+                  <input type="number" value={form.pickup_lat} onChange={(e) => handleChange('pickup_lat', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Pickup lng</label>
+                  <input type="number" value={form.pickup_lng} onChange={(e) => handleChange('pickup_lng', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Điểm đến</label>
+                  <input value={form.destination_address} onChange={(e) => handleChange('destination_address', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Destination lat</label>
+                  <input type="number" value={form.destination_lat} onChange={(e) => handleChange('destination_lat', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Destination lng</label>
+                  <input type="number" value={form.destination_lng} onChange={(e) => handleChange('destination_lng', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Ngày đi (nếu có)</label>
+                  <input type="date" value={form.travel_date} onChange={(e) => handleChange('travel_date', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Giờ đi (nếu có)</label>
+                  <input type="time" value={form.travel_time} onChange={(e) => handleChange('travel_time', e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Đang lưu...' : (mode === 'create' ? 'Tạo chuyến xe' : 'Lưu thay đổi')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const ScheduledDispatchBoard = () => {
   const navigate = useNavigate();
@@ -56,10 +365,26 @@ const ScheduledDispatchBoard = () => {
   const [completedCount, setCompletedCount] = useState(0);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [driverSearch, setDriverSearch] = useState('');
+  const [showRideForm, setShowRideForm] = useState(false);
+  const [rideFormMode, setRideFormMode] = useState('create');
 
   const openDetailModal = (ride) => {
     setCurrentRide(ride);
     setShowDetailModal(true);
+  };
+
+  const openCreateRideModal = () => {
+    setRideFormMode('create');
+    setCurrentRide(null);
+    setShowRideForm(true);
+    fetchInternalDrivers();
+  };
+
+  const openEditRideModal = (ride) => {
+    setRideFormMode('edit');
+    setCurrentRide(ride);
+    setShowRideForm(true);
+    fetchInternalDrivers();
   };
 
   const fetchCounts = async () => {
@@ -358,6 +683,10 @@ const ScheduledDispatchBoard = () => {
             <Banknote size={18} />
             Cấu hình giá
           </button>
+          <button className="btn btn-primary" onClick={openCreateRideModal}>
+            <Plus size={18} />
+            Tạo chuyến xe
+          </button>
         </div>
       </div>
 
@@ -540,6 +869,14 @@ const ScheduledDispatchBoard = () => {
 
                       {ride.status === 'waiting' && (
                         <>
+                          <button
+                            className="btn-action"
+                            title="Chỉnh sửa chuyến"
+                            onClick={(e) => { e.stopPropagation(); openEditRideModal(ride); }}
+                            style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.2)' }}
+                          >
+                            <Edit size={16} />
+                          </button>
                           <button 
                             className="btn-action edit" 
                             title="Gán tài xế nhà"
@@ -557,6 +894,35 @@ const ScheduledDispatchBoard = () => {
                               <Send size={16} />
                             </button>
                           )}
+                          <button
+                            className="btn-action reject"
+                            title="Hủy chuyến"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const result = await Swal.fire({
+                                title: 'Hủy chuyến xe?',
+                                input: 'textarea',
+                                inputLabel: 'Lý do hủy',
+                                inputPlaceholder: 'Nhập lý do nếu có...',
+                                showCancelButton: true,
+                                confirmButtonText: 'Xác nhận hủy',
+                                cancelButtonText: 'Đóng',
+                                confirmButtonColor: '#ef4444'
+                              });
+
+                              if (result.isConfirmed) {
+                                try {
+                                  await rideService.cancelRideBooking(ride.id, result.value || null);
+                                  toast.success('Hủy chuyến xe thành công');
+                                  fetchRides();
+                                } catch (error) {
+                                  toast.error(error.response?.data?.message || 'Không thể hủy chuyến xe');
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </>
                       )}
                     </div>
@@ -597,6 +963,34 @@ const ScheduledDispatchBoard = () => {
           </div>
         )}
       </div>
+
+      <RideFormModal
+        open={showRideForm}
+        mode={rideFormMode}
+        ride={currentRide}
+        defaultRideType={filter.ride_type}
+        internalDrivers={internalDrivers}
+        onClose={() => setShowRideForm(false)}
+        onSubmit={async (payload) => {
+          const loadingToast = toast.loading(rideFormMode === 'create' ? 'Đang tạo chuyến xe...' : 'Đang cập nhật chuyến xe...');
+          try {
+            if (rideFormMode === 'create') {
+              await rideService.createRideBooking(payload);
+              toast.success('Tạo chuyến xe thành công');
+            } else if (currentRide) {
+              await rideService.updateRideBooking(currentRide.id, payload);
+              toast.success('Cập nhật chuyến xe thành công');
+              setShowDetailModal(false);
+            }
+            fetchRides();
+            fetchCounts();
+          } catch (error) {
+            toast.error(error.response?.data?.message || (rideFormMode === 'create' ? 'Không thể tạo chuyến xe' : 'Không thể cập nhật chuyến xe'));
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
 
       {/* Assign Driver Modal */}
       {showAssignModal && (
@@ -867,7 +1261,18 @@ const ScheduledDispatchBoard = () => {
               {/* Bottom Actions */}
               <div className="detail-footer-actions">
                 <button className="btn btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
-                {currentRide.status === 'waiting' && (
+                {currentRide.can_edit && (
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      openEditRideModal(currentRide);
+                    }}
+                  >
+                    Chỉnh sửa
+                  </button>
+                )}
+                {currentRide.can_edit && (
                   <>
                     {dispatchMode === 1 && (
                       <button 
@@ -886,6 +1291,37 @@ const ScheduledDispatchBoard = () => {
                       <UserPlus size={16} /> Gán tài xế
                     </button>
                   </>
+                )}
+                {currentRide.can_cancel && (
+                  <button
+                    className="btn btn-danger"
+                    onClick={async () => {
+                      const result = await Swal.fire({
+                        title: 'Hủy chuyến xe?',
+                        input: 'textarea',
+                        inputLabel: 'Lý do hủy',
+                        inputPlaceholder: 'Nhập lý do nếu có...',
+                        showCancelButton: true,
+                        confirmButtonText: 'Xác nhận hủy',
+                        cancelButtonText: 'Đóng',
+                        confirmButtonColor: '#ef4444'
+                      });
+
+                      if (result.isConfirmed) {
+                        try {
+                          await rideService.cancelRideBooking(currentRide.id, result.value || null);
+                          toast.success('Hủy chuyến xe thành công');
+                          setShowDetailModal(false);
+                          fetchRides();
+                          fetchCounts();
+                        } catch (error) {
+                          toast.error(error.response?.data?.message || 'Không thể hủy chuyến xe');
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 size={16} /> Hủy chuyến
+                  </button>
                 )}
               </div>
             </div>
