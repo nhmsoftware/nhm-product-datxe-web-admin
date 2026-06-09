@@ -23,11 +23,210 @@ import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { adminService } from '../../services/adminService';
 import rideService from '../../services/rideService';
+import merchantService from '../../services/merchantService';
 
 const getOrderAmount = (order) => {
   const value = order?.total_amount ?? order?.final_fare ?? order?.total_price ?? 0;
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+const FoodOrderFormModal = ({ open, mode, order, merchants, merchantMenuMap, onMerchantSelect, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    customer_name: '',
+    customer_phone: '',
+    merchant_id: '',
+    delivery_address: '',
+    delivery_lat: '',
+    delivery_lng: '',
+    notes: '',
+    subtotal_price: '',
+    delivery_fee: '',
+    service_fee: '',
+    total_price: '',
+    items: [],
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      customer_name: order?.customer_name || '',
+      customer_phone: order?.customer_phone || '',
+      merchant_id: order?.merchant_id || '',
+      delivery_address: order?.destination_address || '',
+      delivery_lat: order?.destination_lat ?? '',
+      delivery_lng: order?.destination_lng ?? '',
+      notes: order?.notes || '',
+      subtotal_price: order?.subtotal_price ?? '',
+      delivery_fee: order?.delivery_fee ?? '',
+      service_fee: order?.service_fee ?? '',
+      total_price: getOrderAmount(order) || '',
+      items: order?.items || [],
+    });
+  }, [open, order]);
+
+  if (!open) return null;
+
+  const currentMenu = merchantMenuMap[form.merchant_id] || [];
+
+  const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const addItem = () => {
+    setForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { menu_item_id: '', quantity: 1, notes: '', options: [] }],
+    }));
+  };
+
+  const updateItem = (index, patch) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, idx) => (idx === index ? { ...item, ...patch } : item)),
+    }));
+  };
+
+  const removeItem = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!form.customer_name.trim()) return toast.error('Vui lòng nhập khách hàng.');
+    if (!/^0[3-9]\d{8}$/.test(form.customer_phone.trim())) return toast.error('Số điện thoại khách hàng không hợp lệ.');
+    if (!form.merchant_id) return toast.error('Vui lòng chọn nhà hàng.');
+    if (!form.delivery_address.trim()) return toast.error('Vui lòng nhập địa chỉ giao hàng.');
+    if (!form.items.length) return toast.error('Vui lòng chọn ít nhất một món ăn.');
+    if (!form.subtotal_price || Number(form.subtotal_price) < 0) return toast.error('Phí món ăn không hợp lệ.');
+    if (!form.delivery_fee || Number(form.delivery_fee) < 0) return toast.error('Phí giao hàng không hợp lệ.');
+    if (!form.service_fee || Number(form.service_fee) < 0) return toast.error('Phí dịch vụ không hợp lệ.');
+    if (!form.total_price || Number(form.total_price) < 0) return toast.error('Tổng thanh toán không hợp lệ.');
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        customer_name: form.customer_name.trim(),
+        customer_phone: form.customer_phone.trim(),
+        merchant_id: form.merchant_id,
+        delivery_address: form.delivery_address.trim(),
+        delivery_lat: form.delivery_lat === '' ? null : Number(form.delivery_lat),
+        delivery_lng: form.delivery_lng === '' ? null : Number(form.delivery_lng),
+        notes: form.notes.trim() || null,
+        subtotal_price: Number(form.subtotal_price),
+        delivery_fee: Number(form.delivery_fee),
+        service_fee: Number(form.service_fee),
+        total_price: Number(form.total_price),
+        items: form.items.map((item) => ({
+          menu_item_id: item.menu_item_id,
+          quantity: Number(item.quantity),
+          notes: item.notes || null,
+          options: item.options || [],
+        })),
+      });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target.className === 'modal-backdrop' && onClose()}>
+      <div className="modal-container" style={{ maxWidth: '1080px', width: '95vw' }}>
+        <div className="modal-header">
+          <h2>{mode === 'create' ? 'Tạo đơn đồ ăn' : 'Chỉnh sửa đơn đồ ăn'}</h2>
+          <button className="close-btn" onClick={onClose}><XCircle size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '76vh', overflowY: 'auto' }}>
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <input value={form.customer_name} onChange={(e) => handleChange('customer_name', e.target.value)} placeholder="Khách hàng" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input value={form.customer_phone} onChange={(e) => handleChange('customer_phone', e.target.value)} placeholder="Số điện thoại khách hàng" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <select
+                  value={form.merchant_id}
+                  onChange={async (e) => {
+                    handleChange('merchant_id', e.target.value);
+                    await onMerchantSelect(e.target.value);
+                  }}
+                  style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="">Chọn nhà hàng</option>
+                  {merchants.map((merchant) => (
+                    <option key={merchant.id} value={merchant.id}>
+                      {merchant.store_name}
+                    </option>
+                  ))}
+                </select>
+                <input value={form.delivery_address} onChange={(e) => handleChange('delivery_address', e.target.value)} placeholder="Địa chỉ giao hàng" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+              <textarea value={form.notes} onChange={(e) => handleChange('notes', e.target.value)} placeholder="Ghi chú đơn hàng" rows={3} style={{ marginTop: '1rem', width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <strong>Danh sách món ăn</strong>
+                <button type="button" className="btn btn-secondary" onClick={addItem}>Thêm món</button>
+              </div>
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                {form.items.map((item, index) => (
+                  <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 2fr auto', gap: '0.75rem', alignItems: 'center' }}>
+                    <select
+                      value={item.menu_item_id}
+                      onChange={(e) => updateItem(index, { menu_item_id: e.target.value })}
+                      style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    >
+                      <option value="">Chọn món ăn</option>
+                      {currentMenu.map((menuItem) => (
+                        <option key={menuItem.id} value={menuItem.id}>
+                          {menuItem.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, { quantity: e.target.value })}
+                      placeholder="SL"
+                      style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    />
+                    <input
+                      value={item.notes || ''}
+                      onChange={(e) => updateItem(index, { notes: e.target.value })}
+                      placeholder="Ghi chú món ăn"
+                      style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    />
+                    <button type="button" className="btn btn-danger" onClick={() => removeItem(index)}>Xóa</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
+                <input type="number" value={form.subtotal_price} onChange={(e) => handleChange('subtotal_price', e.target.value)} placeholder="Phí món ăn" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input type="number" value={form.delivery_fee} onChange={(e) => handleChange('delivery_fee', e.target.value)} placeholder="Phí giao hàng" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input type="number" value={form.service_fee} onChange={(e) => handleChange('service_fee', e.target.value)} placeholder="Phí dịch vụ" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input type="number" value={form.total_price} onChange={(e) => handleChange('total_price', e.target.value)} placeholder="Tổng thanh toán" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Đang lưu...' : (mode === 'create' ? 'Tạo đơn đồ ăn' : 'Lưu thay đổi')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 const DeliveryOrderFormModal = ({ open, mode, order, onClose, onSubmit }) => {
@@ -192,6 +391,10 @@ const Services = () => {
   const [driverKeyword, setDriverKeyword] = useState('');
   const [showDeliveryForm, setShowDeliveryForm] = useState(false);
   const [deliveryFormMode, setDeliveryFormMode] = useState('create');
+  const [showFoodForm, setShowFoodForm] = useState(false);
+  const [foodFormMode, setFoodFormMode] = useState('create');
+  const [merchants, setMerchants] = useState([]);
+  const [merchantMenuMap, setMerchantMenuMap] = useState({});
 
   const fetchOrders = async (currentPage = page, currentFilter = filter) => {
     try {
@@ -242,6 +445,29 @@ const Services = () => {
     }
   };
 
+  const fetchMerchants = async () => {
+    try {
+      const response = await merchantService.getMerchants({ per_page: 100 });
+      const list = response?.data?.data || response?.data || [];
+      setMerchants(list);
+    } catch (err) {
+      toast.error('Không thể tải danh sách nhà hàng');
+    }
+  };
+
+  const fetchMerchantMenu = async (merchantId) => {
+    if (!merchantId || merchantMenuMap[merchantId]) return;
+
+    try {
+      const response = await merchantService.getMerchantMenu(merchantId);
+      const categories = response?.data || [];
+      const items = categories.flatMap((category) => category.items || []);
+      setMerchantMenuMap((prev) => ({ ...prev, [merchantId]: items }));
+    } catch (err) {
+      toast.error('Không thể tải thực đơn nhà hàng');
+    }
+  };
+
   const fetchSettings = async () => {
     try {
       const res = await adminService.getScheduledPricing();
@@ -257,6 +483,7 @@ const Services = () => {
   useEffect(() => {
     fetchDrivers();
     fetchSettings();
+    fetchMerchants();
   }, []);
 
   useEffect(() => {
@@ -384,6 +611,21 @@ const Services = () => {
     setShowDeliveryForm(true);
   };
 
+  const openCreateFoodModal = () => {
+    setFoodFormMode('create');
+    setCurrentOrder(null);
+    setShowFoodForm(true);
+  };
+
+  const openEditFoodModal = async (order) => {
+    setFoodFormMode('edit');
+    setCurrentOrder(order);
+    if (order?.merchant_id) {
+      await fetchMerchantMenu(order.merchant_id);
+    }
+    setShowFoodForm(true);
+  };
+
   const handleAssignDriver = async (driver) => {
     try {
       await adminService.assignServiceDriver(currentOrder.id, driver.id);
@@ -485,6 +727,12 @@ const Services = () => {
             <button className="btn btn-primary" onClick={openCreateDeliveryModal}>
               <Package size={18} />
               Tạo đơn giao hàng
+            </button>
+          )}
+          {filter.type === 'Food' && (
+            <button className="btn btn-primary" onClick={openCreateFoodModal}>
+              <Coffee size={18} />
+              Tạo đơn đồ ăn
             </button>
           )}
         </div>
@@ -680,6 +928,15 @@ const Services = () => {
                           <Filter size={16} />
                         </button>
                       )}
+                      {order.type === 'Food' && order.can_edit && (
+                        <button 
+                          className="btn-action"
+                          title="Chỉnh sửa đơn đồ ăn"
+                          onClick={(e) => { e.stopPropagation(); openEditFoodModal(order); }}
+                        >
+                          <Filter size={16} />
+                        </button>
+                      )}
                       {order.status === 'waiting' && (
                         <>
                           <button 
@@ -725,6 +982,37 @@ const Services = () => {
                                 fetchOrders();
                               } catch (error) {
                                 toast.error(error.response?.data?.message || 'Không thể hủy đơn giao hàng');
+                              }
+                            }
+                          }}
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      )}
+                      {order.type === 'Food' && order.can_cancel && (
+                        <button
+                          className="btn-action reject"
+                          title="Hủy đơn đồ ăn"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await Swal.fire({
+                              title: 'Hủy đơn đồ ăn?',
+                              input: 'textarea',
+                              inputLabel: 'Lý do hủy',
+                              inputPlaceholder: 'Nhập lý do nếu có...',
+                              showCancelButton: true,
+                              confirmButtonText: 'Xác nhận hủy',
+                              cancelButtonText: 'Đóng',
+                              confirmButtonColor: '#ef4444'
+                            });
+
+                            if (result.isConfirmed) {
+                              try {
+                                await adminService.cancelFoodOrder(order.id, result.value || null);
+                                toast.success('Hủy đơn đồ ăn thành công');
+                                fetchOrders();
+                              } catch (error) {
+                                toast.error(error.response?.data?.message || 'Không thể hủy đơn đồ ăn');
                               }
                             }
                           }}
@@ -788,6 +1076,33 @@ const Services = () => {
             fetchOrders();
           } catch (error) {
             toast.error(error.response?.data?.message || (deliveryFormMode === 'create' ? 'Không thể tạo đơn giao hàng' : 'Không thể cập nhật đơn giao hàng'));
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
+
+      <FoodOrderFormModal
+        open={showFoodForm}
+        mode={foodFormMode}
+        order={currentOrder}
+        merchants={merchants}
+        merchantMenuMap={merchantMenuMap}
+        onMerchantSelect={fetchMerchantMenu}
+        onClose={() => setShowFoodForm(false)}
+        onSubmit={async (payload) => {
+          const loadingToast = toast.loading(foodFormMode === 'create' ? 'Đang tạo đơn đồ ăn...' : 'Đang cập nhật đơn đồ ăn...');
+          try {
+            if (foodFormMode === 'create') {
+              await adminService.createFoodOrder(payload);
+              toast.success('Tạo đơn đồ ăn thành công');
+            } else if (currentOrder) {
+              await adminService.updateFoodOrder(currentOrder.id, payload);
+              toast.success('Cập nhật đơn đồ ăn thành công');
+            }
+            fetchOrders();
+          } catch (error) {
+            toast.error(error.response?.data?.message || (foodFormMode === 'create' ? 'Không thể tạo đơn đồ ăn' : 'Không thể cập nhật đơn đồ ăn'));
           } finally {
             toast.dismiss(loadingToast);
           }
@@ -891,4 +1206,3 @@ const Services = () => {
 };
 
 export default Services;
-
