@@ -221,6 +221,23 @@ export const adminService = {
     return response.data;
   },
 
+  createDeliveryOrder: async (data) => {
+    const response = await api.post('/v1/admin/services', data);
+    return response.data;
+  },
+
+  updateDeliveryOrder: async (orderId, data) => {
+    const response = await api.put(`/v1/admin/services/${orderId}`, data);
+    return response.data;
+  },
+
+  cancelDeliveryOrder: async (orderId, reason = null) => {
+    const response = await api.delete(`/v1/admin/services/${orderId}`, {
+      data: reason ? { reason } : {}
+    });
+    return response.data;
+  },
+
   assignServiceDriver: async (orderId, driverId) => {
     const response = await api.post('/v1/admin/services/orders/assign', {
       order_id: orderId,

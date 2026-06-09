@@ -30,6 +30,144 @@ const getOrderAmount = (order) => {
   return Number.isFinite(numericValue) ? numericValue : 0;
 };
 
+const DeliveryOrderFormModal = ({ open, mode, order, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    sender_name: '',
+    sender_phone: '',
+    pickup_address: '',
+    pickup_lat: '',
+    pickup_lng: '',
+    receiver_name: '',
+    receiver_phone: '',
+    destination_address: '',
+    destination_lat: '',
+    destination_lng: '',
+    goods_type: '',
+    goods_note: '',
+    total_price: '',
+    distance_km: '',
+    duration_minutes: '',
+    driver_id: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const deliveryInfo = order?.delivery_info || {};
+
+    setForm({
+      sender_name: deliveryInfo.sender_name || '',
+      sender_phone: deliveryInfo.sender_phone || order?.customer_phone || '',
+      pickup_address: order?.pickup_address || '',
+      pickup_lat: order?.pickup_lat ?? '',
+      pickup_lng: order?.pickup_lng ?? '',
+      receiver_name: deliveryInfo.receiver_name || '',
+      receiver_phone: deliveryInfo.receiver_phone || '',
+      destination_address: order?.destination_address || '',
+      destination_lat: order?.destination_lat ?? '',
+      destination_lng: order?.destination_lng ?? '',
+      goods_type: deliveryInfo.goods_type || '',
+      goods_note: deliveryInfo.goods_note || '',
+      total_price: getOrderAmount(order) || '',
+      distance_km: order?.distance_km ?? '',
+      duration_minutes: order?.duration_minutes ?? '',
+      driver_id: order?.driver_id || '',
+    });
+  }, [open, order]);
+
+  if (!open) return null;
+
+  const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!form.sender_name.trim()) return toast.error('Vui lòng nhập người gửi.');
+    if (!/^0[3-9]\d{8}$/.test(form.sender_phone.trim())) return toast.error('Số điện thoại người gửi không hợp lệ.');
+    if (!form.pickup_address.trim()) return toast.error('Vui lòng nhập điểm lấy hàng.');
+    if (!form.receiver_name.trim()) return toast.error('Vui lòng nhập người nhận.');
+    if (!/^0[3-9]\d{8}$/.test(form.receiver_phone.trim())) return toast.error('Số điện thoại người nhận không hợp lệ.');
+    if (!form.destination_address.trim()) return toast.error('Vui lòng nhập điểm giao hàng.');
+    if (!form.goods_type.trim()) return toast.error('Vui lòng nhập loại hàng hóa.');
+    if (!form.total_price || Number(form.total_price) < 0) return toast.error('Tổng thanh toán không hợp lệ.');
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        sender_name: form.sender_name.trim(),
+        sender_phone: form.sender_phone.trim(),
+        pickup_address: form.pickup_address.trim(),
+        pickup_lat: form.pickup_lat === '' ? null : Number(form.pickup_lat),
+        pickup_lng: form.pickup_lng === '' ? null : Number(form.pickup_lng),
+        receiver_name: form.receiver_name.trim(),
+        receiver_phone: form.receiver_phone.trim(),
+        destination_address: form.destination_address.trim(),
+        destination_lat: form.destination_lat === '' ? null : Number(form.destination_lat),
+        destination_lng: form.destination_lng === '' ? null : Number(form.destination_lng),
+        goods_type: form.goods_type.trim(),
+        goods_note: form.goods_note.trim() || null,
+        total_price: Number(form.total_price),
+        distance_km: form.distance_km === '' ? null : Number(form.distance_km),
+        duration_minutes: form.duration_minutes === '' ? null : Number(form.duration_minutes),
+        driver_id: form.driver_id || null,
+      });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target.className === 'modal-backdrop' && onClose()}>
+      <div className="modal-container" style={{ maxWidth: '980px', width: '95vw' }}>
+        <div className="modal-header">
+          <h2>{mode === 'create' ? 'Tạo đơn giao hàng' : 'Chỉnh sửa đơn giao hàng'}</h2>
+          <button className="close-btn" onClick={onClose}><XCircle size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '76vh', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Người gửi</div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <input value={form.sender_name} onChange={(e) => handleChange('sender_name', e.target.value)} placeholder="Người gửi" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  <input value={form.sender_phone} onChange={(e) => handleChange('sender_phone', e.target.value)} placeholder="Số điện thoại người gửi" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  <input value={form.pickup_address} onChange={(e) => handleChange('pickup_address', e.target.value)} placeholder="Điểm lấy hàng" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+              </div>
+              <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 700, textTransform: 'uppercase' }}>Người nhận</div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <input value={form.receiver_name} onChange={(e) => handleChange('receiver_name', e.target.value)} placeholder="Người nhận" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  <input value={form.receiver_phone} onChange={(e) => handleChange('receiver_phone', e.target.value)} placeholder="Số điện thoại người nhận" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  <input value={form.destination_address} onChange={(e) => handleChange('destination_address', e.target.value)} placeholder="Điểm giao hàng" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+              </div>
+            </div>
+            <div className="glass" style={{ padding: '1.25rem', borderRadius: '18px', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <input value={form.goods_type} onChange={(e) => handleChange('goods_type', e.target.value)} placeholder="Loại hàng hóa" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input value={form.total_price} type="number" onChange={(e) => handleChange('total_price', e.target.value)} placeholder="Tổng thanh toán" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input value={form.distance_km} type="number" onChange={(e) => handleChange('distance_km', e.target.value)} placeholder="Khoảng cách (km)" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <input value={form.duration_minutes} type="number" onChange={(e) => handleChange('duration_minutes', e.target.value)} placeholder="Thời gian (phút)" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                <textarea value={form.goods_note} onChange={(e) => handleChange('goods_note', e.target.value)} placeholder="Ghi chú hàng hóa" rows={3} style={{ gridColumn: '1 / -1', width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1.25rem 1.5rem 1.5rem', borderTop: '1px solid var(--border)' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Hủy</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Đang lưu...' : (mode === 'create' ? 'Tạo đơn giao hàng' : 'Lưu thay đổi')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Services = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +190,8 @@ const Services = () => {
   const [internalDrivers, setInternalDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [driverKeyword, setDriverKeyword] = useState('');
+  const [showDeliveryForm, setShowDeliveryForm] = useState(false);
+  const [deliveryFormMode, setDeliveryFormMode] = useState('create');
 
   const fetchOrders = async (currentPage = page, currentFilter = filter) => {
     try {
@@ -232,6 +372,18 @@ const Services = () => {
     setShowAssignModal(true);
   };
 
+  const openCreateDeliveryModal = () => {
+    setDeliveryFormMode('create');
+    setCurrentOrder(null);
+    setShowDeliveryForm(true);
+  };
+
+  const openEditDeliveryModal = (order) => {
+    setDeliveryFormMode('edit');
+    setCurrentOrder(order);
+    setShowDeliveryForm(true);
+  };
+
   const handleAssignDriver = async (driver) => {
     try {
       await adminService.assignServiceDriver(currentOrder.id, driver.id);
@@ -326,6 +478,13 @@ const Services = () => {
             <button className="btn btn-primary" onClick={() => handlePushToPool(selectedOrders)}>
               <Send size={18} />
               Đẩy {selectedOrders.length} đơn vào hàng đợi
+            </button>
+          )}
+
+          {filter.type === 'Delivery' && (
+            <button className="btn btn-primary" onClick={openCreateDeliveryModal}>
+              <Package size={18} />
+              Tạo đơn giao hàng
             </button>
           )}
         </div>
@@ -512,6 +671,15 @@ const Services = () => {
                   </td>
                   <td>
                     <div className="action-buttons">
+                      {order.type === 'Delivery' && order.can_edit && (
+                        <button 
+                          className="btn-action"
+                          title="Chỉnh sửa đơn"
+                          onClick={(e) => { e.stopPropagation(); openEditDeliveryModal(order); }}
+                        >
+                          <Filter size={16} />
+                        </button>
+                      )}
                       {order.status === 'waiting' && (
                         <>
                           <button 
@@ -532,6 +700,37 @@ const Services = () => {
                             </button>
                           )}
                         </>
+                      )}
+                      {order.type === 'Delivery' && order.can_cancel && (
+                        <button
+                          className="btn-action reject"
+                          title="Hủy đơn"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await Swal.fire({
+                              title: 'Hủy đơn giao hàng?',
+                              input: 'textarea',
+                              inputLabel: 'Lý do hủy',
+                              inputPlaceholder: 'Nhập lý do nếu có...',
+                              showCancelButton: true,
+                              confirmButtonText: 'Xác nhận hủy',
+                              cancelButtonText: 'Đóng',
+                              confirmButtonColor: '#ef4444'
+                            });
+
+                            if (result.isConfirmed) {
+                              try {
+                                await adminService.cancelDeliveryOrder(order.id, result.value || null);
+                                toast.success('Hủy đơn giao hàng thành công');
+                                fetchOrders();
+                              } catch (error) {
+                                toast.error(error.response?.data?.message || 'Không thể hủy đơn giao hàng');
+                              }
+                            }
+                          }}
+                        >
+                          <XCircle size={16} />
+                        </button>
                       )}
                     </div>
                   </td>
@@ -570,6 +769,30 @@ const Services = () => {
           </div>
         )}
       </div>
+
+      <DeliveryOrderFormModal
+        open={showDeliveryForm}
+        mode={deliveryFormMode}
+        order={currentOrder}
+        onClose={() => setShowDeliveryForm(false)}
+        onSubmit={async (payload) => {
+          const loadingToast = toast.loading(deliveryFormMode === 'create' ? 'Đang tạo đơn giao hàng...' : 'Đang cập nhật đơn giao hàng...');
+          try {
+            if (deliveryFormMode === 'create') {
+              await adminService.createDeliveryOrder(payload);
+              toast.success('Tạo đơn giao hàng thành công');
+            } else if (currentOrder) {
+              await adminService.updateDeliveryOrder(currentOrder.id, payload);
+              toast.success('Cập nhật đơn giao hàng thành công');
+            }
+            fetchOrders();
+          } catch (error) {
+            toast.error(error.response?.data?.message || (deliveryFormMode === 'create' ? 'Không thể tạo đơn giao hàng' : 'Không thể cập nhật đơn giao hàng'));
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+      />
 
       {/* Modal - same style as ScheduledDispatchBoard */}
       {showAssignModal && (
@@ -668,5 +891,4 @@ const Services = () => {
 };
 
 export default Services;
-
 
