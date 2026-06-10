@@ -14,6 +14,14 @@ const formatDateInputValue = (value) => {
   return date.toISOString().split('T')[0];
 };
 
+const DEFAULT_VEHICLE_TYPES = [
+  { id: 1, name_vi: 'Xe máy' },
+  { id: 2, name_vi: 'Ô tô 4 chỗ' },
+  { id: 3, name_vi: 'Ô tô 7 chỗ' },
+  { id: 4, name_vi: 'Ô tô 9 chỗ' },
+  { id: 5, name_vi: 'Xe ghép / Tiện chuyến' },
+];
+
 const DriverFormModal = ({ open, mode, driver, onClose, onSubmit }) => {
   const [form, setForm] = useState({
     full_name: '',
@@ -27,6 +35,22 @@ const DriverFormModal = ({ open, mode, driver, onClose, onSubmit }) => {
     lock_reason: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState(DEFAULT_VEHICLE_TYPES);
+
+  useEffect(() => {
+    const loadVehicleTypes = async () => {
+      try {
+        const response = await adminService.getVehicleTypes();
+        if (Array.isArray(response?.data) && response.data.length > 0) {
+          setVehicleTypes(response.data);
+        }
+      } catch (error) {
+        console.error('Không thể tải danh mục loại xe', error);
+      }
+    };
+
+    loadVehicleTypes();
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -353,10 +377,9 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Loại xe</label>
                     <select value={form.vehicle_type} onChange={(e) => handleChange('vehicle_type', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
                       <option value="">Chọn loại xe</option>
-                      <option value="1">Xe máy</option>
-                      <option value="2">Ô tô 4 chỗ</option>
-                      <option value="3">Ô tô 7 chỗ</option>
-                      <option value="4">Ô tô 9 chỗ</option>
+                      {vehicleTypes.map((type) => (
+                        <option key={type.id} value={type.id}>{type.name_vi}</option>
+                      ))}
                     </select>
                   </div>
                   <div>

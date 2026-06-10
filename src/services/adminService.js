@@ -48,6 +48,11 @@ export const adminService = {
     return response.data;
   },
 
+  archivePricingConfig: async (vehicleTypeId) => {
+    const response = await api.post(`/v1/admin/pricing/configs/${vehicleTypeId}/archive`);
+    return response.data;
+  },
+
   resetPricingConfig: async (vehicleType) => {
     const response = await api.delete(`/v1/admin/pricing/configs/${vehicleType}/reset`);
     return response.data;
@@ -61,6 +66,16 @@ export const adminService = {
   // UC-96: Set Surge Pricing
   getSurgeRules: async () => {
     const response = await api.get('/v1/admin/pricing/surge-rules');
+    return response.data;
+  },
+
+  getVehicleTypes: async () => {
+    const response = await api.get('/v1/meta/vehicle-types');
+    return response.data;
+  },
+
+  getAdminVehicleTypes: async () => {
+    const response = await api.get('/v1/admin/meta/vehicle-types');
     return response.data;
   },
 

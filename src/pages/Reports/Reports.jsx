@@ -36,10 +36,24 @@ const Reports = () => {
   const [commissionData, setCommissionData] = useState({ summary: [], details: [] });
   const [orderStats, setOrderStats] = useState(null);
   const [detailedData, setDetailedData] = useState({ vehicle_types: [], ride_types: [] });
+  const [vehicleTypes, setVehicleTypes] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, [filters, activeTab]);
+
+  useEffect(() => {
+    const loadVehicleTypes = async () => {
+      try {
+        const response = await adminService.getVehicleTypes();
+        setVehicleTypes(Array.isArray(response?.data) ? response.data : []);
+      } catch (error) {
+        console.error('Không thể tải danh mục loại xe', error);
+      }
+    };
+
+    loadVehicleTypes();
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -87,7 +101,10 @@ const Reports = () => {
   };
 
   const getVehicleLabel = (type) => {
-    const labels = { 1: 'Xe máy', 2: 'Ô tô 4 chỗ', 3: 'Ô tô 7 chỗ', 4: 'Xe tải' };
+    const matched = vehicleTypes.find((item) => Number(item.id) === Number(type));
+    if (matched) return matched.name_vi;
+
+    const labels = { 1: 'Xe máy', 2: 'Ô tô 4 chỗ', 3: 'Ô tô 7 chỗ', 4: 'Ô tô 9 chỗ', 5: 'Xe ghép', 6: 'Lái hộ' };
     return labels[type] || `Loại ${type}`;
   };
 

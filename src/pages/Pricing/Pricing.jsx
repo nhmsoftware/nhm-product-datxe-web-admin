@@ -14,8 +14,19 @@ const VIETNAM_PROVINCES = [
   "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
 ].sort();
 
+const VEHICLE_ICON_MAP = {
+  bike: { icon: <Bike size={22} />, color: 'var(--primary)' },
+  car_4: { icon: <Car size={22} />, color: '#00906a' },
+  car_7: { icon: <CarFront size={22} />, color: '#b78300' },
+  car_9: { icon: <Bus size={22} />, color: '#ef4444' },
+  car_shared: { icon: <Users size={22} />, color: '#0ea5e9' },
+  chauffeur: { icon: <User size={22} />, color: '#6366f1' },
+  default: { icon: <Car size={22} />, color: 'var(--primary)' },
+};
+
 const Pricing = () => {
   const [configs, setConfigs] = useState([]);
+  const [vehicleTypes, setVehicleTypes] = useState([]);
   const [isFreeMode, setIsFreeMode] = useState(false);
   const [surgeRules, setSurgeRules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +49,16 @@ const Pricing = () => {
   
   // State cho việc sửa giá cố định
   const [editingConfigId, setEditingConfigId] = useState(null);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const [configForm, setConfigForm] = useState({
-    vehicleType: 0,
+    vehicleTypeId: 0,
     basePrice: 0,
     distanceRate: 0,
     timeRate: 0,
     minFare: 0,
     surgeMultiplier: 1,
+    commissionRate: 20,
+    isActive: true,
   });
 
   // State cho việc quản lý Surge Rules
@@ -61,12 +75,14 @@ const Pricing = () => {
       const [configRes, surgeRes, scheduledRes] = await Promise.all([
         adminService.getPricingConfigs(),
         adminService.getSurgeRules(),
-        adminService.getScheduledPricing()
+        adminService.getScheduledPricing(),
       ]);
+      const vehicleTypeRes = await adminService.getVehicleTypes();
 
       // Backend: { data: { configs: [...], global_settings: { is_free_mode: bool } } }
       const configData = configRes?.data ?? {};
       setConfigs(Array.isArray(configData.configs) ? configData.configs : []);
+      setVehicleTypes(Array.isArray(vehicleTypeRes?.data) ? vehicleTypeRes.data : []);
       setIsFreeMode(configData.global_settings?.is_free_mode ?? false);
 
       // Backend: { data: [...] } — array trực tiếp
@@ -101,29 +117,51 @@ const Pricing = () => {
   };
 
   const handleEditConfig = (config) => {
-    setEditingConfigId(config.vehicle_type);
+    setEditingConfigId(config.vehicle_type_id);
     setConfigForm({
-      vehicleType: config.vehicle_type,
-      basePrice: config.base_price,
-      distanceRate: config.distance_rate,
-      timeRate: config.time_rate,
-      minFare: config.min_fare,
-      surgeMultiplier: config.surge_multiplier,
+      vehicleTypeId: config.vehicle_type_id,
+      basePrice: config.base_price ?? 0,
+      distanceRate: config.distance_rate ?? 0,
+      timeRate: config.time_rate ?? 0,
+      minFare: config.min_fare ?? 0,
+      surgeMultiplier: config.surge_multiplier ?? 1,
+      commissionRate: config.commission_rate ?? 20,
+      isActive: config.is_active ?? true,
     });
+    setShowConfigModal(true);
+  };
+
+  const handleCreateConfig = () => {
+    const defaultType = configs.find(cfg => cfg.config_status === 'not_configured') || configs[0];
+    setEditingConfigId(null);
+    setConfigForm({
+      vehicleTypeId: defaultType?.vehicle_type_id ?? 0,
+      basePrice: 0,
+      distanceRate: 0,
+      timeRate: 0,
+      minFare: 0,
+      surgeMultiplier: 1,
+      commissionRate: 20,
+      isActive: true,
+    });
+    setShowConfigModal(true);
   };
 
   const handleSaveConfig = async () => {
     try {
       await adminService.updatePricingConfig({
-        vehicle_type: configForm.vehicleType,
+        vehicle_type_id: Number(configForm.vehicleTypeId),
         base_price: configForm.basePrice,
         distance_rate: configForm.distanceRate,
         time_rate: configForm.timeRate,
         min_fare: configForm.minFare,
         surge_multiplier: configForm.surgeMultiplier,
+        commission_rate: configForm.commissionRate,
+        is_active: configForm.isActive,
       });
       setEditingConfigId(null);
-      fetchData();
+      setShowConfigModal(false);
+      await fetchData();
       toast.success('Đã lưu cấu hình giá mới!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Lỗi khi lưu cấu hình');
@@ -146,11 +184,11 @@ const Pricing = () => {
 
     if (result.isConfirmed) {
       try {
-        await adminService.resetPricingConfig(vehicleType);
-        fetchData();
-        toast.success('Đã khôi phục giá mặc định thành công.');
+        await adminService.archivePricingConfig(vehicleType);
+        await fetchData();
+        toast.success('Đã lưu trữ cấu hình giá thành công.');
       } catch (error) {
-        toast.error('Không thể khôi phục giá mặc định.');
+        toast.error('Không thể lưu trữ cấu hình giá.');
       }
     }
   };
@@ -272,13 +310,16 @@ const Pricing = () => {
     } 
   };
 
-  const VEHICLE_INFO = {
-    1: { name: 'Xe máy (Bike)', icon: <Bike size={22} />, color: 'var(--primary)' },
-    2: { name: 'Ô tô 4 chỗ (Car 4)', icon: <Car size={22} />, color: '#00906a' },
-    3: { name: 'Ô tô 7 chỗ (Car 7)', icon: <CarFront size={22} />, color: '#b78300' },
-    4: { name: 'Ô tô 9 chỗ (Car 9)', icon: <Bus size={22} />, color: '#ef4444' },
-    6: { name: 'Dịch vụ Lái hộ', icon: <User size={22} />, color: '#6366f1' },
-  };
+  const VEHICLE_INFO = vehicleTypes.reduce((acc, type) => {
+    const visual = VEHICLE_ICON_MAP[type.code] || VEHICLE_ICON_MAP.default;
+    acc[type.id] = {
+      name: type.name_vi,
+      icon: visual.icon,
+      color: visual.color,
+      code: type.code,
+    };
+    return acc;
+  }, {});
 
   const SURGE_CONDITIONS = [
     { id: 'peak_hour', label: 'Giờ cao điểm', icon: <Clock size={16} /> },
@@ -294,77 +335,83 @@ const Pricing = () => {
       
       <div className="header-info">
         <h1 className="main-title">Cấu hình giá cước</h1>
-        <div className="free-mode-wrapper">
-          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Chế độ miễn phí</span>
-          <button className={`switch-btn ${isFreeMode ? 'active' : ''}`} onClick={handleToggleFreeMode}>
-            <div className="switch-handle" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <button className="btn-premium" onClick={handleCreateConfig}>
+            <Plus size={18} /> Thêm cấu hình giá
           </button>
+          <div className="free-mode-wrapper">
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Chế độ miễn phí</span>
+            <button className={`switch-btn ${isFreeMode ? 'active' : ''}`} onClick={handleToggleFreeMode}>
+              <div className="switch-handle" />
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="pricing-grid">
         {configs.map(config => (
-          <div key={config.vehicle_type} className="price-card glass">
+          <div key={config.vehicle_type_id} className="price-card glass">
             <div className="card-top">
-              <div className="icon-badge" style={{ color: VEHICLE_INFO[Number(config.vehicle_type)]?.color }}>
-                {VEHICLE_INFO[Number(config.vehicle_type)]?.icon}
+              <div className="icon-badge" style={{ color: VEHICLE_INFO[Number(config.vehicle_type_id)]?.color }}>
+                {VEHICLE_INFO[Number(config.vehicle_type_id)]?.icon}
               </div>
               <div className="title-box">
-                <h3>{VEHICLE_INFO[Number(config.vehicle_type)]?.name || 'Loại xe mới'}</h3>
-                <p>{editingConfigId === config.vehicle_type ? 'Đang chỉnh sửa...' : 'Cấu hình tiêu chuẩn'}</p>
+                <h3>{config.vehicle_label || VEHICLE_INFO[Number(config.vehicle_type_id)]?.name || 'Loại xe mới'}</h3>
+                <p>
+                  {config.config_status === 'not_configured'
+                    ? 'Chưa có cấu hình giá'
+                    : config.config_status === 'inactive'
+                      ? 'Cấu hình đã lưu trữ'
+                      : 'Cấu hình tiêu chuẩn'}
+                </p>
               </div>
               <div className="card-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                {editingConfigId === config.vehicle_type ? (
-                  <>
-                    <button onClick={handleSaveConfig} className="btn-icon" style={{ color: 'var(--success)', borderColor: 'var(--success)' }} title="Lưu"><Save size={18} /></button>
-                    <button onClick={() => setEditingConfigId(null)} className="btn-icon" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} title="Hủy"><X size={18} /></button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => handleResetConfig(config.vehicle_type)} className="btn-icon" title="Khôi phục mặc định"><RefreshCw size={18} /></button>
-                    <button onClick={() => handleEditConfig(config)} className="btn-icon" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }} title="Chỉnh sửa"><Edit2 size={18} /></button>
-                  </>
+                {config.config_status !== 'not_configured' && (
+                  <button onClick={() => handleResetConfig(config.vehicle_type_id)} className="btn-icon" title="Lưu trữ cấu hình"><Trash2 size={18} /></button>
                 )}
+                <button onClick={() => handleEditConfig(config)} className="btn-icon" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }} title={config.config_status === 'not_configured' ? 'Tạo cấu hình' : 'Chỉnh sửa'}>
+                  {config.config_status === 'not_configured' ? <Plus size={18} /> : <Edit2 size={18} />}
+                </button>
               </div>
 
             </div>
 
             <div className="card-body">
               <PriceBox 
-                label="Giá mở cửa" value={config.base_price} 
-                editing={editingConfigId === config.vehicle_type}
-                editValue={configForm.basePrice}
-                onChange={val => setConfigForm({...configForm, basePrice: val})}
+                label="Giá mở cửa" value={config.base_price ?? 0}
+                editing={false}
                 unit="đ"
               />
               <PriceBox 
-                label="Giá tối thiểu" value={config.min_fare} 
-                editing={editingConfigId === config.vehicle_type}
-                editValue={configForm.minFare}
-                onChange={val => setConfigForm({...configForm, minFare: val})}
+                label="Giá tối thiểu" value={config.min_fare ?? 0}
+                editing={false}
                 unit="đ"
               />
               <PriceBox 
-                label="Giá / km" value={config.distance_rate} 
-                editing={editingConfigId === config.vehicle_type}
-                editValue={configForm.distanceRate}
-                onChange={val => setConfigForm({...configForm, distanceRate: val})}
+                label="Giá / km" value={config.distance_rate ?? 0}
+                editing={false}
                 unit="đ"
               />
               <PriceBox 
-                label="Giá / phút" value={config.time_rate} 
-                editing={editingConfigId === config.vehicle_type}
-                editValue={configForm.timeRate}
-                onChange={val => setConfigForm({...configForm, timeRate: val})}
+                label="Giá / phút" value={config.time_rate ?? 0}
+                editing={false}
                 unit="đ"
               />
               <PriceBox 
-                label="Hệ số Surge" value={config.surge_multiplier} 
-                editing={editingConfigId === config.vehicle_type}
-                editValue={configForm.surgeMultiplier}
-                onChange={val => setConfigForm({...configForm, surgeMultiplier: val})}
-                unit="x" step="0.1"
+                label="Hệ số Surge" value={config.surge_multiplier ?? 1}
+                editing={false}
+                unit="x"
               />
+            </div>
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className={`status-tag ${config.is_active ? 'active' : ''}`}>
+                {config.config_status === 'not_configured' ? 'Not configured' : (config.is_active ? 'Active' : 'Inactive')}
+              </span>
+              {!config.is_bookable && (
+                <span className="status-tag" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--error)' }}>
+                  Not bookable
+                </span>
+              )}
             </div>
           </div>
         ))}
@@ -752,6 +799,71 @@ const Pricing = () => {
                   <button type="submit" className="btn-premium">Lưu cấu hình</button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfigModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '620px', width: '90%' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>{editingConfigId ? 'Chỉnh sửa cấu hình giá' : 'Thêm cấu hình giá'}</h3>
+              <button className="btn-icon" onClick={() => setShowConfigModal(false)}><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Loại xe</label>
+                <select
+                  value={configForm.vehicleTypeId}
+                  disabled={!!editingConfigId}
+                  onChange={(e) => setConfigForm({ ...configForm, vehicleTypeId: Number(e.target.value) })}
+                >
+                  {configs.map(cfg => (
+                    <option key={cfg.vehicle_type_id} value={cfg.vehicle_type_id}>
+                      {cfg.vehicle_label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Giá mở cửa</label>
+                  <input type="number" min="0" value={configForm.basePrice} onChange={(e) => setConfigForm({ ...configForm, basePrice: Number(e.target.value) })} />
+                </div>
+                <div className="form-group">
+                  <label>Giá tối thiểu</label>
+                  <input type="number" min="0" value={configForm.minFare} onChange={(e) => setConfigForm({ ...configForm, minFare: Number(e.target.value) })} />
+                </div>
+                <div className="form-group">
+                  <label>Giá / km</label>
+                  <input type="number" min="0" value={configForm.distanceRate} onChange={(e) => setConfigForm({ ...configForm, distanceRate: Number(e.target.value) })} />
+                </div>
+                <div className="form-group">
+                  <label>Giá / phút</label>
+                  <input type="number" min="0" value={configForm.timeRate} onChange={(e) => setConfigForm({ ...configForm, timeRate: Number(e.target.value) })} />
+                </div>
+                <div className="form-group">
+                  <label>Hệ số surge</label>
+                  <input type="number" min="0" step="0.1" value={configForm.surgeMultiplier} onChange={(e) => setConfigForm({ ...configForm, surgeMultiplier: Number(e.target.value) })} />
+                </div>
+                <div className="form-group">
+                  <label>Tỷ lệ hoa hồng</label>
+                  <input type="number" min="0" max="100" step="0.1" value={configForm.commissionRate} onChange={(e) => setConfigForm({ ...configForm, commissionRate: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input type="checkbox" checked={configForm.isActive} onChange={(e) => setConfigForm({ ...configForm, isActive: e.target.checked })} />
+                  Kích hoạt cấu hình ngay sau khi lưu
+                </label>
+              </div>
+              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                <button type="button" onClick={() => setShowConfigModal(false)} className="btn glass" style={{ color: 'var(--text)' }}>Hủy</button>
+                <button type="button" onClick={handleSaveConfig} className="btn-premium">
+                  <Save size={18} /> Lưu cấu hình
+                </button>
+              </div>
             </div>
           </div>
         </div>
