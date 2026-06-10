@@ -24,6 +24,24 @@ const VEHICLE_ICON_MAP = {
   default: { icon: <Car size={22} />, color: 'var(--primary)' },
 };
 
+const CONFIG_STATUS_META = {
+  configured: {
+    label: 'Đang hoạt động',
+    description: 'Loại xe này đang có bảng giá được áp dụng.',
+    tone: 'active',
+  },
+  inactive: {
+    label: 'Đã lưu trữ',
+    description: 'Có cấu hình cũ nhưng hiện không còn áp dụng.',
+    tone: 'inactive',
+  },
+  not_configured: {
+    label: 'Chưa cấu hình',
+    description: 'Chưa có bảng giá. Loại xe sẽ không thể đặt chuyến.',
+    tone: 'draft',
+  },
+};
+
 const Pricing = () => {
   const [configs, setConfigs] = useState([]);
   const [vehicleTypes, setVehicleTypes] = useState([]);
@@ -168,15 +186,15 @@ const Pricing = () => {
     }
   };
 
-  const handleResetConfig = async (vehicleType) => {
+  const handleDeleteConfig = async (vehicleTypeId, vehicleLabel) => {
     const result = await Swal.fire({
-      title: 'Khôi phục mặc định?',
-      text: "Hệ thống sẽ quay về giá cước mặc định trong code cho loại xe này.",
+      title: 'Lưu trữ cấu hình giá?',
+      text: `Cấu hình hiện tại của ${vehicleLabel} sẽ bị chuyển sang trạng thái không hoạt động.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: 'var(--primary)',
+      confirmButtonColor: '#ef4444',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Đồng ý',
+      confirmButtonText: 'Lưu trữ',
       cancelButtonText: 'Hủy',
       background: document.body.className.includes('dark') ? '#1e293b' : '#fff',
       color: document.body.className.includes('dark') ? '#fff' : '#000',
@@ -184,7 +202,7 @@ const Pricing = () => {
 
     if (result.isConfirmed) {
       try {
-        await adminService.archivePricingConfig(vehicleType);
+        await adminService.archivePricingConfig(vehicleTypeId);
         await fetchData();
         toast.success('Đã lưu trữ cấu hình giá thành công.');
       } catch (error) {
@@ -326,6 +344,10 @@ const Pricing = () => {
     { id: 'weather_rain', label: 'Thời tiết xấu', icon: <CloudRain size={16} /> },
   ];
 
+  const activeConfigCount = configs.filter((config) => config.config_status === 'configured' && config.is_active).length;
+  const notConfiguredCount = configs.filter((config) => config.config_status === 'not_configured').length;
+  const archivedConfigCount = configs.filter((config) => config.config_status === 'inactive' || !config.is_active).length;
+
   if (loading && configs.length === 0) {
     return <div className="loading-screen">Đang tải dữ liệu cấu hình...</div>;
   }
@@ -348,26 +370,44 @@ const Pricing = () => {
         </div>
       </div>
 
+      <div className="pricing-summary">
+        <div className="summary-card glass">
+          <span className="summary-label">Đang hoạt động</span>
+          <strong className="summary-value">{activeConfigCount}</strong>
+        </div>
+        <div className="summary-card glass">
+          <span className="summary-label">Chưa cấu hình</span>
+          <strong className="summary-value">{notConfiguredCount}</strong>
+        </div>
+        <div className="summary-card glass">
+          <span className="summary-label">Đã lưu trữ</span>
+          <strong className="summary-value">{archivedConfigCount}</strong>
+        </div>
+      </div>
+
       <div className="pricing-grid">
         {configs.map(config => (
-          <div key={config.vehicle_type_id} className="price-card glass">
+          <div
+            key={config.vehicle_type_id}
+            className={`price-card glass config-status-${config.config_status === 'configured' && config.is_active ? 'configured' : config.config_status}`}
+          >
             <div className="card-top">
               <div className="icon-badge" style={{ color: VEHICLE_INFO[Number(config.vehicle_type_id)]?.color }}>
                 {VEHICLE_INFO[Number(config.vehicle_type_id)]?.icon}
               </div>
               <div className="title-box">
                 <h3>{config.vehicle_label || VEHICLE_INFO[Number(config.vehicle_type_id)]?.name || 'Loại xe mới'}</h3>
-                <p>
-                  {config.config_status === 'not_configured'
-                    ? 'Chưa có cấu hình giá'
-                    : config.config_status === 'inactive'
-                      ? 'Cấu hình đã lưu trữ'
-                      : 'Cấu hình tiêu chuẩn'}
-                </p>
+                <p>{CONFIG_STATUS_META[config.config_status]?.description || 'Cấu hình tiêu chuẩn'}</p>
               </div>
               <div className="card-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
                 {config.config_status !== 'not_configured' && (
-                  <button onClick={() => handleResetConfig(config.vehicle_type_id)} className="btn-icon" title="Lưu trữ cấu hình"><Trash2 size={18} /></button>
+                  <button
+                    onClick={() => handleDeleteConfig(config.vehicle_type_id, config.vehicle_label)}
+                    className="btn-icon btn-icon-danger"
+                    title="Lưu trữ cấu hình"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 )}
                 <button onClick={() => handleEditConfig(config)} className="btn-icon" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }} title={config.config_status === 'not_configured' ? 'Tạo cấu hình' : 'Chỉnh sửa'}>
                   {config.config_status === 'not_configured' ? <Plus size={18} /> : <Edit2 size={18} />}
@@ -404,12 +444,17 @@ const Pricing = () => {
               />
             </div>
             <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span className={`status-tag ${config.is_active ? 'active' : ''}`}>
-                {config.config_status === 'not_configured' ? 'Not configured' : (config.is_active ? 'Active' : 'Inactive')}
+              <span className={`status-tag ${CONFIG_STATUS_META[config.config_status]?.tone || ''}`}>
+                {CONFIG_STATUS_META[config.config_status]?.label || (config.is_active ? 'Đang hoạt động' : 'Đã lưu trữ')}
               </span>
               {!config.is_bookable && (
-                <span className="status-tag" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--error)' }}>
-                  Not bookable
+                <span className="status-tag status-tag-blocked">
+                  Không thể đặt chuyến
+                </span>
+              )}
+              {Array.isArray(config.service_scopes) && config.service_scopes.length > 0 && (
+                <span className="scope-chip">
+                  {config.service_scopes.join(' • ')}
                 </span>
               )}
             </div>
@@ -876,6 +921,33 @@ const Pricing = () => {
         .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
         .main-title { font-size: 1.75rem; font-weight: 800; color: var(--text); }
 
+        .pricing-summary {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 1rem;
+          margin-bottom: 1.75rem;
+        }
+        .summary-card {
+          padding: 1rem 1.2rem;
+          border-radius: 18px;
+          background: var(--card);
+          border: 1px solid var(--border);
+        }
+        .summary-label {
+          display: block;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-muted);
+          margin-bottom: 0.35rem;
+          font-weight: 700;
+        }
+        .summary-value {
+          font-size: 1.65rem;
+          color: var(--text);
+          font-weight: 800;
+        }
+
         .free-mode-wrapper { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 1rem; background: var(--bg-soft); border-radius: 12px; }
         .switch-btn { width: 44px; height: 24px; border-radius: 12px; background: #cbd5e1; border: none; cursor: pointer; position: relative; transition: background 0.3s; }
         .switch-btn.active { background: #00906a; }
@@ -889,14 +961,17 @@ const Pricing = () => {
           margin-bottom: 3rem;
         }
 
-        .price-card { padding: 1.5rem; border-radius: 20px; transition: transform 0.2s; background: var(--card); }
+        .price-card { padding: 1.5rem; border-radius: 20px; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; background: var(--card); border: 1px solid transparent; }
         .price-card:hover { transform: translateY(-5px); }
+        .price-card.config-status-configured { border-color: rgba(0, 144, 106, 0.24); box-shadow: 0 18px 45px rgba(0, 144, 106, 0.08); }
+        .price-card.config-status-inactive { border-color: rgba(245, 158, 11, 0.24); box-shadow: 0 18px 45px rgba(245, 158, 11, 0.08); }
+        .price-card.config-status-not_configured { border-color: rgba(239, 68, 68, 0.22); box-shadow: 0 18px 45px rgba(239, 68, 68, 0.08); }
         
         .card-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
         .icon-badge { width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .title-box { flex: 1; min-width: 0; }
         .title-box h3 { font-size: 1rem; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .title-box p { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+        .title-box p { font-size: 0.78rem; color: var(--text-muted); margin: 0.2rem 0 0; line-height: 1.45; }
         
         .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         .price-item { 
@@ -917,6 +992,8 @@ const Pricing = () => {
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: nowrap; }
         .btn-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-muted); cursor: pointer; transition: var(--transition); flex-shrink: 0; }
         .btn-icon:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+        .btn-icon-danger { color: var(--error); border-color: rgba(239, 68, 68, 0.3); }
+        .btn-icon-danger:hover { border-color: var(--error); color: var(--error); background: rgba(239, 68, 68, 0.08); }
         
         .badge-list { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .mini-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--bg-soft); border-radius: 6px; display: flex; align-items: center; gap: 0.25rem; }
@@ -924,6 +1001,18 @@ const Pricing = () => {
         
         .status-tag { padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(239, 68, 68, 0.1); color: var(--error); }
         .status-tag.active { background: rgba(0, 144, 106, 0.1); color: #00906a; }
+        .status-tag.inactive { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+        .status-tag.draft { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+        .status-tag-blocked { background: rgba(239,68,68,0.1); color: var(--error); }
+        .scope-chip {
+          padding: 0.28rem 0.7rem;
+          border-radius: 999px;
+          font-size: 0.72rem;
+          font-weight: 700;
+          background: var(--bg-soft);
+          color: var(--text-muted);
+          border: 1px solid var(--border);
+        }
 
         .conditions-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; background: var(--bg-soft); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
         .cond-checkbox { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 6px; transition: background 0.2s; }
@@ -936,6 +1025,7 @@ const Pricing = () => {
         @media (max-width: 640px) {
           .pricing-grid { grid-template-columns: 1fr; }
           .card-body { grid-template-columns: 1fr; }
+          .pricing-summary { grid-template-columns: 1fr; }
         }
 
         .section-divider { display: flex; justify-content: space-between; align-items: center; margin: 4rem 0 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem; }
