@@ -79,6 +79,21 @@ export const adminService = {
     return response.data;
   },
 
+  createVehicleType: async (data) => {
+    const response = await api.post('/v1/admin/meta/vehicle-types', data);
+    return response.data;
+  },
+
+  updateVehicleType: async (id, data) => {
+    const response = await api.put(`/v1/admin/meta/vehicle-types/${id}`, data);
+    return response.data;
+  },
+
+  deleteVehicleType: async (id) => {
+    const response = await api.delete(`/v1/admin/meta/vehicle-types/${id}`);
+    return response.data;
+  },
+
   saveSurgeRule: async (data) => {
     const response = await api.post('/v1/admin/pricing/surge-rules', data);
     return response.data;

@@ -68,6 +68,8 @@ const Pricing = () => {
   // State cho việc sửa giá cố định
   const [editingConfigId, setEditingConfigId] = useState(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showVehicleTypeModal, setShowVehicleTypeModal] = useState(false);
+  const [editingVehicleTypeId, setEditingVehicleTypeId] = useState(null);
   const [configForm, setConfigForm] = useState({
     vehicleTypeId: 0,
     basePrice: 0,
@@ -77,6 +79,17 @@ const Pricing = () => {
     surgeMultiplier: 1,
     commissionRate: 20,
     isActive: true,
+  });
+  const [vehicleTypeForm, setVehicleTypeForm] = useState({
+    name_vi: '',
+    code: '',
+    description_vi: '',
+    capacity: 1,
+    estimated_wait_time: '',
+    service_scopes: [],
+    is_bookable: true,
+    is_active: true,
+    sort_order: 0,
   });
 
   // State cho việc quản lý Surge Rules
@@ -95,7 +108,7 @@ const Pricing = () => {
         adminService.getSurgeRules(),
         adminService.getScheduledPricing(),
       ]);
-      const vehicleTypeRes = await adminService.getVehicleTypes();
+      const vehicleTypeRes = await adminService.getAdminVehicleTypes();
 
       // Backend: { data: { configs: [...], global_settings: { is_free_mode: bool } } }
       const configData = configRes?.data ?? {};
@@ -165,6 +178,38 @@ const Pricing = () => {
     setShowConfigModal(true);
   };
 
+  const handleCreateVehicleType = () => {
+    setEditingVehicleTypeId(null);
+    setVehicleTypeForm({
+      name_vi: '',
+      code: '',
+      description_vi: '',
+      capacity: 1,
+      estimated_wait_time: '',
+      service_scopes: [],
+      is_bookable: true,
+      is_active: true,
+      sort_order: vehicleTypes.length + 1,
+    });
+    setShowVehicleTypeModal(true);
+  };
+
+  const handleEditVehicleType = (vehicleType) => {
+    setEditingVehicleTypeId(vehicleType.id);
+    setVehicleTypeForm({
+      name_vi: vehicleType.name_vi || '',
+      code: vehicleType.code || '',
+      description_vi: vehicleType.description_vi || '',
+      capacity: vehicleType.capacity || 1,
+      estimated_wait_time: vehicleType.estimated_wait_time || '',
+      service_scopes: Array.isArray(vehicleType.service_scopes) ? vehicleType.service_scopes : [],
+      is_bookable: vehicleType.is_bookable ?? true,
+      is_active: vehicleType.is_active ?? true,
+      sort_order: vehicleType.sort_order || 0,
+    });
+    setShowVehicleTypeModal(true);
+  };
+
   const handleSaveConfig = async () => {
     try {
       await adminService.updatePricingConfig({
@@ -207,6 +252,55 @@ const Pricing = () => {
         toast.success('Đã lưu trữ cấu hình giá thành công.');
       } catch (error) {
         toast.error('Không thể lưu trữ cấu hình giá.');
+      }
+    }
+  };
+
+  const handleSaveVehicleType = async () => {
+    try {
+      const payload = {
+        ...vehicleTypeForm,
+        capacity: Number(vehicleTypeForm.capacity || 1),
+        sort_order: Number(vehicleTypeForm.sort_order || 0),
+      };
+
+      if (editingVehicleTypeId) {
+        await adminService.updateVehicleType(editingVehicleTypeId, payload);
+        toast.success('Đã cập nhật phương tiện thành công.');
+      } else {
+        await adminService.createVehicleType(payload);
+        toast.success('Đã tạo phương tiện thành công.');
+      }
+
+      setShowVehicleTypeModal(false);
+      setEditingVehicleTypeId(null);
+      await fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể lưu phương tiện.');
+    }
+  };
+
+  const handleDeleteVehicleType = async (vehicleType) => {
+    const result = await Swal.fire({
+      title: 'Lưu trữ phương tiện?',
+      text: `Phương tiện "${vehicleType.name_vi}" sẽ bị ẩn khỏi danh mục khả dụng.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Lưu trữ',
+      cancelButtonText: 'Hủy',
+      background: document.body.className.includes('dark') ? '#1e293b' : '#fff',
+      color: document.body.className.includes('dark') ? '#fff' : '#000',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await adminService.deleteVehicleType(vehicleType.id);
+        await fetchData();
+        toast.success('Đã lưu trữ phương tiện.');
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể lưu trữ phương tiện.');
       }
     }
   };
@@ -343,6 +437,13 @@ const Pricing = () => {
     { id: 'peak_hour', label: 'Giờ cao điểm', icon: <Clock size={16} /> },
     { id: 'weather_rain', label: 'Thời tiết xấu', icon: <CloudRain size={16} /> },
   ];
+  const SERVICE_SCOPE_OPTIONS = [
+    { id: 'city', label: 'Chuyến thường' },
+    { id: 'intercity', label: 'Đi tỉnh' },
+    { id: 'airport', label: 'Sân bay' },
+    { id: 'delivery', label: 'Giao hàng' },
+    { id: 'chauffeur', label: 'Lái hộ' },
+  ];
 
   const activeConfigCount = configs.filter((config) => config.config_status === 'configured' && config.is_active).length;
   const notConfiguredCount = configs.filter((config) => config.config_status === 'not_configured').length;
@@ -360,6 +461,9 @@ const Pricing = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <button className="btn-premium" onClick={handleCreateConfig}>
             <Plus size={18} /> Thêm cấu hình giá
+          </button>
+          <button className="btn glass" onClick={handleCreateVehicleType}>
+            <Plus size={18} /> Thêm phương tiện
           </button>
           <div className="free-mode-wrapper">
             <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Chế độ miễn phí</span>
@@ -460,6 +564,61 @@ const Pricing = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="surge-section glass" style={{ marginBottom: '2rem' }}>
+        <div className="section-header">
+          <h3>Danh mục phương tiện</h3>
+          <button className="btn-premium" onClick={handleCreateVehicleType}>
+            <Plus size={18} /> Thêm phương tiện
+          </button>
+        </div>
+
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tên phương tiện</th>
+                <th>Mã</th>
+                <th>Sức chứa</th>
+                <th>Dịch vụ</th>
+                <th>Trạng thái</th>
+                <th style={{ textAlign: 'right' }}>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vehicleTypes.map((type) => (
+                <tr key={type.id}>
+                  <td style={{ fontWeight: 700 }}>{type.name_vi}</td>
+                  <td>{type.code}</td>
+                  <td>{type.capacity}</td>
+                  <td>
+                    <div className="badge-list">
+                      {(type.service_scopes || []).map((scope) => (
+                        <span key={scope} className="mini-badge">{scope}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status-tag ${type.is_active ? 'active' : 'inactive'}`}>
+                      {type.is_active ? 'Đang dùng' : 'Đã lưu trữ'}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn-action btn-action-edit" onClick={() => handleEditVehicleType(type)}>
+                        <Edit2 size={16} /> Sửa
+                      </button>
+                      <button className="btn-action btn-action-danger" onClick={() => handleDeleteVehicleType(type)}>
+                        <Trash2 size={16} /> Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="surge-section glass">
@@ -907,6 +1066,83 @@ const Pricing = () => {
                 <button type="button" onClick={() => setShowConfigModal(false)} className="btn glass" style={{ color: 'var(--text)' }}>Hủy</button>
                 <button type="button" onClick={handleSaveConfig} className="btn-premium">
                   <Save size={18} /> Lưu cấu hình
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVehicleTypeModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '680px', width: '92%' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>{editingVehicleTypeId ? 'Chỉnh sửa phương tiện' : 'Thêm phương tiện mới'}</h3>
+              <button className="btn-icon" onClick={() => setShowVehicleTypeModal(false)}><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Tên phương tiện</label>
+                  <input value={vehicleTypeForm.name_vi} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, name_vi: e.target.value })} placeholder="Ví dụ: Xe điện 4 chỗ" />
+                </div>
+                <div className="form-group">
+                  <label>Mã phương tiện</label>
+                  <input value={vehicleTypeForm.code} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, code: e.target.value })} placeholder="Ví dụ: ev_car_4" />
+                </div>
+                <div className="form-group">
+                  <label>Sức chứa</label>
+                  <input type="number" min="1" value={vehicleTypeForm.capacity} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, capacity: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Thời gian chờ ước tính</label>
+                  <input value={vehicleTypeForm.estimated_wait_time} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, estimated_wait_time: e.target.value })} placeholder="Ví dụ: 3-5 phút" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Mô tả</label>
+                <input value={vehicleTypeForm.description_vi} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, description_vi: e.target.value })} placeholder="Mô tả ngắn cho phương tiện" />
+              </div>
+              <div className="form-group">
+                <label>Scope dịch vụ</label>
+                <div className="conditions-grid">
+                  {SERVICE_SCOPE_OPTIONS.map((scope) => (
+                    <label key={scope.id} className="cond-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={vehicleTypeForm.service_scopes.includes(scope.id)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...vehicleTypeForm.service_scopes, scope.id]
+                            : vehicleTypeForm.service_scopes.filter((item) => item !== scope.id);
+                          setVehicleTypeForm({ ...vehicleTypeForm, service_scopes: next });
+                        }}
+                      />
+                      <span>{scope.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Thứ tự hiển thị</label>
+                  <input type="number" min="0" value={vehicleTypeForm.sort_order} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, sort_order: e.target.value })} />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="checkbox" checked={vehicleTypeForm.is_bookable} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, is_bookable: e.target.checked })} />
+                    Cho phép đặt chuyến
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="checkbox" checked={vehicleTypeForm.is_active} onChange={(e) => setVehicleTypeForm({ ...vehicleTypeForm, is_active: e.target.checked })} />
+                    Kích hoạt phương tiện
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                <button type="button" onClick={() => setShowVehicleTypeModal(false)} className="btn glass" style={{ color: 'var(--text)' }}>Hủy</button>
+                <button type="button" onClick={handleSaveVehicleType} className="btn-premium">
+                  <Save size={18} /> Lưu phương tiện
                 </button>
               </div>
             </div>
