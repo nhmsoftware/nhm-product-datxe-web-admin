@@ -364,6 +364,13 @@ const Pricing = () => {
     try {
       setSavingScheduled(true);
       const rulesToUse = overrideRules || scheduledConfig.rules;
+
+      const invalidRuleIndex = rulesToUse.findIndex((rule) => !Array.isArray(rule.ranges) || rule.ranges.length === 0);
+      if (invalidRuleIndex >= 0) {
+        toast.error(`Bảng giá #${invalidRuleIndex + 1} chưa có khoảng KM nào.`);
+        return;
+      }
+
       const payload = {
         pre_book_surcharge: Number(scheduledConfig.surcharges?.pre_book_surcharge || 0),
         night_surcharge: Number(scheduledConfig.surcharges?.night_surcharge || 0),
@@ -393,7 +400,9 @@ const Pricing = () => {
         fetchData();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Lỗi khi cập nhật cấu hình');
+      const errorData = error.response?.data;
+      const firstError = errorData?.errors ? Object.values(errorData.errors)[0]?.[0] : null;
+      toast.error(firstError || errorData?.message || 'Lỗi khi cập nhật cấu hình');
     } finally {
       setSavingScheduled(false);
     }
@@ -401,6 +410,10 @@ const Pricing = () => {
 
   const handleSaveRuleModal = async (e) => {
     e.preventDefault();
+    if (!Array.isArray(editRuleForm.ranges) || editRuleForm.ranges.length === 0) {
+      toast.error('Vui lòng thêm ít nhất một khoảng KM trước khi lưu.');
+      return;
+    }
     const newRules = [...scheduledConfig.rules];
     if (editRuleIndex !== null) {
       newRules[editRuleIndex] = editRuleForm;
