@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { VOUCHER_SERVICE_LABEL_MAP, VOUCHER_SERVICE_OPTIONS } from '../../constants/serviceCatalog';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -387,13 +388,7 @@ const VoucherList = () => {
                   </td>
                   <td>
                     <span className="badge badge-glass">
-                      {{
-                        1: 'Chuyến xe',
-                        2: 'Đồ ăn',
-                        3: 'Đa dịch vụ',
-                        4: 'Giao hàng',
-                        5: 'Tất cả'
-                      }[voucher.service_type] || 'Không xác định'}
+                      {VOUCHER_SERVICE_LABEL_MAP[voucher.service_type] || 'Không xác định'}
                     </span>
                   </td>
                   <td>
@@ -555,9 +550,9 @@ const VoucherList = () => {
                     onChange={(e) => setFormData({...formData, service_type: parseInt(e.target.value)})}
                     style={{ width: '100%' }}
                   >
-                    <option value="5">Tất cả</option>
-                    <option value="1">Đặt xe</option>
-                    <option value="2">Đồ ăn</option>
+                    {VOUCHER_SERVICE_OPTIONS.map((service) => (
+                      <option key={service.id} value={service.id}>{service.label}</option>
+                    ))}
                   </select>
                   <p className="helper-text">Dịch vụ được phép áp dụng.</p>
                 </div>

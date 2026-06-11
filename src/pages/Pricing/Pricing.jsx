@@ -8,6 +8,12 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import {
+  SCHEDULED_PRICING_SERVICE_OPTIONS,
+  SCHEDULED_PRICING_SERVICE_LABEL_MAP,
+  SCHEDULED_RIDE_MODE_OPTIONS,
+  SCHEDULED_RIDE_MODE_LABEL_MAP,
+} from '../../constants/serviceCatalog';
 
 const VIETNAM_PROVINCES = [
   "Hà Nội", "Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ", 
@@ -755,7 +761,7 @@ const Pricing = () => {
             <button className="btn-premium" onClick={() => {
               setEditRuleIndex(null);
               setEditRuleForm({
-                service_type: 6,
+                service_type: SCHEDULED_PRICING_SERVICE_OPTIONS[0]?.id ?? 6,
                 ride_mode: 'shared',
                 vehicle_type: 2,
                 airport_id: '',
@@ -789,8 +795,8 @@ const Pricing = () => {
                 )}
                 {scheduledConfig.rules.map((rule, rIndex) => (
                   <tr key={rIndex}>
-                    <td style={{ fontWeight: 600 }}>{String(rule.service_type) === '6' ? 'Đi Tỉnh' : 'Sân bay'}</td>
-                    <td>{rule.ride_mode === 'shared' ? 'Ghép (Shared)' : 'Bao xe (Private)'}</td>
+                    <td style={{ fontWeight: 600 }}>{SCHEDULED_PRICING_SERVICE_LABEL_MAP[Number(rule.service_type)] || `Dịch vụ #${rule.service_type}`}</td>
+                    <td>{SCHEDULED_RIDE_MODE_LABEL_MAP[rule.ride_mode] || rule.ride_mode}</td>
                     <td>{VEHICLE_INFO[rule.vehicle_type]?.name}</td>
                     <td>
                       {String(rule.service_type) === '6' ? (
@@ -850,15 +856,17 @@ const Pricing = () => {
                   <div className="form-group">
                     <label>Loại Dịch vụ</label>
                     <select className="form-select" value={editRuleForm.service_type} onChange={e => setEditRuleForm({...editRuleForm, service_type: e.target.value})}>
-                      <option value={6}>Đi Tỉnh (6)</option>
-                      <option value={7}>Sân bay (7)</option>
+                      {SCHEDULED_PRICING_SERVICE_OPTIONS.map((service) => (
+                        <option key={service.id} value={service.id}>{service.label} ({service.id})</option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group">
                     <label>Hình thức đi</label>
                     <select className="form-select" value={editRuleForm.ride_mode} onChange={e => setEditRuleForm({...editRuleForm, ride_mode: e.target.value})}>
-                      <option value="shared">Ghép (Shared)</option>
-                      <option value="private">Bao xe (Private)</option>
+                      {SCHEDULED_RIDE_MODE_OPTIONS.map((mode) => (
+                        <option key={mode.id} value={mode.id}>{mode.label}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group">

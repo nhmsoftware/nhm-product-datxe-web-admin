@@ -4,6 +4,7 @@ import { Search, Filter, CheckCircle, XCircle, Check, X, Ban, Unlock, Car, Eye, 
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { DRIVER_SERVICE_OPTIONS } from '../../constants/serviceCatalog';
 
 import { useLocation } from 'react-router-dom';
 
@@ -253,16 +254,7 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
 
   if (!open || !driver) return null;
 
-  const serviceOptions = [
-    { id: 1, label: 'Xe ôm' },
-    { id: 2, label: 'Taxi 4 chỗ' },
-    { id: 3, label: 'Taxi 7 chỗ' },
-    { id: 4, label: 'Giao đồ ăn' },
-    { id: 5, label: 'Giao hàng' },
-    { id: 6, label: 'Xe đi tỉnh' },
-    { id: 7, label: 'Xe sân bay' },
-    { id: 8, label: 'Lái hộ' },
-  ];
+  const serviceOptions = DRIVER_SERVICE_OPTIONS;
 
   const fileFields = [
     ['cccd_front', 'CCCD mặt trước'],

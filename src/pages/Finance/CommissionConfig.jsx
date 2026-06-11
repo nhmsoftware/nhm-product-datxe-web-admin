@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import { COMMISSION_SERVICE_LABEL_MAP, COMMISSION_SERVICE_OPTIONS } from '../../constants/serviceCatalog';
 
 // Native helpers
 const formatDateForInput = (dateStr) => {
@@ -150,9 +151,11 @@ const CommissionConfig = () => {
   };
 
   const SERVICE_TYPES = {
-    1: { label: 'Chuyến xe', icon: <Bike size={16} />, color: 'var(--primary)', bg: 'rgba(0, 73, 172, 0.1)' },
-    2: { label: 'Ăn uống', icon: <Utensils size={16} />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-    3: { label: 'Giao hàng', icon: <Package size={16} />, color: '#00906a', bg: 'rgba(0, 144, 106, 0.1)' }
+    1: { label: COMMISSION_SERVICE_LABEL_MAP[1], icon: <Bike size={16} />, color: 'var(--primary)', bg: 'rgba(0, 73, 172, 0.1)' },
+    2: { label: COMMISSION_SERVICE_LABEL_MAP[2], icon: <Utensils size={16} />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+    3: { label: COMMISSION_SERVICE_LABEL_MAP[3], icon: <Package size={16} />, color: '#00906a', bg: 'rgba(0, 144, 106, 0.1)' },
+    6: { label: COMMISSION_SERVICE_LABEL_MAP[6], icon: <Globe size={16} />, color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
+    7: { label: COMMISSION_SERVICE_LABEL_MAP[7], icon: <MapPin size={16} />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' }
   };
 
   const TARGET_TYPES = {
@@ -273,9 +276,11 @@ const CommissionConfig = () => {
             <span className="filter-label"><Filter size={14} /> LOẠI DỊCH VỤ:</span>
             <div className="tabs-container m-0">
               <button className={`tab-item ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>Tất cả</button>
-              <button className={`tab-item ${filterType === '1' ? 'active' : ''}`} onClick={() => setFilterType('1')}>Chuyến xe</button>
-              <button className={`tab-item ${filterType === '2' ? 'active' : ''}`} onClick={() => setFilterType('2')}>Nhà hàng</button>
-              <button className={`tab-item ${filterType === '3' ? 'active' : ''}`} onClick={() => setFilterType('3')}>Giao hàng</button>
+              {COMMISSION_SERVICE_OPTIONS.map((service) => (
+                <button key={service.id} className={`tab-item ${filterType === String(service.id) ? 'active' : ''}`} onClick={() => setFilterType(String(service.id))}>
+                  {service.label}
+                </button>
+              ))}
             </div>
           </div>
           <div className="filter-group ml-8">
@@ -444,8 +449,8 @@ const CommissionConfig = () => {
                               <option value="2_2">Hoa hồng Quán ăn (Merchant)</option>
                               <option value="1_2">Hoa hồng Tài xế Giao đồ ăn</option>
                               <option value="1_3">Hoa hồng Giao hàng</option>
-                              <option value="1_6">Hoa hồng Đặt xe Đi tỉnh</option>
-                              <option value="1_7">Hoa hồng Đặt xe Sân bay</option>
+                              <option value="1_6">Hoa hồng Tài xế Đi tỉnh</option>
+                              <option value="1_7">Hoa hồng Tài xế Sân bay</option>
                             </select>
                           </div>
                         </div>
