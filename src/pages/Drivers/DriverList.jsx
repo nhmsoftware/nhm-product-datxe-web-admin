@@ -224,7 +224,7 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
     full_name: '',
     phone: '',
     citizen_id: '',
-    vehicle_type: '',
+    vehicle_type_id: '',
     vehicle_name: '',
     vehicle_color: '',
     vehicle_number: '',
@@ -241,7 +241,7 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
       full_name: driver?.full_name || '',
       phone: driver?.phone || '',
       citizen_id: '',
-      vehicle_type: driver?.vehicle_info?.vehicle_type ? String(driver.vehicle_info.vehicle_type) : '',
+      vehicle_type_id: driver?.vehicle_info?.vehicle_type_id ? String(driver.vehicle_info.vehicle_type_id) : '',
       vehicle_name: driver?.vehicle_info?.vehicle_name || '',
       vehicle_color: '',
       vehicle_number: driver?.vehicle_info?.vehicle_number || '',
@@ -302,7 +302,7 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
     if (!form.full_name.trim()) return toast.error('Vui lòng nhập họ và tên.');
     if (!form.phone.trim()) return toast.error('Vui lòng nhập số điện thoại.');
     if (!form.citizen_id.trim() || !/^[0-9]{12}$/.test(form.citizen_id.trim())) return toast.error('CCCD phải gồm đúng 12 chữ số.');
-    if (!form.vehicle_type) return toast.error('Vui lòng chọn loại xe.');
+    if (!form.vehicle_type_id) return toast.error('Vui lòng chọn loại xe.');
     if (!form.vehicle_name.trim()) return toast.error('Vui lòng nhập tên xe.');
     if (!form.vehicle_color) return toast.error('Vui lòng chọn màu xe.');
     if (!form.vehicle_number.trim()) return toast.error('Vui lòng nhập biển số xe.');
@@ -318,7 +318,7 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
     data.append('full_name', form.full_name.trim());
     data.append('phone', form.phone.trim());
     data.append('citizen_id', form.citizen_id.trim());
-    data.append('vehicle_type', form.vehicle_type);
+    data.append('vehicle_type_id', form.vehicle_type_id);
     data.append('vehicle_name', form.vehicle_name.trim());
     data.append('vehicle_color', form.vehicle_color);
     data.append('vehicle_number', form.vehicle_number.trim());
@@ -375,7 +375,7 @@ const DriverKycUploadModal = ({ open, driver, onClose, onSubmit }) => {
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Loại xe</label>
-                    <select value={form.vehicle_type} onChange={(e) => handleChange('vehicle_type', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
+                    <select value={form.vehicle_type_id} onChange={(e) => handleChange('vehicle_type_id', e.target.value)} style={{ width: '100%', padding: '0.9rem 1rem', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: '14px', color: 'var(--text)', outline: 'none' }}>
                       <option value="">Chọn loại xe</option>
                       {vehicleTypes.map((type) => (
                         <option key={type.id} value={type.id}>{type.name_vi}</option>
