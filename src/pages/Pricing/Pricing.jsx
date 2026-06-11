@@ -374,7 +374,7 @@ const Pricing = () => {
         rules: rulesToUse.map(rule => ({
           service_type: Number(rule.service_type),
           ride_mode: rule.ride_mode,
-          vehicle_type: Number(rule.vehicle_type),
+          vehicle_type_id: Number(rule.vehicle_type_id ?? rule.vehicle_type),
           airport_id: rule.airport_id || null,
           ranges: rule.ranges.map(range => ({
             start_km: Number(range.start_km),
@@ -763,7 +763,7 @@ const Pricing = () => {
               setEditRuleForm({
                 service_type: SCHEDULED_PRICING_SERVICE_OPTIONS[0]?.id ?? 6,
                 ride_mode: 'shared',
-                vehicle_type: 2,
+                vehicle_type_id: 2,
                 airport_id: '',
                 ranges: []
               });
@@ -797,7 +797,7 @@ const Pricing = () => {
                   <tr key={rIndex}>
                     <td style={{ fontWeight: 600 }}>{SCHEDULED_PRICING_SERVICE_LABEL_MAP[Number(rule.service_type)] || `Dịch vụ #${rule.service_type}`}</td>
                     <td>{SCHEDULED_RIDE_MODE_LABEL_MAP[rule.ride_mode] || rule.ride_mode}</td>
-                    <td>{VEHICLE_INFO[rule.vehicle_type]?.name}</td>
+                    <td>{VEHICLE_INFO[rule.vehicle_type_id ?? rule.vehicle_type]?.name}</td>
                     <td>
                       {String(rule.service_type) === '6' ? (
                         <span style={{ color: 'var(--text-muted)' }}>- Không áp dụng -</span>
@@ -871,7 +871,7 @@ const Pricing = () => {
                   </div>
                   <div className="form-group">
                     <label>Loại xe</label>
-                    <select className="form-select" value={editRuleForm.vehicle_type} onChange={e => setEditRuleForm({...editRuleForm, vehicle_type: e.target.value})}>
+                    <select className="form-select" value={editRuleForm.vehicle_type_id ?? editRuleForm.vehicle_type ?? ''} onChange={e => setEditRuleForm({...editRuleForm, vehicle_type_id: e.target.value})}>
                       {Object.entries(VEHICLE_INFO).map(([id, info]) => <option key={id} value={id}>{info.name}</option>)}
                     </select>
                   </div>
