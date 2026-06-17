@@ -1012,8 +1012,8 @@ const ScheduledDispatchBoard = () => {
                   <span>Chọn tài xế khả dụng:</span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     ({internalDrivers.filter(d => {
-                      const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
-                      const isVehicleMatch = Number(d.vehicle_type) === Number(currentRide?.vehicle_type);
+                      const hasCompleteProfile = !!(d.vehicle_type_id && d.vehicle_number && d.vehicle_name);
+                      const isVehicleMatch = Number(d.vehicle_type_id) === Number(currentRide?.vehicle_type);
                       return hasCompleteProfile && isVehicleMatch;
                     }).length} tài xế)
                   </span>
@@ -1045,15 +1045,15 @@ const ScheduledDispatchBoard = () => {
                   {loadingDrivers ? (
                     <div className="loading-spinner"><Loader2 size={32} className="spinner-icon" /></div>
                   ) : internalDrivers.filter(d => {
-                    const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
-                    const isVehicleMatch = Number(d.vehicle_type) === Number(currentRide?.vehicle_type);
+                    const hasCompleteProfile = !!(d.vehicle_type_id && d.vehicle_number && d.vehicle_name);
+                    const isVehicleMatch = Number(d.vehicle_type_id) === Number(currentRide?.vehicle_type);
                     return hasCompleteProfile && isVehicleMatch;
                   }).length === 0 ? (
                     <p className="empty-drivers">Không có tài xế phù hợp và khả dụng</p>
                   ) : (
                     internalDrivers.filter(d => {
-                      const hasCompleteProfile = !!(d.vehicle_type && d.vehicle_number && d.vehicle_name);
-                      const isVehicleMatch = Number(d.vehicle_type) === Number(currentRide?.vehicle_type);
+                      const hasCompleteProfile = !!(d.vehicle_type_id && d.vehicle_number && d.vehicle_name);
+                      const isVehicleMatch = Number(d.vehicle_type_id) === Number(currentRide?.vehicle_type);
                       return hasCompleteProfile && isVehicleMatch;
                     }).map(driver => (
                       <div 
